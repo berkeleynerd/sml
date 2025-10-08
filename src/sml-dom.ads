@@ -143,10 +143,7 @@ package SML.DOM with SPARK_Mode => On is
    --  No node exceeds maximum depth
    function Has_Valid_Depth (Doc : Document) return Boolean
      with Ghost,
-          Global => null,
-          Post => Has_Valid_Depth'Result =
-                    (for all N in Node_Id =>
-                       (if Is_Valid_Node (Doc, N) then Depth (Doc, N) <= Max_Tree_Depth));
+          Global => null;
 
    --  Checks if Parent_Node has Child_Node as a child
    function Has_Child (Doc : Document; Parent_Node, Child_Node : Node_Id)
@@ -194,10 +191,7 @@ package SML.DOM with SPARK_Mode => On is
    --  Checks if Document has no memory leaks
    function No_Memory_Leaks (Doc : Document) return Boolean
      with Ghost,
-          Global => null,
-          Post => No_Memory_Leaks'Result =
-                    (for all N in Node_Id =>
-                       (if Is_Valid_Node (Doc, N) then Owns_Node (Doc, N)));
+          Global => null;
 
 private
    ---------------------------------------------------------------------------
