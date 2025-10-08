@@ -205,8 +205,11 @@ private
    --  Node_Id is a safe reference to a Node
    type Node_Id is new Node_Access;
 
-   --  Node pool for memory management
-   type Node_Pool is limited private;
+   --  Node pool for memory management (defined before Document)
+   type Node_Pool is limited record
+      --  Implementation would include memory management details
+      null;
+   end record;
 
    --  Document structure owns all Nodes in its tree
    type Document is limited record
@@ -233,12 +236,6 @@ private
          when Text =>
             Text_Content     : Unbounded_String := Null_Unbounded_String;
       end case;
-   end record;
-
-   --  Node pool implementation (details hidden)
-   type Node_Pool is limited record
-      --  Implementation would include memory management details
-      null;
    end record;
 
 end SML.DOM;
