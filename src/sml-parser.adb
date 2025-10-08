@@ -347,7 +347,7 @@ package body SML.Parser with SPARK_Mode => On is
    begin
       --  Ghost function - not callable at runtime
       --  Limited types cannot be returned by value in implementations
-      raise Program_Error with "Ghost function Partial_DOM is not implemented";
+      return raise Program_Error with "Ghost function Partial_DOM is not implemented";
    end Partial_DOM;
 
    function Is_Valid_Partial_State (State : Parser_State) return Boolean is
