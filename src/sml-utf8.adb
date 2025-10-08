@@ -4,7 +4,14 @@
 --  SPARK Ada Implementation with Formal Verification Support
 ------------------------------------------------------------------------------
 
+with Interfaces; use Interfaces;
+
 package body SML.UTF8 with SPARK_Mode => On is
+
+   --  Helper function for bitwise AND on Natural values
+   function Bitwise_And (Left : Natural; Right : Unsigned_8) return Natural is
+     (Natural (Unsigned_8 (Left) and Right))
+   with Inline;
 
    ---------------------------------------------------------------------------
    --  UTF-8 Character Classification
@@ -125,9 +132,9 @@ package body SML.UTF8 with SPARK_Mode => On is
             end if;
 
             -- Extract code point
-            Code := (Byte1 and 16#0F#) * 16#1000# +
-                   (Byte2 and 16#3F#) * 16#40# +
-                   (Byte3 and 16#3F#);
+            Code := Bitwise_And (Byte1, 16#0F#) * 16#1000# +
+                   Bitwise_And (Byte2, 16#3F#) * 16#40# +
+                   Bitwise_And (Byte3, 16#3F#);
 
             -- Check for overlong encoding
             if Byte1 = 16#E0# and then Byte2 < 16#A0# then
@@ -154,10 +161,10 @@ package body SML.UTF8 with SPARK_Mode => On is
             end if;
 
             -- Extract code point
-            Code := (Byte1 and 16#07#) * 16#40000# +
-                   (Byte2 and 16#3F#) * 16#1000# +
-                   (Byte3 and 16#3F#) * 16#40# +
-                   (Byte4 and 16#3F#);
+            Code := Bitwise_And (Byte1, 16#07#) * 16#40000# +
+                   Bitwise_And (Byte2, 16#3F#) * 16#1000# +
+                   Bitwise_And (Byte3, 16#3F#) * 16#40# +
+                   Bitwise_And (Byte4, 16#3F#);
 
             -- Check for overlong encoding
             if Byte1 = 16#F0# and then Byte2 < 16#90# then
@@ -331,9 +338,9 @@ package body SML.UTF8 with SPARK_Mode => On is
                          Error_Position => I + 2);
                end if;
 
-               Code := (Byte1 and 16#0F#) * 16#1000# +
-                      (Byte2 and 16#3F#) * 16#40# +
-                      (Byte3 and 16#3F#);
+               Code := Bitwise_And (Byte1, 16#0F#) * 16#1000# +
+                      Bitwise_And (Byte2, 16#3F#) * 16#40# +
+                      Bitwise_And (Byte3, 16#3F#);
 
                if Byte1 = 16#E0# and then Byte2 < 16#A0# then
                   return (Valid => False,
@@ -370,10 +377,10 @@ package body SML.UTF8 with SPARK_Mode => On is
                          Error_Position => I + 3);
                end if;
 
-               Code := (Byte1 and 16#07#) * 16#40000# +
-                      (Byte2 and 16#3F#) * 16#1000# +
-                      (Byte3 and 16#3F#) * 16#40# +
-                      (Byte4 and 16#3F#);
+               Code := Bitwise_And (Byte1, 16#07#) * 16#40000# +
+                      Bitwise_And (Byte2, 16#3F#) * 16#1000# +
+                      Bitwise_And (Byte3, 16#3F#) * 16#40# +
+                      Bitwise_And (Byte4, 16#3F#);
 
                if Byte1 = 16#F0# and then Byte2 < 16#90# then
                   return (Valid => False,
@@ -420,24 +427,24 @@ package body SML.UTF8 with SPARK_Mode => On is
 
          when 2 =>
             Byte2 := Character'Pos (Text (Position + 1));
-            Code := (Byte1 and 16#1F#) * 16#40# +
-                   (Byte2 and 16#3F#);
+            Code := Bitwise_And (Byte1, 16#1F#) * 16#40# +
+                   Bitwise_And (Byte2, 16#3F#);
 
          when 3 =>
             Byte2 := Character'Pos (Text (Position + 1));
             Byte3 := Character'Pos (Text (Position + 2));
-            Code := (Byte1 and 16#0F#) * 16#1000# +
-                   (Byte2 and 16#3F#) * 16#40# +
-                   (Byte3 and 16#3F#);
+            Code := Bitwise_And (Byte1, 16#0F#) * 16#1000# +
+                   Bitwise_And (Byte2, 16#3F#) * 16#40# +
+                   Bitwise_And (Byte3, 16#3F#);
 
          when 4 =>
             Byte2 := Character'Pos (Text (Position + 1));
             Byte3 := Character'Pos (Text (Position + 2));
             Byte4 := Character'Pos (Text (Position + 3));
-            Code := (Byte1 and 16#07#) * 16#40000# +
-                   (Byte2 and 16#3F#) * 16#1000# +
-                   (Byte3 and 16#3F#) * 16#40# +
-                   (Byte4 and 16#3F#);
+            Code := Bitwise_And (Byte1, 16#07#) * 16#40000# +
+                   Bitwise_And (Byte2, 16#3F#) * 16#1000# +
+                   Bitwise_And (Byte3, 16#3F#) * 16#40# +
+                   Bitwise_And (Byte4, 16#3F#);
 
          when others =>
             Code := 16#FFFD#;  -- Replacement character
