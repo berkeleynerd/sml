@@ -21,6 +21,8 @@ package SML.DOM with SPARK_Mode => On is
    --  INVARIANT: All Document values satisfy Is_Well_Formed (enforced via contracts)
    type Document is limited private;
 
+   --  Node_Id is a discrete index (defined in private section)
+   --  Opaque to users but internally uses SML.Memory_Model.Node_Index
    type Node_Id is private;
 
    --  A constant representing an invalid or null node reference
@@ -199,12 +201,12 @@ private
    --  Internal Representation - Index-Based for SPARK Compatibility
    ---------------------------------------------------------------------------
 
-   --  Node_Id is a discrete index type (SPARK-compatible)
+   --  Node_Id is a discrete index type derived from Memory_Model (SPARK-compatible)
    --  Allows equality, quantified expressions, and full verification
-   subtype Node_Id is SML.Memory_Model.Node_Index;
+   type Node_Id is new SML.Memory_Model.Node_Index;
 
    --  The Null_Node constant (index 0 is reserved as invalid)
-   Null_Node : constant Node_Id := SML.Memory_Model.No_Node_Index;
+   Null_Node : constant Node_Id := Node_Id (SML.Memory_Model.No_Node_Index);
 
    --  Document structure using arena-based allocation
    --  All nodes stored in fixed-size array pool for bounded memory
