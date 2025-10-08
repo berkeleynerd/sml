@@ -240,6 +240,6 @@ private
       Stack_Depth  : Natural;
       Current_Node : SML.DOM.Node_Id;
       Has_Error    : Boolean;
-   end record with Ghost;
+   end record;
 
 end SML.Parser;

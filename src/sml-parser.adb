@@ -161,11 +161,10 @@ package body SML.Parser with SPARK_Mode => On is
       -- 4. Handle entities
       -- 5. Track depth and children counts
 
-      declare
-         Doc : SML.DOM.Document;
-      begin
-         return (Success => True, Document => Doc);
-      end;
+      -- Use extended return for limited types
+      return Result : Parse_Result (Success => True) do
+         null;  -- Document is default-initialized
+      end return;
 
    exception
       when others =>
@@ -345,9 +344,10 @@ package body SML.Parser with SPARK_Mode => On is
 
    function Partial_DOM (State : Parser_State) return SML.DOM.Document is
       pragma Unreferenced (State);
-      Doc : SML.DOM.Document;
    begin
-      return Doc;
+      --  Ghost function - not callable at runtime
+      --  Limited types cannot be returned by value in implementations
+      raise Program_Error with "Ghost function Partial_DOM is not implemented";
    end Partial_DOM;
 
    function Is_Valid_Partial_State (State : Parser_State) return Boolean is
