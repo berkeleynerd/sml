@@ -1,0 +1,13 @@
+name = "sml"
+description = "Simple XML library for Ada/SPARK"
+version = "0.1.0-dev"
+
+authors = ["Your Name"]
+maintainers = ["Your Name <example@example.com>"]
+licenses = "MIT OR Apache-2.0 WITH LLVM-exception"
+website = ""
+tags = ["xml", "parser", "simple-xml", "spark"]
+
+[build-switches]
+"*".ada_version = "Ada2022"
+"*".runtime_checks = "Overflow"
