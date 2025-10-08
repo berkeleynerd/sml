@@ -216,8 +216,7 @@ private
       Root_Node : Node_Id := Null_Node;
       Pool      : Node_Pool;
       --  Ghost field for proof purposes
-      Total_Nodes : Natural := 0
-        with Ghost;
+      Total_Nodes : Natural := 0;
    end record;
 
    --  The Null_Node constant
