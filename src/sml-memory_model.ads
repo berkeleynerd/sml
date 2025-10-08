@@ -4,7 +4,7 @@
 --  SPARK Ada Implementation with Formal Memory Safety
 ------------------------------------------------------------------------------
 
-with SML.DOM;
+limited with SML.DOM;
 
 package SML.Memory_Model with SPARK_Mode => On is
 

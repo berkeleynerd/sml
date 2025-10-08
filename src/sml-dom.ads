@@ -5,6 +5,7 @@
 ------------------------------------------------------------------------------
 
 with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
+with SML.Memory_Model;
 
 package SML.DOM with SPARK_Mode => On is
 
@@ -195,46 +196,33 @@ package SML.DOM with SPARK_Mode => On is
 
 private
    ---------------------------------------------------------------------------
-   --  Internal Representation
+   --  Internal Representation - Index-Based for SPARK Compatibility
    ---------------------------------------------------------------------------
 
-   --  Forward declare Node type
-   type Node;
-   type Node_Access is access Node;
+   --  Node_Id is a discrete index type (SPARK-compatible)
+   --  Allows equality, quantified expressions, and full verification
+   subtype Node_Id is SML.Memory_Model.Node_Index;
 
-   --  Node_Id is a safe reference to a Node
-   type Node_Id is new Node_Access;
+   --  The Null_Node constant (index 0 is reserved as invalid)
+   Null_Node : constant Node_Id := SML.Memory_Model.No_Node_Index;
 
-   --  Node pool for memory management (defined before Document)
-   type Node_Pool is limited record
-      --  Implementation would include memory management details
-      null;
-   end record;
-
-   --  Document structure owns all Nodes in its tree
+   --  Document structure using arena-based allocation
+   --  All nodes stored in fixed-size array pool for bounded memory
    type Document is limited record
+      --  Arena pool for node and string storage
+      Pool : SML.Memory_Model.Arena_Pool;
+
+      --  Root node index (0 = no root)
       Root_Node : Node_Id := Null_Node;
-      Pool      : Node_Pool;
+
       --  Ghost field for proof purposes
       Total_Nodes : Natural := 0;
    end record;
 
-   --  The Null_Node constant
-   Null_Node : constant Node_Id := Node_Id (Node_Access'(null));
-
-   --  Node structure using discriminated record
-   type Node (Kind : Node_Kind := Element) is record
-      Parent_Node       : Node_Id := Null_Node;
-      Next_Sibling_Node : Node_Id := Null_Node;
-
-      case Kind is
-         when Element =>
-            First_Child_Node : Node_Id := Null_Node;
-            Element_Name     : Unbounded_String := Null_Unbounded_String;
-            Num_Children     : Natural := 0;
-         when Text =>
-            Text_Content     : Unbounded_String := Null_Unbounded_String;
-      end case;
-   end record;
+   --  Note: Node type is defined in SML.Memory_Model
+   --  Node structure:
+   --    - Parent_Index, First_Child_Index, Next_Sibling_Index (Node_Index)
+   --    - Element_Name_Ref or Text_Content_Ref (String_Ref)
+   --    - Num_Children (Natural, Element only)
 
 end SML.DOM;
