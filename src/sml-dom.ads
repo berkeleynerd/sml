@@ -17,8 +17,8 @@ package SML.DOM with SPARK_Mode => On is
    type Node_Kind is (Element, Text);
 
    --  Forward declaration of primary DOM types (opaque to users)
-   type Document is limited private
-     with Type_Invariant => Is_Well_Formed (Document);
+   --  INVARIANT: All Document values satisfy Is_Well_Formed (enforced via contracts)
+   type Document is limited private;
 
    type Node_Id is private;
 

@@ -9,6 +9,16 @@ with Ada.Strings.Unbounded; use Ada.Strings.Unbounded;
 package body SML.DOM with SPARK_Mode => On is
 
    ---------------------------------------------------------------------------
+   --  Helper Functions
+   ---------------------------------------------------------------------------
+
+   --  Check if two Node_Id values reference the same node
+   --  SPARK-compatible equality for access-derived types
+   function Same_Node (Left, Right : Node_Id) return Boolean is
+     (Node_Access (Left) = Node_Access (Right))
+   with Inline;
+
+   ---------------------------------------------------------------------------
    --  DOM Traversal Functions
    ---------------------------------------------------------------------------
 
@@ -216,7 +226,7 @@ package body SML.DOM with SPARK_Mode => On is
       Current := First_Child (Doc, Parent_Node);
 
       while Current /= Null_Node loop
-         if Current = Child_Node then
+         if Same_Node (Current, Child_Node) then
             return True;
          end if;
 
