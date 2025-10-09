@@ -56,6 +56,7 @@ is
         then
           Kind (Doc, Parent'Result) = Element
           and then Has_Child (Doc, Parent'Result, Node)),
+     Subprogram_Variant => (Structural => Node),
      Global => null;
 
    --  Returns the first child of a given Element node
@@ -65,6 +66,7 @@ is
      Post =>
        (if First_Child'Result /= Null_Node
         then Parent (Doc, First_Child'Result) = Node),
+     Subprogram_Variant => (Structural => Node),
      Global => null;
 
    --  Returns the next sibling of a given node
@@ -74,6 +76,7 @@ is
      Post =>
        (if Next_Sibling'Result /= Null_Node
         then Parent (Doc, Next_Sibling'Result) = Parent (Doc, Node)),
+     Subprogram_Variant => (Structural => Node),
      Global => null;
 
    --  Returns the number of child nodes of a given Element node
@@ -177,6 +180,7 @@ is
        and then Child_Node /= Null_Node
        and then Is_Valid_Node (Doc, Parent_Node)
        and then Is_Valid_Node (Doc, Child_Node),
+     Subprogram_Variant => (Structural => Parent_Node),
      Global => null;
 
    --  Checks if a string is a valid element name
