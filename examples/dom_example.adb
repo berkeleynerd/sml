@@ -73,7 +73,25 @@ procedure DOM_Example is
       Put_Line (Input);
       New_Line;
 
-      --  Find and delete the 'temp' element (second child)
+      --  Modify the first element's text (demonstrate Set_Text_Content)
+      declare
+         Old_El   : constant SML.DOM.Node_Id := SML.DOM.Child_At (Doc, Root, 1);
+         Old_Text : constant SML.DOM.Node_Id :=
+           SML.DOM.First_Child (Doc, Old_El);
+      begin
+         Put_Line ("Changing text from 'Keep' to 'Modified'");
+         SML.DOM.Builder.Set_Text_Content (Doc, Old_Text, "Modified");
+      end;
+
+      --  Rename the first element (demonstrate Set_Element_Name)
+      declare
+         Old_El : constant SML.DOM.Node_Id := SML.DOM.Child_At (Doc, Root, 1);
+      begin
+         Put_Line ("Renaming 'old' element to 'updated'");
+         SML.DOM.Builder.Set_Element_Name (Doc, Old_El, "updated");
+      end;
+
+      --  Delete the 'temp' element (second child)
       if SML.DOM.Child_Count (Doc, Root) >= 2 then
          Temp := SML.DOM.Child_At (Doc, Root, 2);
          Put_Line ("Deleting node: " & SML.DOM.Name (Doc, Temp));

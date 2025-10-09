@@ -83,6 +83,49 @@ is
        and then Not_Deleted (Doc, New_Text);
 
    ---------------------------------------------------------------------------
+   --  Update Operations
+   ---------------------------------------------------------------------------
+
+   --  Modify text content of a text node in-place
+   procedure Set_Text_Content
+     (Doc       : in out Document;
+      Text_Node : Node_Id;
+      New_Text  : String)
+   with
+     Pre =>
+       Is_Well_Formed (Doc)
+       and then Text_Node /= Null_Node
+       and then Is_Valid_Node (Doc, Text_Node)
+       and then Kind (Doc, Text_Node) = SML.DOM.Text
+       and then Not_Deleted (Doc, Text_Node)
+       and then New_Text'Length <= 10_000,
+     Post =>
+       Is_Well_Formed (Doc)
+       and then Text_Value (Doc, Text_Node) = New_Text
+       and then Not_Deleted (Doc, Text_Node);
+
+   --  Modify element name in-place
+   procedure Set_Element_Name
+     (Doc          : in out Document;
+      Element_Node : Node_Id;
+      New_Name     : String)
+   with
+     Pre =>
+       Is_Well_Formed (Doc)
+       and then Element_Node /= Null_Node
+       and then Is_Valid_Node (Doc, Element_Node)
+       and then Kind (Doc, Element_Node) = Element
+       and then Not_Deleted (Doc, Element_Node)
+       and then Is_Valid_Name (New_Name)
+       and then New_Name'Length > 0
+       and then New_Name'Length <= 100,
+     Post =>
+       Is_Well_Formed (Doc)
+       and then Name (Doc, Element_Node) = New_Name
+       and then Kind (Doc, Element_Node) = Element
+       and then Not_Deleted (Doc, Element_Node);
+
+   ---------------------------------------------------------------------------
    --  Deletion Operations
    ---------------------------------------------------------------------------
 

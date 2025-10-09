@@ -229,6 +229,55 @@ is
    end Add_Text_Node;
 
    ---------------------------------------------------------------------------
+   --  Update Operations
+   ---------------------------------------------------------------------------
+
+   procedure Set_Text_Content
+     (Doc       : in out Document;
+      Text_Node : Node_Id;
+      New_Text  : String)
+   is
+      Text_Index : constant SML.Memory_Model.Node_Index := To_Index (Text_Node);
+      New_Ref    : SML.Memory_Model.String_Ref;
+      N          : SML.Memory_Model.Node;
+   begin
+      --  Allocate new string storage
+      SML.Memory_Model.Allocate_String (Doc.Pool, New_Text, New_Ref);
+      SML.Memory_Model.Store_String (Doc.Pool, New_Ref, New_Text);
+
+      --  Update text node's content reference
+      N := SML.Memory_Model.Get_Node (Doc.Pool, Text_Index);
+      N.Text_Content_Ref := New_Ref;
+      SML.Memory_Model.Set_Node (Doc.Pool, Text_Index, N);
+
+      --  Note: Old string in arena is now unused (garbage)
+      --  Memory can be reclaimed with Compact (future feature)
+   end Set_Text_Content;
+
+   procedure Set_Element_Name
+     (Doc          : in out Document;
+      Element_Node : Node_Id;
+      New_Name     : String)
+   is
+      Element_Index : constant SML.Memory_Model.Node_Index :=
+        To_Index (Element_Node);
+      New_Ref       : SML.Memory_Model.String_Ref;
+      N             : SML.Memory_Model.Node;
+   begin
+      --  Allocate new string storage
+      SML.Memory_Model.Allocate_String (Doc.Pool, New_Name, New_Ref);
+      SML.Memory_Model.Store_String (Doc.Pool, New_Ref, New_Name);
+
+      --  Update element node's name reference
+      N := SML.Memory_Model.Get_Node (Doc.Pool, Element_Index);
+      N.Element_Name_Ref := New_Ref;
+      SML.Memory_Model.Set_Node (Doc.Pool, Element_Index, N);
+
+      --  Note: Old name in arena is now unused (garbage)
+      --  Memory can be reclaimed with Compact (future feature)
+   end Set_Element_Name;
+
+   ---------------------------------------------------------------------------
    --  Deletion Operations
    ---------------------------------------------------------------------------
 
