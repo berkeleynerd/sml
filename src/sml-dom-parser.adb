@@ -602,6 +602,11 @@ is
          Ctx.Line := 1;
          Ctx.Column := 1;
          Ctx.Stack_Depth := 0;
+         Ctx.Stack := (others => (Name => (others => ' '),
+                                  Name_Length => 0,
+                                  Node => Null_Node,
+                                  Last_Child => Null_Node,
+                                  Num_Children => 0));
 
          --  Skip leading whitespace
          Skip_Whitespace (Input_Str, Ctx);

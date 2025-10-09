@@ -2,3 +2,12 @@
 /lib/
 /alire/
 /config/
+
+# SPARK proof session files
+proof/sessions/
+*.bak
+
+# SPARK/GNATprove output files
+gnatprove.log
+gnatprove_results.txt
+gnatprove.out

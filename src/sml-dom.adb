@@ -42,7 +42,7 @@ is
       end if;
 
       declare
-         Result : String (1 .. Ref.Length);
+         Result : String (1 .. Ref.Length) := (others => ' ');
       begin
          for I in 1 .. Ref.Length loop
             Result (I) := Pool.Strings (Ref.Start + I - 1);
