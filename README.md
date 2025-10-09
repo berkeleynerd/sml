@@ -13,25 +13,42 @@ A formally verified parser and Document Object Model (DOM) for Simple Markup Lan
 
 ```bash
 # Build the library
-alr build
+./build.sh
+
+# Run comprehensive example
+cd examples && alr exec -- gnatmake sml_example.adb -aI../src
+./sml_example
 
 # Run SPARK verification
-alr exec -- gnatprove -P sml.gpr --level=0 --report=all
-
-# Use in your project
-with SML.DOM.Parser;
-
-procedure Example is
-   Result : constant SML.DOM.Parser.Parse_Result :=
-     SML.DOM.Parser.Parse ("<root><child>Hello, World!</child></root>");
-begin
-   if Result.Success then
-      -- Process the DOM tree...
-   else
-      -- Handle parse error...
-   end if;
-end Example;
+alr exec -- gnatprove -P sml.gpr --mode=flow
 ```
+
+### Example Usage
+
+```ada
+with SML.DOM.Parser;
+with SML.DOM.Builder;
+with SML.DOM.Writer;
+
+procedure Your_App is
+   -- Parse SML
+   Result : constant SML.DOM.Parser.Parse_Result :=
+     SML.DOM.Parser.Parse ("<root><item>Hello</item></root>");
+
+   -- Build DOM from scratch
+   Doc : SML.DOM.Document := SML.DOM.Builder.Create_Document ("root");
+
+   -- Modify
+   SML.DOM.Builder.Set_Text_Content (Doc, Text_Node, "New value");
+
+   -- Serialize
+   Output : String := SML.DOM.Writer.Serialize (Doc);
+begin
+   -- Full CRUD operations available
+end Your_App;
+```
+
+See `examples/sml_example.adb` for comprehensive demonstrations of all features.
 
 ## Documentation
 
