@@ -198,6 +198,7 @@ is
       Len : Natural;
    begin
       while I <= Text'Last loop
+         pragma Loop_Variant (Increases => I);
          if not Is_Valid_UTF8_At (Text, I) then
             return False;
          end if;
@@ -220,6 +221,7 @@ is
       Len : Natural;
    begin
       while I <= Last loop
+         pragma Loop_Variant (Increases => I);
          if not Is_Valid_UTF8_At (Text, I) then
             return False;
          end if;
@@ -261,6 +263,7 @@ is
    begin
       -- Move back to find start of UTF-8 sequence
       while Pos > Text'First and then Is_Continuation_Byte (Text (Pos)) loop
+         pragma Loop_Variant (Decreases => Pos);
          Pos := Pos - 1;
       end loop;
 
@@ -273,6 +276,7 @@ is
       Len   : Natural;
    begin
       while I <= Text'Last loop
+         pragma Loop_Variant (Increases => I);
          Count := Count + 1;
          Len := UTF8_Sequence_Length (Text, I);
 
@@ -298,6 +302,7 @@ is
       Code                       : Natural;
    begin
       while I <= Text'Last loop
+         pragma Loop_Variant (Increases => I);
          Len := UTF8_Sequence_Length (Text, I);
 
          if Len = 0 then
@@ -576,11 +581,13 @@ is
    begin
       -- Find first non-whitespace
       while First <= Last and then Is_XML_Whitespace (Text (First)) loop
+         pragma Loop_Variant (Increases => First);
          First := First + 1;
       end loop;
 
       -- Find last non-whitespace
       while Last >= First and then Is_XML_Whitespace (Text (Last)) loop
+         pragma Loop_Variant (Decreases => Last);
          Last := Last - 1;
       end loop;
 
@@ -628,6 +635,7 @@ is
       Len   : Natural;
    begin
       while I <= Last loop
+         pragma Loop_Variant (Increases => I);
          Count := Count + 1;
          Len := UTF8_Sequence_Length (Text, I);
 

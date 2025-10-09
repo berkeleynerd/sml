@@ -156,6 +156,8 @@ is
       Current := To_Node_Id (N.First_Child_Index);
 
       while Current /= Null_Node and then Count < Index loop
+         pragma Loop_Variant (Increases => Count);
+
          Current_Idx := To_Index (Current);
 
          if not SML.Memory_Model.Valid_Node_Index (Doc.Pool, Current_Idx) then
@@ -236,6 +238,8 @@ is
       D           : Natural := 0;
    begin
       while Current /= Null_Node and then Current /= Doc.Root_Node loop
+         pragma Loop_Variant (Increases => D);
+
          Current_Idx := To_Index (Current);
 
          if not SML.Memory_Model.Valid_Node_Index (Doc.Pool, Current_Idx) then
@@ -310,7 +314,8 @@ is
    function Has_Child
      (Doc : Document; Parent_Node, Child_Node : Node_Id) return Boolean
    is
-      Current : Node_Id;
+      Current   : Node_Id;
+      Iter_Count : Natural := 0;
    begin
       if Parent_Node = Null_Node or else Child_Node = Null_Node then
          return False;
@@ -323,12 +328,18 @@ is
       Current := First_Child (Doc, Parent_Node);
 
       while Current /= Null_Node loop
+         pragma Loop_Variant (Increases => Iter_Count);
+
          if Current = Child_Node then
             --  Direct equality works on discrete type!
             return True;
          end if;
 
          Current := Next_Sibling (Doc, Current);
+         Iter_Count := Iter_Count + 1;
+
+         --  Safety: prevent infinite loops (max children limit)
+         exit when Iter_Count > Max_Children;
       end loop;
 
       return False;

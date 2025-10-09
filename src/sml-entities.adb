@@ -42,6 +42,7 @@ is
                                             (End_Pos)
                                        /= ';'
       loop
+         pragma Loop_Variant (Increases => End_Pos);
          End_Pos := End_Pos + 1;
       end loop;
 
@@ -102,6 +103,7 @@ is
       -- Find semicolon (we know it exists from precondition)
       End_Pos := Position + 1;
       while End_Pos <= Text'Last and then Text (End_Pos) /= ';' loop
+         pragma Loop_Variant (Increases => End_Pos);
          End_Pos := End_Pos + 1;
       end loop;
 
@@ -141,6 +143,7 @@ is
       -- Find semicolon (we know it exists from precondition)
       End_Pos := Position + 1;
       while End_Pos <= Text'Last and then Text (End_Pos) /= ';' loop
+         pragma Loop_Variant (Increases => End_Pos);
          End_Pos := End_Pos + 1;
       end loop;
 
@@ -156,6 +159,7 @@ is
       I     : Natural := Text'First;
    begin
       while I <= Text'Last loop
+         pragma Loop_Variant (Increases => I);
          if Text (I) = '&' and then Has_Valid_Entity_At (Text, I) then
             Count := Count + 1;  -- Each entity becomes 1 character
             I := I + Entity_Length_At (Text, I);
@@ -176,6 +180,7 @@ is
       Entity     : Standard_Entity;
    begin
       while I <= Text'Last loop
+         pragma Loop_Variant (Increases => I);
          if Text (I) = '&' and then Has_Valid_Entity_At (Text, I) then
             Entity := Get_Entity_At (Text, I);
             Result (J) := Entity_Table (Entity).Char;
@@ -343,6 +348,7 @@ is
       End_Pos : Natural;
    begin
       while I <= Text'Last loop
+         pragma Loop_Variant (Increases => I);
          if Text (I) = '&' then
             -- Check for entity
             End_Pos := I + 1;
@@ -355,6 +361,7 @@ is
                                                  (End_Pos)
                                             /= ';'
             loop
+               pragma Loop_Variant (Increases => End_Pos);
                End_Pos := End_Pos + 1;
             end loop;
 
@@ -404,6 +411,7 @@ is
       I : Natural := Text'First;
    begin
       while I <= Text'Last loop
+         pragma Loop_Variant (Increases => I);
          if Text (I) = '&' then
             if not Has_Valid_Entity_At (Text, I) then
                return False;
@@ -426,6 +434,7 @@ is
       I     : Natural := Text'First;
    begin
       while I <= Text'Last loop
+         pragma Loop_Variant (Increases => I);
          if Text (I) = '&' and then Has_Valid_Entity_At (Text, I) then
             Count := Count + 1;
             I := I + Entity_Length_At (Text, I);
