@@ -1,14 +1,13 @@
 ------------------------------------------------------------------------------
---  SML.Parser Package Specification
+--  SML.DOM.Parser Package Specification
 --  Parser and Validator for Simple Markup Language (SML)
 --  SPARK Ada Implementation with Formal Verification Support
+--  Child Package with Privileged Access to DOM Internals
 ------------------------------------------------------------------------------
 
-with SML.DOM;
+package SML.DOM.Parser with SPARK_Mode => On is
 
-package SML.Parser with SPARK_Mode => On is
-
-   --  SML.Parser: Provides parsing and validation for SML documents.
+   --  SML.DOM.Parser: Provides parsing and validation for SML documents.
    --  Produces a DOM Document on success or a detailed error on failure.
    --  Handles all SML format rules: no attributes, no processing instructions,
    --  no DTD, no CDATA, UTF-8 only, entity references for <>&"'
@@ -41,8 +40,8 @@ package SML.Parser with SPARK_Mode => On is
    --  Result of parsing: either success with Document or failure with error
    type Parse_Result (Success : Boolean := False) is limited record
       case Success is
-         when True  => Document : SML.DOM.Document;
-         when False => Error    : Parse_Error;
+         when True  => Doc : Document;
+         when False => Error : Parse_Error;
       end case;
    end record;
 
@@ -55,9 +54,9 @@ package SML.Parser with SPARK_Mode => On is
      with Pre  => Input'Length <= Natural'Last - 1000,  -- Prevent overflow
           Post => (if Parse'Result.Success then
                      -- Successful parse postconditions:
-                     SML.DOM.Is_Well_Formed (Parse'Result.Document) and then
+                     Is_Well_Formed (Parse'Result.Doc) and then
                      Is_Valid_SML (Input) and then
-                     Parses_To (Input, Parse'Result.Document)
+                     Parses_To (Input, Parse'Result.Doc)
                    else
                      -- Failure postconditions:
                      not Is_Valid_SML (Input) and then
@@ -78,16 +77,16 @@ package SML.Parser with SPARK_Mode => On is
    type Parse_Options is record
       Whitespace     : Whitespace_Mode := Preserve_All;
       Expand_Entities : Boolean := True;
-      Max_Depth      : Natural := SML.DOM.Max_Tree_Depth;
+      Max_Depth      : Natural := Max_Tree_Depth;
    end record;
 
    function Parse_With_Options (Input : String; Options : Parse_Options)
                                return Parse_Result
      with Pre  => Input'Length <= Natural'Last - 1000 and then
                   Options.Max_Depth > 0 and then
-                  Options.Max_Depth <= SML.DOM.Max_Tree_Depth,
+                  Options.Max_Depth <= Max_Tree_Depth,
           Post => (if Parse_With_Options'Result.Success then
-                     SML.DOM.Is_Well_Formed (Parse_With_Options'Result.Document)),
+                     Is_Well_Formed (Parse_With_Options'Result.Doc)),
           Global => null;
 
    ---------------------------------------------------------------------------
@@ -105,9 +104,9 @@ package SML.Parser with SPARK_Mode => On is
                      Has_Valid_Entities (Input));
 
    --  Relates an input string to a DOM Document
-   function Parses_To (Input : String; Doc : SML.DOM.Document) return Boolean
+   function Parses_To (Input : String; Doc : Document) return Boolean
      with Ghost,
-          Pre => SML.DOM.Is_Well_Formed (Doc),
+          Pre => Is_Well_Formed (Doc),
           Global => null;
 
    --  Input contains only valid UTF-8 sequences
@@ -200,7 +199,7 @@ package SML.Parser with SPARK_Mode => On is
           Global => null;
 
    --  Gets the partial DOM constructed so far
-   function Partial_DOM (State : Parser_State) return SML.DOM.Document
+   function Partial_DOM (State : Parser_State) return Document
      with Ghost,
           Pre => Is_Valid_Partial_State (State),
           Global => null;
@@ -238,8 +237,8 @@ private
    type Parser_State is record
       Position     : Natural;
       Stack_Depth  : Natural;
-      Current_Node : SML.DOM.Node_Id;
+      Current_Node : Node_Id;
       Has_Error    : Boolean;
    end record;
 
-end SML.Parser;
+end SML.DOM.Parser;

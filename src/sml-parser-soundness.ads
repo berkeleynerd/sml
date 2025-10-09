@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------
---  SML.Parser.Soundness Package Specification
+--  SML.DOM.Parser.Soundness Package Specification
 --  Soundness Proof for SML Parser
 --  SPARK Ada Implementation - Formal Verification
 ------------------------------------------------------------------------------
@@ -8,7 +8,7 @@ with SML.DOM;
 with SML.Grammar;
 with SML.Parser;
 
-package SML.Parser.Soundness with SPARK_Mode => On, Ghost is
+package SML.DOM.Parser.Soundness with SPARK_Mode => On, Ghost is
 
    --  This package contains the formal proof that the SML parser is sound:
    --  If Parse(Input).Success then Is_Valid_SML(Input)
@@ -322,4 +322,4 @@ package SML.Parser.Soundness with SPARK_Mode => On, Ghost is
    function Reaches_State_From_Initial (State : Parser_State;
                                         Input : String) return Boolean;
 
-end SML.Parser.Soundness;
+end SML.DOM.Parser.Soundness;

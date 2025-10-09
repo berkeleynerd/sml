@@ -1,0 +1,20 @@
+with "sml.gpr";
+
+project Examples is
+
+   for Source_Dirs use ("examples/");
+   for Object_Dir use "obj/examples";
+   for Exec_Dir use "bin";
+   for Create_Missing_Dirs use "True";
+
+   for Main use ("parse_and_traverse.adb");
+
+   package Compiler is
+      for Default_Switches ("Ada") use ("-gnatwa", "-gnatwe");
+   end Compiler;
+
+   package Builder is
+      for Executable ("parse_and_traverse.adb") use "parse_and_traverse";
+   end Builder;
+
+end Examples;

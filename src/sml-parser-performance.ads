@@ -8,7 +8,7 @@ with SML.Parser;
 with SML.Complexity;
 with SML.Memory_Model;
 
-package SML.Parser_Performance with SPARK_Mode => On, Ghost is
+package SML.DOM.Parser_Performance with SPARK_Mode => On, Ghost is
 
    --  This ghost package specifies the performance characteristics of the
    --  SML parser, including parsing phases, token processing, tree building,
@@ -285,4 +285,4 @@ package SML.Parser_Performance with SPARK_Mode => On, Ghost is
                         Parse_Complexity (Input_Length).Time_Complexity = O_N and then
                         Bound_For_Input (O_N, Input_Length) = Input_Length));
 
-end SML.Parser_Performance;
+end SML.DOM.Parser_Performance;

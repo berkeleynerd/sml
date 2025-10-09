@@ -9,7 +9,7 @@ project Sml is
    for Create_Missing_Dirs use "True";
    for Library_Dir use "lib";
 
-   for Library_Interface use ("SML", "SML.Parser", "SML.DOM", "SML.UTF8", "SML.Entities");
+   for Library_Interface use ("SML", "SML.DOM", "SML.DOM.Parser", "SML.UTF8", "SML.Entities", "SML.Memory_Model");
 
    type Library_Type_Type is ("relocatable", "static", "static-pic");
    Library_Type : Library_Type_Type :=

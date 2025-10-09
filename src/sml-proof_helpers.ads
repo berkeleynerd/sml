@@ -139,10 +139,10 @@ package SML.Proof_Helpers with SPARK_Mode => On, Ghost is
 
    --  Valid SML input produces a well-formed DOM
    procedure Lemma_Valid_Input_Well_Formed_DOM (Input : String)
-   with Pre  => SML.Parser.Is_Valid_SML (Input),
+   with Pre  => SML.DOM.Parser.Is_Valid_SML (Input),
         Post => (declare
-                   Result : constant SML.Parser.Parse_Result :=
-                     SML.Parser.Parse (Input);
+                   Result : constant SML.DOM.Parser.Parse_Result :=
+                     SML.DOM.Parser.Parse (Input);
                  begin
                    Result.Success and then
                    SML.DOM.Is_Well_Formed (Result.Document)),
@@ -150,22 +150,22 @@ package SML.Proof_Helpers with SPARK_Mode => On, Ghost is
 
    --  Invalid SML input produces an error
    procedure Lemma_Invalid_Input_Produces_Error (Input : String)
-   with Pre  => not SML.Parser.Is_Valid_SML (Input),
+   with Pre  => not SML.DOM.Parser.Is_Valid_SML (Input),
         Post => (declare
-                   Result : constant SML.Parser.Parse_Result :=
-                     SML.Parser.Parse (Input);
+                   Result : constant SML.DOM.Parser.Parse_Result :=
+                     SML.DOM.Parser.Parse (Input);
                  begin
                    not Result.Success),
         Global => null;
 
    --  Parse is deterministic: same input produces same DOM
    procedure Lemma_Parse_Deterministic (Input : String)
-   with Pre  => SML.Parser.Is_Valid_SML (Input),
+   with Pre  => SML.DOM.Parser.Is_Valid_SML (Input),
         Post => (declare
-                   Result1 : constant SML.Parser.Parse_Result :=
-                     SML.Parser.Parse (Input);
-                   Result2 : constant SML.Parser.Parse_Result :=
-                     SML.Parser.Parse (Input);
+                   Result1 : constant SML.DOM.Parser.Parse_Result :=
+                     SML.DOM.Parser.Parse (Input);
+                   Result2 : constant SML.DOM.Parser.Parse_Result :=
+                     SML.DOM.Parser.Parse (Input);
                  begin
                    Result1.Success and Result2.Success and then
                    Same_DOM_Structure (Result1.Document, Result2.Document)),
@@ -217,8 +217,8 @@ package SML.Proof_Helpers with SPARK_Mode => On, Ghost is
    --  Valid UTF-8 input produces valid UTF-8 text nodes
    procedure Lemma_UTF8_Preservation
      (Input : String; Doc : SML.DOM.Document; Node : SML.DOM.Node_Id)
-   with Pre  => SML.Parser.Has_Valid_UTF8 (Input) and then
-                SML.Parser.Parses_To (Input, Doc) and then
+   with Pre  => SML.DOM.Parser.Has_Valid_UTF8 (Input) and then
+                SML.DOM.Parser.Parses_To (Input, Doc) and then
                 Node /= SML.DOM.Null_Node and then
                 SML.DOM.Is_Valid_Node (Doc, Node) and then
                 SML.DOM.Kind (Doc, Node) = SML.DOM.Text,
@@ -227,7 +227,7 @@ package SML.Proof_Helpers with SPARK_Mode => On, Ghost is
 
    --  Entity expansion preserves well-formedness
    procedure Lemma_Entity_Expansion_Safe (Input : String)
-   with Pre  => SML.Parser.Has_Valid_Entities (Input),
+   with Pre  => SML.DOM.Parser.Has_Valid_Entities (Input),
         Post => No_Unescaped_Markup_Chars (Expand_Entities (Input)),
         Global => null;
 
@@ -280,7 +280,7 @@ package SML.Proof_Helpers with SPARK_Mode => On, Ghost is
    --  Template for parse loop invariant
    function Parse_Loop_Invariant
      (Input : String; Position : Natural;
-      State : SML.Parser.Parser_State) return Boolean
+      State : SML.DOM.Parser.Parser_State) return Boolean
    with Pre => Position >= Input'First and then Position <= Input'Last + 1,
         Global => null;
 

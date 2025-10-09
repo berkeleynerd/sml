@@ -224,17 +224,17 @@ package SML.Invariant_Preservation with SPARK_Mode => On, Ghost is
 
    --  Parse operation creates well-formed document
    procedure Lemma_Parse_Creates_Valid_Document (Input : String)
-     with Pre  => SML.Parser.Is_Valid_SML (Input),
-          Post => (for some Result : SML.Parser.Parse_Result =>
-                     (if SML.Parser.Parse (Input) = Result and then
+     with Pre  => SML.DOM.Parser.Is_Valid_SML (Input),
+          Post => (for some Result : SML.DOM.Parser.Parse_Result =>
+                     (if SML.DOM.Parser.Parse (Input) = Result and then
                          Result.Success
                       then System_Invariant (Result.Document)));
 
    --  Parse error doesn't corrupt state
    procedure Lemma_Parse_Error_Safe (Input : String)
-     with Pre  => not SML.Parser.Is_Valid_SML (Input),
-          Post => (for some Result : SML.Parser.Parse_Result =>
-                     (if SML.Parser.Parse (Input) = Result then
+     with Pre  => not SML.DOM.Parser.Is_Valid_SML (Input),
+          Post => (for some Result : SML.DOM.Parser.Parse_Result =>
+                     (if SML.DOM.Parser.Parse (Input) = Result then
                         not Result.Success));
 
    ---------------------------------------------------------------------------

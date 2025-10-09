@@ -222,7 +222,7 @@ package SML.Bounds_Safety with SPARK_Mode => On, Ghost is
    --  Parser positions are always valid
    procedure Lemma_Parser_Positions_Valid
      with Post => (for all Input : String =>
-                     for all State : SML.Parser.Parser_State =>
+                     for all State : SML.DOM.Parser.Parser_State =>
                        Parser_Position_In_Bounds(Input, State.Position));
 
    --  No integer overflows

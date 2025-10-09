@@ -53,7 +53,7 @@ package SML.Memory_Accounting with SPARK_Mode => On is
 
    --  Actual expansion factor for valid SML
    function Actual_Expansion_Factor (Input : String) return Natural
-     with Pre => SML.Parser.Is_Valid_SML(Input),
+     with Pre => SML.DOM.Parser.Is_Valid_SML(Input),
           Post => Actual_Expansion_Factor'Result <=
                     SML.Memory_Model.Memory_Expansion_Factor;
 
@@ -99,7 +99,7 @@ package SML.Memory_Accounting with SPARK_Mode => On is
    --  Actual string storage used
    function String_Storage_Used (Pool : SML.Memory_Model.Arena_Pool;
                                 Input : String) return Natural
-     with Pre => SML.Parser.Parse(Input).Success,
+     with Pre => SML.DOM.Parser.Parse(Input).Success,
           Post => String_Storage_Used'Result <= Input'Length;
 
    --  String deduplication savings (if implemented)
@@ -122,7 +122,7 @@ package SML.Memory_Accounting with SPARK_Mode => On is
 
    --  Actual stack depth during parsing
    function Parse_Stack_Depth (Input : String) return Natural
-     with Pre => SML.Parser.Is_Valid_SML(Input),
+     with Pre => SML.DOM.Parser.Is_Valid_SML(Input),
           Post => Parse_Stack_Depth'Result <= SML.DOM.Max_Tree_Depth;
 
    ---------------------------------------------------------------------------
@@ -138,7 +138,7 @@ package SML.Memory_Accounting with SPARK_Mode => On is
 
    --  Get allocation pattern for input
    function Get_Allocation_Pattern (Input : String) return Allocation_Pattern
-     with Pre => SML.Parser.Is_Valid_SML(Input);
+     with Pre => SML.DOM.Parser.Is_Valid_SML(Input);
 
    --  Check if allocation pattern is efficient
    function Is_Efficient_Pattern (Pattern : Allocation_Pattern) return Boolean
@@ -176,21 +176,21 @@ package SML.Memory_Accounting with SPARK_Mode => On is
    --  Memory is bounded by input size
    procedure Lemma_Memory_Bounded_By_Input
      with Post => (for all Input : String =>
-                     (if SML.Parser.Parse(Input).Success then
+                     (if SML.DOM.Parser.Parse(Input).Success then
                         (for some Pool : SML.Memory_Model.Arena_Pool =>
                            Total_Memory_Used(Pool) <= Max_Memory_For_Input(Input'Length))));
 
    --  Node count is bounded
    procedure Lemma_Node_Count_Bounded
      with Post => (for all Input : String =>
-                     (if SML.Parser.Parse(Input).Success then
+                     (if SML.DOM.Parser.Parse(Input).Success then
                         (for some Pool : SML.Memory_Model.Arena_Pool =>
                            Pool.Allocated_Nodes <= Total_Possible_Nodes(Input))));
 
    --  String storage is bounded
    procedure Lemma_String_Storage_Bounded
      with Post => (for all Input : String =>
-                     (if SML.Parser.Parse(Input).Success then
+                     (if SML.DOM.Parser.Parse(Input).Success then
                         (for some Pool : SML.Memory_Model.Arena_Pool =>
                            Pool.Allocated_Bytes <= Max_String_Storage_For_Input(Input))));
 
@@ -210,7 +210,7 @@ package SML.Memory_Accounting with SPARK_Mode => On is
    --  Efficiency bound
    procedure Lemma_Memory_Efficiency_Bound
      with Post => (for all Input : String =>
-                     (if Input'Length > 0 and SML.Parser.Parse(Input).Success then
+                     (if Input'Length > 0 and SML.DOM.Parser.Parse(Input).Success then
                         (for some Pool : SML.Memory_Model.Arena_Pool =>
                            Memory_Efficiency(Pool, Input'Length) <=
                            Float(SML.Memory_Model.Memory_Expansion_Factor))));

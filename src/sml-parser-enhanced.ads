@@ -6,7 +6,7 @@
 
 with SML.DOM;
 
-package SML.Parser with SPARK_Mode => On is
+package SML.DOM.Parser with SPARK_Mode => On is
 
    --  SML.Parser: Provides parsing and validation for SML documents.
    --  Produces a DOM Document on success or a detailed error on failure.
@@ -385,4 +385,4 @@ private
       Column       : Positive;       -- For error reporting
    end record with Ghost;
 
-end SML.Parser;
+end SML.DOM.Parser;

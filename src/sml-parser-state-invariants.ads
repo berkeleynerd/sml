@@ -7,7 +7,7 @@
 with SML.Parser;
 with SML.DOM;
 
-package SML.Parser_State_Invariants with SPARK_Mode => On, Ghost is
+package SML.DOM.Parser_State_Invariants with SPARK_Mode => On, Ghost is
 
    --  This ghost package proves that the SML parser maintains critical
    --  state invariants throughout parsing, ensuring correct and safe
@@ -33,7 +33,7 @@ package SML.Parser_State_Invariants with SPARK_Mode => On, Ghost is
 
       --  Error state
       Has_Error      : Boolean;
-      Error_Info     : SML.Parser.Parse_Error;
+      Error_Info     : SML.DOM.Parser.Parse_Error;
 
       --  DOM being built
       Current_Node   : SML.Memory_Model.Node_Index;
@@ -41,7 +41,7 @@ package SML.Parser_State_Invariants with SPARK_Mode => On, Ghost is
 
       --  Configuration
       Max_Depth      : Natural;
-      Options        : SML.Parser.Parse_Options;
+      Options        : SML.DOM.Parser.Parse_Options;
    end record
      with Predicate =>
        Position <= Input_Length + 1 and then
@@ -185,7 +185,7 @@ package SML.Parser_State_Invariants with SPARK_Mode => On, Ghost is
 
    --  Setting error maintains invariants
    procedure Lemma_Set_Error_Safe (State : in out Parser_State;
-                                   Error : SML.Parser.Parse_Error)
+                                   Error : SML.DOM.Parser.Parse_Error)
      with Pre  => Valid_State (State) and then
                   not State.Has_Error,
           Post => Valid_State (State) and then
@@ -302,4 +302,4 @@ package SML.Parser_State_Invariants with SPARK_Mode => On, Ghost is
                                    Op : Parser_Operation) return Boolean
      with Post => Maintains_Valid_State'Result = True;
 
-end SML.Parser_State_Invariants;
+end SML.DOM.Parser_State_Invariants;

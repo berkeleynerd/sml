@@ -1,5 +1,5 @@
 ------------------------------------------------------------------------------
---  SML.Parser.Completeness Package Specification
+--  SML.DOM.Parser.Completeness Package Specification
 --  Completeness Proof for SML Parser
 --  SPARK Ada Implementation - Formal Verification
 ------------------------------------------------------------------------------
@@ -8,7 +8,7 @@ with SML.DOM;
 with SML.Grammar;
 with SML.Parser;
 
-package SML.Parser.Completeness with SPARK_Mode => On, Ghost is
+package SML.DOM.Parser.Completeness with SPARK_Mode => On, Ghost is
 
    --  This package contains the formal proof that the SML parser is complete:
    --  If Is_Valid_SML(Input) then Parse(Input).Success
@@ -310,4 +310,4 @@ package SML.Parser.Completeness with SPARK_Mode => On, Ghost is
                                  Tag_Name : String) return Boolean
      renames SML.Grammar.Well_Formed_Element;
 
-end SML.Parser.Completeness;
+end SML.DOM.Parser.Completeness;
