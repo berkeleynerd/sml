@@ -88,18 +88,12 @@ is
       Error.Position := Position;
       Error.Line := Line;
       Error.Column := Column;
-      Error.Message := (others => ' ');
+      Error.Message := [others => ' '];
       Error.Message (1 .. Msg_Len) :=
         Message (Message'First .. Message'First + Msg_Len - 1);
       Error.Msg_Length := Msg_Len;
       return Error;
    end Make_Error;
-
-   function Make_Error_At_Context
-     (Ctx : Parser_Context; Kind : Error_Kind; Message : String)
-      return Parse_Error
-   is (Make_Error (Kind, Ctx.Position, Ctx.Line, Ctx.Column, Message))
-   with Inline;
 
    ---------------------------------------------------------------------------
    --  Position Tracking Helpers
@@ -212,7 +206,7 @@ is
    begin
       Result.Success := False;
       Result.Name_Length := 0;
-      Result.Name := (others => ' ');
+      Result.Name := [others => ' '];
 
       --  First character must be name start char
       if At_End (Input_Str, Ctx)
@@ -266,7 +260,7 @@ is
    is
       Len : constant Natural := Natural'Min (Msg'Length, 256);
    begin
-      Target.Error_Msg := (others => ' ');
+      Target.Error_Msg := [others => ' '];
       Target.Error_Msg (1 .. Len) := Msg (Msg'First .. Msg'First + Len - 1);
       Target.Error_Msg_Len := Len;
    end Set_Error_Message;
@@ -294,10 +288,10 @@ is
       Result.Success := False;
       Result.Is_Empty_Element := False;
       Result.Is_Closing := False;
-      Result.Name := (others => ' ');
+      Result.Name := [others => ' '];
       Result.Name_Length := 0;
       Result.Err_Kind := Malformed_Structure;  -- Default error kind
-      Result.Error_Msg := (others => ' ');
+      Result.Error_Msg := [others => ' '];
       Result.Error_Msg_Len := 0;
 
       --  Must start with <
@@ -412,7 +406,6 @@ is
       end if;
 
       for I in 1 .. Len1 loop
-         pragma Loop_Invariant (I <= Len1);
          if Name1 (Name1'First + I - 1) /= Name2 (Name2'First + I - 1) then
             return False;
          end if;
@@ -589,18 +582,18 @@ is
          Error_Info : out Parse_Error)
       is
          Ctx : Parser_Context (Input_Str'First, Input_Str'Last) :=
-           (Input_First => Input_Str'First,
+           [Input_First => Input_Str'First,
             Input_Last  => Input_Str'Last,
             Position    => Input_Str'First,
             Line        => 1,
             Column      => 1,
             Stack_Depth => 0,
             Stack       =>
-              (others => (Name         => (others => ' '),
+              [others => [Name         => [others => ' '],
                           Name_Length  => 0,
                           Node         => Null_Node,
                           Last_Child   => Null_Node,
-                          Num_Children => 0)));
+                          Num_Children => 0]]];
          Tag_Result : Parse_Tag_Result;
          Root_Index : SML.Memory_Model.Node_Index;
          Name_Ref   : SML.Memory_Model.String_Ref;
@@ -609,12 +602,12 @@ is
 
          --  Initialize Error_Info (only used if Had_Error becomes True)
          Error_Info :=
-           (Kind       => Malformed_Structure,
+           [Kind       => Malformed_Structure,
             Position   => 0,
             Line       => 1,
             Column     => 1,
-            Message    => (others => ' '),
-            Msg_Length => 0);
+            Message    => [others => ' '],
+            Msg_Length => 0];
 
          --  Initialize arena pool
          SML.Memory_Model.Reset_Arena (Doc.Pool);
@@ -1490,7 +1483,7 @@ is
       return Parser_State
    is
       pragma Unreferenced (Input, Start_Pos, End_Pos);
-      New_State : Parser_State := State;
+      New_State : constant Parser_State := State;
    begin
       --  Ghost function for specification
       return New_State;

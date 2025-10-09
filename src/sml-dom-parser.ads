@@ -220,15 +220,15 @@ is
 
    --  Entity reference strings
    Entity_Names : constant array (Entity_Ref) of String (1 .. 6) :=
-     (Lt   => "lt;   ",
+     [Lt   => "lt;   ",
       Gt   => "gt;   ",
       Amp  => "amp;  ",
       Quot => "quot; ",
-      Apos => "apos; ");
+      Apos => "apos; "];
 
    --  Entity replacement characters
    Entity_Chars : constant array (Entity_Ref) of Character :=
-     (Lt => '<', Gt => '>', Amp => '&', Quot => '"', Apos => ''');
+     [Lt => '<', Gt => '>', Amp => '&', Quot => '"', Apos => '''];
 
 private
    ---------------------------------------------------------------------------

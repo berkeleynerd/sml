@@ -174,7 +174,7 @@ is
 
    function Expand_Entities (Text : String) return String is
       Result_Len : constant Natural := Expanded_Length (Text);
-      Result     : String (1 .. Result_Len) := (others => ' ');
+      Result     : String (1 .. Result_Len) := [others => ' '];
       J          : Natural := 1;
       I          : Natural := Text'First;
       Entity     : Standard_Entity;
@@ -247,9 +247,9 @@ is
       -- Calculate maximum possible result size
       Max_Len    : constant Natural :=
         Text'Length * 6;  -- Worst case: all &apos;
-      Result     : String (1 .. Max_Len) := (others => ' ');
+      Result     : String (1 .. Max_Len) := [others => ' '];
       J          : Natural := 0;
-      Entity_Str : String (1 .. 6) := (others => ' ');
+      Entity_Str : String (1 .. 6) := [others => ' '];
       Entity_Len : Natural;
    begin
       for I in Text'Range loop
