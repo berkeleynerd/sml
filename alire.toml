@@ -8,7 +8,7 @@ licenses = "MIT OR Apache-2.0 WITH LLVM-exception"
 website = ""
 tags = ["xml", "parser", "simple-xml", "spark"]
 
-executables = ["test_parser", "parse_and_traverse"]
+executables = ["sml_example"]
 
 [build-switches]
 "*".ada_version = "Ada2022"

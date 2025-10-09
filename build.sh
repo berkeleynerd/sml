@@ -1,47 +1,35 @@
 #!/bin/bash
 ##############################################################################
 # SML Library Build Script
-# Builds the SML library and example programs
+# Builds library and examples using Alire
 ##############################################################################
 
-set -e  # Exit on error
+set -e
 
-echo "================================================"
-echo "Building SML SPARK Ada Library"
-echo "================================================"
+echo "========================================"
+echo "Building SML Library and Examples"
+echo "========================================"
 echo
 
-# Clean previous builds
-echo "Cleaning previous build artifacts..."
-alr clean
-echo "✓ Clean complete"
-echo
-
-# Build the library
-echo "Building SML library..."
+# Build library
+echo "Building library..."
 alr build
-echo "✓ Library build complete"
+echo "✅ Library built"
 echo
 
-# Build examples
-if [ -f "examples/sml_example.adb" ]; then
-    echo "Building sml_example..."
-    echo "Note: Example uses library from obj/development"
-    echo "      Run manually: cd examples && alr exec -- gnatmake sml_example.adb -aI../src -aO../obj/development"
-    echo "ℹ️  Example requires manual build (no GPR file yet)"
-else
-    echo "⚠ No examples found"
-fi
+# Build examples (separate project)
+echo "Building examples..."
+alr exec -- gprbuild -P examples.gpr
+echo "✅ Examples built"
 
 echo
-echo "================================================"
-echo "Build Summary"
-echo "================================================"
-echo "Library:  ✅ SUCCESS"
-echo "Examples: ℹ️  Manual build required"
+echo "========================================"
+echo "Build Complete!"
+echo "========================================"
+echo "  Library:   lib/libSml.a"
+echo "  Example:   bin/sml_example"
 echo
 echo "Next steps:"
+echo "  Run:   bin/sml_example"
 echo "  Verify: alr exec -- gnatprove -P sml.gpr --mode=flow"
-echo "  Build example: cd examples && alr exec -- gnatmake sml_example.adb -aI../src"
-echo "  Run example:   ./examples/sml_example"
-echo "================================================"
+echo "========================================"

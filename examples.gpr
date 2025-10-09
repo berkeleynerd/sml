@@ -7,14 +7,14 @@ project Examples is
    for Exec_Dir use "bin";
    for Create_Missing_Dirs use "True";
 
-   for Main use ("parse_and_traverse.adb");
+   for Main use ("sml_example.adb");
 
    package Compiler is
-      for Default_Switches ("Ada") use ("-gnatwa", "-gnatwe");
+      for Default_Switches ("Ada") use ("-gnatwa", "-gnatwe", "-gnat2022");
    end Compiler;
 
    package Builder is
-      for Executable ("parse_and_traverse.adb") use "parse_and_traverse";
+      for Executable ("sml_example.adb") use "sml_example";
    end Builder;
 
    package Linker is

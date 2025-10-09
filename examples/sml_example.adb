@@ -80,18 +80,15 @@ procedure SML_Example is
    ---------------------------------------------------------------------------
 
    procedure Example_Build_From_Scratch is
-      Doc    : SML.DOM.Document;
+      --  Create document with root (limited type initialized at declaration)
+      Doc    : SML.DOM.Document := SML.DOM.Builder.Create_Document ("catalog");
       Item1  : SML.DOM.Node_Id;
       Item2  : SML.DOM.Node_Id;
       Text1  : SML.DOM.Node_Id;
       Text2  : SML.DOM.Node_Id;
-      Output : String (1 .. 10_000);
    begin
       Put_Line ("=== Example 2: Build DOM from Scratch ===");
       New_Line;
-
-      --  Create document with root
-      Doc := SML.DOM.Builder.Create_Document ("catalog");
 
       --  Add items with text
       SML.DOM.Builder.Add_Child_Element (Doc, SML.DOM.Root (Doc), "item", Item1);
@@ -101,13 +98,11 @@ procedure SML_Example is
       SML.DOM.Builder.Add_Text_Node (Doc, Item2, "Pen", Text2);
 
       Put_Line ("Compact output:");
-      Output := SML.DOM.Writer.Serialize (Doc);
-      Put_Line (Output);
+      Put_Line (SML.DOM.Writer.Serialize (Doc));
       New_Line;
 
       Put_Line ("Formatted output:");
-      Output := SML.DOM.Writer.Serialize_Formatted (Doc);
-      Put_Line (Output);
+      Put_Line (SML.DOM.Writer.Serialize_Formatted (Doc));
       New_Line;
    end Example_Build_From_Scratch;
 
@@ -116,36 +111,29 @@ procedure SML_Example is
    ---------------------------------------------------------------------------
 
    procedure Example_Modify_DOM is
-      Input  : constant String :=
-        "<root><old>Keep</old><temp>Delete Me</temp></root>";
-      Result : constant SML.DOM.Parser.Parse_Result :=
-        SML.DOM.Parser.Parse (Input);
-      Doc    : SML.DOM.Document;
-      Root   : SML.DOM.Node_Id;
-      Old_El : SML.DOM.Node_Id;
+      --  Build a simple document to modify
+      Doc      : SML.DOM.Document := SML.DOM.Builder.Create_Document ("root");
+      Root     : constant SML.DOM.Node_Id := SML.DOM.Root (Doc);
+      Old_El   : SML.DOM.Node_Id;
+      Temp_El  : SML.DOM.Node_Id;
       Old_Text : SML.DOM.Node_Id;
-      Temp   : SML.DOM.Node_Id;
-      New_El : SML.DOM.Node_Id;
-      Output : String (1 .. 10_000);
+      Temp_Text : SML.DOM.Node_Id;
+      New_El   : SML.DOM.Node_Id;
    begin
-      Put_Line ("=== Example 3: Modify Existing DOM ===");
+      Put_Line ("=== Example 3: Full CRUD Operations ===");
       New_Line;
 
-      if not Result.Success then
-         Put_Line ("Parse failed!");
-         return;
-      end if;
+      --  CREATE: Build initial structure
+      SML.DOM.Builder.Add_Child_Element (Doc, Root, "old", Old_El);
+      SML.DOM.Builder.Add_Text_Node (Doc, Old_El, "Keep", Old_Text);
+      SML.DOM.Builder.Add_Child_Element (Doc, Root, "temp", Temp_El);
+      SML.DOM.Builder.Add_Text_Node (Doc, Temp_El, "Delete Me", Temp_Text);
 
-      Doc := Result.Doc;
-      Root := SML.DOM.Root (Doc);
-
-      Put_Line ("Original:");
-      Put_Line (Input);
+      Put_Line ("Initial structure:");
+      Put_Line (SML.DOM.Writer.Serialize (Doc));
       New_Line;
 
       --  UPDATE: Modify text content
-      Old_El := SML.DOM.Child_At (Doc, Root, 1);
-      Old_Text := SML.DOM.First_Child (Doc, Old_El);
       Put_Line ("Changing text 'Keep' → 'Modified'");
       SML.DOM.Builder.Set_Text_Content (Doc, Old_Text, "Modified");
 
@@ -153,21 +141,17 @@ procedure SML_Example is
       Put_Line ("Renaming 'old' → 'updated'");
       SML.DOM.Builder.Set_Element_Name (Doc, Old_El, "updated");
 
-      --  DELETE: Remove second element
-      if SML.DOM.Child_Count (Doc, Root) >= 2 then
-         Temp := SML.DOM.Child_At (Doc, Root, 2);
-         Put_Line ("Deleting: <" & SML.DOM.Name (Doc, Temp) & ">");
-         SML.DOM.Builder.Delete_Node (Doc, Temp);
-      end if;
+      --  DELETE: Remove temp element
+      Put_Line ("Deleting: <temp>");
+      SML.DOM.Builder.Delete_Node (Doc, Temp_El);
 
       --  CREATE: Add new element
       SML.DOM.Builder.Add_Child_Element (Doc, Root, "new", New_El);
       Put_Line ("Added: <new>");
       New_Line;
 
-      Put_Line ("Result:");
-      Output := SML.DOM.Writer.Serialize (Doc);
-      Put_Line (Output);
+      Put_Line ("Final result:");
+      Put_Line (SML.DOM.Writer.Serialize (Doc));
       New_Line;
    end Example_Modify_DOM;
 
@@ -180,8 +164,6 @@ procedure SML_Example is
         "<data><item>Test &amp; verify</item></data>";
       Result1 : constant SML.DOM.Parser.Parse_Result :=
         SML.DOM.Parser.Parse (Input);
-      Output  : String (1 .. 10_000);
-      Result2 : SML.DOM.Parser.Parse_Result;
    begin
       Put_Line ("=== Example 4: Round-Trip Verification ===");
       New_Line;
@@ -195,21 +177,23 @@ procedure SML_Example is
          return;
       end if;
 
-      --  Serialize
-      Output := SML.DOM.Writer.Serialize (Result1.Doc);
-      Put_Line ("Serialized:");
-      Put_Line (Output);
-      New_Line;
+      --  Serialize and re-parse
+      declare
+         Output : constant String := SML.DOM.Writer.Serialize (Result1.Doc);
+         Result2 : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse (Output);
+      begin
+         Put_Line ("Serialized:");
+         Put_Line (Output);
+         New_Line;
 
-      --  Parse again
-      Result2 := SML.DOM.Parser.Parse (Output);
-
-      if Result2.Success then
-         Put_Line ("✓ Round-trip successful!");
-         Put_Line ("✓ Entities properly encoded and decoded");
-      else
-         Put_Line ("✗ Round-trip failed!");
-      end if;
+         if Result2.Success then
+            Put_Line ("✓ Round-trip successful!");
+            Put_Line ("✓ Entities properly encoded and decoded");
+         else
+            Put_Line ("✗ Round-trip failed!");
+         end if;
+      end;
       New_Line;
    end Example_Round_Trip;
 

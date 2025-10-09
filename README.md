@@ -12,12 +12,12 @@ A formally verified parser and Document Object Model (DOM) for Simple Markup Lan
 ## Quick Start
 
 ```bash
-# Build the library
+# Build library and examples
 ./build.sh
+# or: alr build
 
 # Run comprehensive example
-cd examples && alr exec -- gnatmake sml_example.adb -aI../src
-./sml_example
+alr run sml_example
 
 # Run SPARK verification
 alr exec -- gnatprove -P sml.gpr --mode=flow
