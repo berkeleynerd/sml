@@ -549,7 +549,7 @@ is
    end Is_XML_Whitespace_Code;
 
    function Normalize_Whitespace (Text : String) return String is
-      Result   : String (1 .. Text'Length);
+      Result   : String (1 .. Text'Length) := (others => ' ');
       J        : Natural := 0;
       In_Space : Boolean := False;
    begin

@@ -296,6 +296,8 @@ is
       Result.Is_Closing := False;
       Result.Name := (others => ' ');
       Result.Name_Length := 0;
+      Result.Err_Kind := Malformed_Structure;  -- Default error kind
+      Result.Error_Msg := (others => ' ');
       Result.Error_Msg_Len := 0;
 
       --  Must start with <
@@ -604,6 +606,15 @@ is
          Name_Ref   : SML.Memory_Model.String_Ref;
       begin
          Had_Error := False;
+
+         --  Initialize Error_Info (only used if Had_Error becomes True)
+         Error_Info :=
+           (Kind       => Malformed_Structure,
+            Position   => 0,
+            Line       => 1,
+            Column     => 1,
+            Message    => (others => ' '),
+            Msg_Length => 0);
 
          --  Initialize arena pool
          SML.Memory_Model.Reset_Arena (Doc.Pool);

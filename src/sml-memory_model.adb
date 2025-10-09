@@ -101,7 +101,7 @@ is
    end Store_String;
 
    function Get_String (Pool : Arena_Pool; Ref : String_Ref) return String is
-      Result : String (1 .. Ref.Length);
+      Result : String (1 .. Ref.Length) := (others => ' ');
    begin
       if Ref.Length = 0 then
          return "";
