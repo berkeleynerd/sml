@@ -582,18 +582,18 @@ is
          Error_Info : out Parse_Error)
       is
          Ctx : Parser_Context (Input_Str'First, Input_Str'Last) :=
-           [Input_First => Input_Str'First,
+           (Input_First => Input_Str'First,
             Input_Last  => Input_Str'Last,
             Position    => Input_Str'First,
             Line        => 1,
             Column      => 1,
             Stack_Depth => 0,
             Stack       =>
-              [others => [Name         => [others => ' '],
+              [others => (Name         => [others => ' '],
                           Name_Length  => 0,
                           Node         => Null_Node,
                           Last_Child   => Null_Node,
-                          Num_Children => 0]]];
+                          Num_Children => 0)]);
          Tag_Result : Parse_Tag_Result;
          Root_Index : SML.Memory_Model.Node_Index;
          Name_Ref   : SML.Memory_Model.String_Ref;
@@ -602,12 +602,12 @@ is
 
          --  Initialize Error_Info (only used if Had_Error becomes True)
          Error_Info :=
-           [Kind       => Malformed_Structure,
+           (Kind       => Malformed_Structure,
             Position   => 0,
             Line       => 1,
             Column     => 1,
             Message    => [others => ' '],
-            Msg_Length => 0];
+            Msg_Length => 0);
 
          --  Initialize arena pool
          SML.Memory_Model.Reset_Arena (Doc.Pool);

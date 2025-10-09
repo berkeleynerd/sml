@@ -108,6 +108,7 @@ is
       Parent_Index       : Node_Index;
       First_Child_Index  : Node_Index;
       Next_Sibling_Index : Node_Index;
+      Is_Deleted         : Boolean := False;  -- Logical deletion flag
 
       --  Content based on kind discriminant
       case Kind is

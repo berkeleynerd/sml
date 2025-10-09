@@ -27,11 +27,11 @@ package SML.Entities with SPARK_Mode => On is
 
    --  Standard entity definitions
    Entity_Table : constant array (Standard_Entity) of Entity_Info :=
-     [Lt   => [Kind => Lt,   Name => "lt   ", Name_Len => 2, Char => '<'],
-      Gt   => [Kind => Gt,   Name => "gt   ", Name_Len => 2, Char => '>'],
-      Amp  => [Kind => Amp,  Name => "amp  ", Name_Len => 3, Char => '&'],
-      Quot => [Kind => Quot, Name => "quot ", Name_Len => 4, Char => '"'],
-      Apos => [Kind => Apos, Name => "apos ", Name_Len => 4, Char => ''']];
+     [Lt   => (Kind => Lt,   Name => "lt   ", Name_Len => 2, Char => '<'),
+      Gt   => (Kind => Gt,   Name => "gt   ", Name_Len => 2, Char => '>'),
+      Amp  => (Kind => Amp,  Name => "amp  ", Name_Len => 3, Char => '&'),
+      Quot => (Kind => Quot, Name => "quot ", Name_Len => 4, Char => '"'),
+      Apos => (Kind => Apos, Name => "apos ", Name_Len => 4, Char => ''')];
 
    ---------------------------------------------------------------------------
    --  Entity Detection and Validation
