@@ -24,10 +24,6 @@ is
    --  Exception for carrying parse error information
    Parse_Failed : exception;
 
-   --  Package-level variable to store error info when exception is raised
-   --  (Ada doesn't allow data in exceptions, so we use this workaround)
-   Last_Parse_Error : Parse_Error;
-
    --  Element stack entry for tracking open tags
    type Element_Stack_Entry is record
       Name         : String (1 .. Max_Tag_Name_Length);
@@ -580,6 +576,9 @@ is
    is
       pragma Unreferenced (Options);
 
+      --  Local variable for error info (avoids global state)
+      Local_Error : Parse_Error;
+
       --  Helper procedure to build DOM (avoids extended return scope issues)
       procedure Build_DOM
         (Input_Str  : String;
@@ -587,7 +586,19 @@ is
          Had_Error  : out Boolean;
          Error_Info : out Parse_Error)
       is
-         Ctx        : Parser_Context (Input_Str'First, Input_Str'Last);
+         Ctx : Parser_Context (Input_Str'First, Input_Str'Last) :=
+           (Input_First => Input_Str'First,
+            Input_Last  => Input_Str'Last,
+            Position    => Input_Str'First,
+            Line        => 1,
+            Column      => 1,
+            Stack_Depth => 0,
+            Stack       =>
+              (others => (Name         => (others => ' '),
+                          Name_Length  => 0,
+                          Node         => Null_Node,
+                          Last_Child   => Null_Node,
+                          Num_Children => 0)));
          Tag_Result : Parse_Tag_Result;
          Root_Index : SML.Memory_Model.Node_Index;
          Name_Ref   : SML.Memory_Model.String_Ref;
@@ -596,17 +607,6 @@ is
 
          --  Initialize arena pool
          SML.Memory_Model.Reset_Arena (Doc.Pool);
-
-         --  Initialize parser context
-         Ctx.Position := Input_Str'First;
-         Ctx.Line := 1;
-         Ctx.Column := 1;
-         Ctx.Stack_Depth := 0;
-         Ctx.Stack := (others => (Name => (others => ' '),
-                                  Name_Length => 0,
-                                  Node => Null_Node,
-                                  Last_Child => Null_Node,
-                                  Num_Children => 0));
 
          --  Skip leading whitespace
          Skip_Whitespace (Input_Str, Ctx);
@@ -1162,7 +1162,7 @@ is
 
             if Had_Error then
                --  Store error info and raise exception to return failure result
-               Last_Parse_Error := Err_Info;
+               Local_Error := Err_Info;
                raise Parse_Failed;
             end if;
          end;
@@ -1171,7 +1171,7 @@ is
    exception
       when Parse_Failed =>
          --  Parse failed, return error result with stored error info
-         return (Success => False, Error => Last_Parse_Error);
+         return (Success => False, Error => Local_Error);
    end Parse_With_Options;
 
    ---------------------------------------------------------------------------

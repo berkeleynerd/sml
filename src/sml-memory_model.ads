@@ -136,18 +136,19 @@ is
    type Arena_Pool is limited record
       --  Node storage
       Nodes           : Node_Array (1 .. Max_Document_Nodes);
-      Next_Node_Index : Node_Index;
+      Next_Node_Index : Node_Index := 1;
 
       --  String storage
       Strings         : String_Storage (1 .. Max_String_Storage);
-      Next_String_Pos : String_Index;
+      Next_String_Pos : String_Index := 1;
 
       --  Ghost fields for memory accounting (Ghost documented in comments)
-      Allocated_Nodes : Natural;
-      Allocated_Bytes : Natural;
-      High_Water_Mark : Natural;  -- Maximum allocation reached
+      Allocated_Nodes : Natural := 0;
+      Allocated_Bytes : Natural := 0;
+      High_Water_Mark : Natural := 0;  -- Maximum allocation reached
    end record
    with
+     Relaxed_Initialization,
      Predicate =>
        Next_Node_Index <= Max_Document_Nodes + 1
        and then Next_String_Pos <= Max_String_Storage + 1
