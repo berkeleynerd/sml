@@ -1,0 +1,149 @@
+sml-algorithm-performance.ads: warning: unit name "SML.ALGORITHM_PERFORMANCE" does not match source name
+sml-bisimulation.adb: warning: unit name "SML.UISIMULATION" does not match source name
+sml-bounds-safety.adb: warning: unit name "SML.UOUNDS.SAFETY" does not match source name
+sml-bounds-safety.ads: warning: unit name "SML.BOUNDS_SAFETY" does not match source name
+sml-dom-enhanced.adb: warning: unit name "SML.DOM_ENHANCED" does not match source name
+sml-dom-enhanced.ads: warning: unit name "SML.DOM_ENHANCED" does not match source name
+sml-dom-operation-safety.ads: warning: unit name "SML.DOM_OPERATION_SAFETY" does not match source name
+sml-dom-performance.ads: warning: unit name "SML.DOM_PERFORMANCE" does not match source name
+sml-entities-enhanced.adb: warning: unit name "SML.ENTITIES_ENHANCED" does not match source name
+sml-entities-enhanced.ads: warning: unit name "SML.ENTITIES" does not match source name
+sml-entities-roundtrip.ads: warning: unit name "SML.ENTITIES_ROUNDTRIP" does not match source name
+sml-error-detection.ads: warning: unit name "SML.ERROR_DETECTION" does not match source name
+sml-invariant-composition.ads: warning: unit name "SML.INVARIANT_COMPOSITION" does not match source name
+sml-invariant-preservation.ads: warning: unit name "SML.INVARIANT_PRESERVATION" does not match source name
+sml-memory-accounting.adb: warning: unit name "SML.MEMORY_ACCOUNTING" does not match source name
+sml-memory-accounting.ads: warning: unit name "SML.MEMORY_ACCOUNTING" does not match source name
+sml-memory-performance.ads: warning: unit name "SML.MEMORY_PERFORMANCE" does not match source name
+sml-null-safety.adb: warning: unit name "SML." does not match source name
+sml-null-safety.ads: warning: unit name "SML.NULL_SAFETY" does not match source name
+sml-parser-enhanced.adb: warning: unit name "SML.PARSER_ENHANCED" does not match source name
+sml-parser-enhanced.ads: warning: unit name "SML.PARSER" does not match source name
+sml-parser-performance.ads: warning: unit name "SML.PARSER_PERFORMANCE" does not match source name
+sml-parser-state-invariants.ads: warning: unit name "SML.PARSER_STATE_INVARIANTS" does not match source name
+sml-proof_helpers-enhanced.adb: warning: unit name "SML.PROOF_HELPERS" does not match source name
+sml-proof_helpers-enhanced.ads: warning: unit name "SML.PROOF_HELPERS" does not match source name
+sml-proof_helpers.adb: warning: unit name "SML.PROOF.HELPERS" does not match source name
+sml-utf8-bijection.adb: warning: unit name "SML.UTF8.UIJECTION" does not match source name
+sml-utf8-bijection.ads: warning: unit name "SML.UTF8_BIJECTION" does not match source name
+sml-utf8-compliance.ads: warning: unit name "SML.UTF8_COMPLIANCE" does not match source name
+sml-utf8-enhanced.adb: warning: unit name "SML.UTF8_ENHANCED" does not match source name
+sml-utf8-enhanced.ads: warning: unit name "SML.UTF8" does not match source name
+sml-utf8-security.ads: warning: unit name "SML.UTF8_SECURITY" does not match source name
+sml.gpr: warning: duplicated spec for unit "SML.PROOF_HELPERS" in /Users/rebecca/src/github.com/pretty-good-apps/sml/src/sml-proof_helpers.ads and /Users/rebecca/src/github.com/pretty-good-apps/sml/src/sml-proof_helpers-enhanced.ads
+sml.gpr: warning: duplicated spec for unit "SML.UTF8" in /Users/rebecca/src/github.com/pretty-good-apps/sml/src/sml-utf8-enhanced.ads and /Users/rebecca/src/github.com/pretty-good-apps/sml/src/sml-utf8.ads
+sml.gpr: warning: duplicated spec for unit "SML.ENTITIES" in /Users/rebecca/src/github.com/pretty-good-apps/sml/src/sml-entities-enhanced.ads and /Users/rebecca/src/github.com/pretty-good-apps/sml/src/sml-entities.ads
+sml.gpr: warning: duplicated spec for unit "SML.PARSER" in /Users/rebecca/src/github.com/pretty-good-apps/sml/src/sml-parser.ads and /Users/rebecca/src/github.com/pretty-good-apps/sml/src/sml-parser-enhanced.ads
+Phase 1 of 3: generation of data representation information ...
+Phase 2 of 3: generation of Global contracts ...
+Phase 3 of 3: analysis of data and information flow ...
+sml-dom.adb:17:13: info: implicit aspect Always_Terminates on "To_Index" has been proved, subprogram will terminate
+sml-dom.adb:22:13: info: implicit aspect Always_Terminates on "To_Node_Id" has been proved, subprogram will terminate
+sml-dom.adb:27:13: info: implicit aspect Always_Terminates on "To_DOM_Kind" has been proved, subprogram will terminate
+sml-dom.adb:34:13: info: implicit aspect Always_Terminates on "Get_String" has been proved, subprogram will terminate
+
+sml-dom.adb:47:17: medium: "Result" might not be initialized
+   47 |         return Result;
+      |                ^~~~~~
+sml-dom.adb:76:07: info: initialization of "N" proved
+sml-dom.adb:111:07: info: initialization of "N" proved
+sml-dom.adb:133:07: info: initialization of "N" proved
+sml-dom.adb:134:07: info: initialization of "Current" proved
+sml-dom.adb:135:07: info: initialization of "Current_Idx" proved
+
+sml-dom.adb:154:57: medium: implicit aspect Always_Terminates on "Child_At" could be incorrect, loop might be nonterminating
+  154 |      while Current /= Null_Node and then Count < Index loop
+      |                                                        ^~~~
+  possible fix: add loop variant in the loop body
+sml-dom.adb:187:07: info: initialization of "N" proved
+sml-dom.adb:208:07: info: initialization of "N" proved
+sml-dom.adb:229:07: info: initialization of "Current_Idx" proved
+
+sml-dom.adb:232:68: medium: implicit aspect Always_Terminates on "Depth" could be incorrect, loop might be nonterminating
+  232 |      while Current /= Null_Node and then Current /= Doc.Root_Node loop
+      |                                                                   ^~~~
+  possible fix: add loop variant in the loop body
+sml-dom.adb:303:07: info: initialization of "Current" proved
+
+sml-dom.adb:313:15: medium: implicit aspect Always_Terminates on "Has_Child" could be incorrect, "Has_Child" and "First_Child" are mutually recursive
+  313 |      Current := First_Child (Doc, Parent_Node);
+      |      ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  possible fix: annotate "Has_Child" and "First_Child" with Subprogram_Variant aspects
+
+sml-dom.adb:315:34: medium: implicit aspect Always_Terminates on "Has_Child" could be incorrect, loop might be nonterminating
+  315 |      while Current /= Null_Node loop
+      |                                 ^~~~
+  possible fix: add loop variant in the loop body
+
+sml-dom.adb:320:18: medium: implicit aspect Always_Terminates on "Has_Child" could be incorrect, "Has_Child" and "Next_Sibling" are mutually recursive
+  320 |         Current := Next_Sibling (Doc, Current);
+      |         ~~~~~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  possible fix: annotate "Has_Child" and "Next_Sibling" with Subprogram_Variant aspects
+sml-dom.ads:42:13: info: implicit aspect Always_Terminates on "Root" has been proved, subprogram will terminate
+sml-dom.ads:45:11: info: data dependencies proved
+
+sml-dom.ads:50:20: medium: implicit aspect Always_Terminates on "Parent" could be incorrect, "Parent" and "Has_Child" are mutually recursive
+   50>|          Post => (if Parent'Result /= Null_Node then
+   51 |                     Kind (Doc, Parent'Result) = Element and then
+   52 |                     Has_Child (Doc, Parent'Result, Node)),
+  possible fix: annotate "Parent" and "Has_Child" with Subprogram_Variant aspects
+sml-dom.ads:53:11: info: data dependencies proved
+
+sml-dom.ads:58:20: medium: implicit aspect Always_Terminates on "First_Child" could be incorrect, "First_Child" and "Parent" are mutually recursive
+   58>|          Post => (if First_Child'Result /= Null_Node then
+   59 |                     Parent (Doc, First_Child'Result) = Node),
+  possible fix: annotate "First_Child" and "Parent" with Subprogram_Variant aspects
+sml-dom.ads:60:11: info: data dependencies proved
+
+sml-dom.ads:65:20: medium: implicit aspect Always_Terminates on "Next_Sibling" could be incorrect, "Next_Sibling" and "Parent" are mutually recursive
+   65>|          Post => (if Next_Sibling'Result /= Null_Node then
+   66 |                     Parent (Doc, Next_Sibling'Result) = Parent (Doc, Node)),
+  possible fix: annotate "Next_Sibling" and "Parent" with Subprogram_Variant aspects
+sml-dom.ads:67:11: info: data dependencies proved
+sml-dom.ads:70:13: info: implicit aspect Always_Terminates on "Child_Count" has been proved, subprogram will terminate
+sml-dom.ads:74:11: info: data dependencies proved
+sml-dom.ads:83:11: info: data dependencies proved
+sml-dom.ads:86:13: info: implicit aspect Always_Terminates on "Kind" has been proved, subprogram will terminate
+sml-dom.ads:88:11: info: data dependencies proved
+sml-dom.ads:91:13: info: implicit aspect Always_Terminates on "Name" has been proved, subprogram will terminate
+sml-dom.ads:96:11: info: data dependencies proved
+sml-dom.ads:99:13: info: implicit aspect Always_Terminates on "Text_Value" has been proved, subprogram will terminate
+sml-dom.ads:103:11: info: data dependencies proved
+sml-dom.ads:110:11: info: data dependencies proved
+sml-dom.ads:117:13: info: implicit aspect Always_Terminates on "Is_Valid_Node" has been proved, subprogram will terminate
+sml-dom.ads:119:11: info: data dependencies proved
+sml-dom.ads:122:13: info: implicit aspect Always_Terminates on "Is_Well_Formed" has been proved, subprogram will terminate
+sml-dom.ads:124:11: info: data dependencies proved
+sml-dom.ads:132:13: info: implicit aspect Always_Terminates on "Has_Single_Root" has been proved, subprogram will terminate
+sml-dom.ads:134:11: info: data dependencies proved
+sml-dom.ads:137:13: info: implicit aspect Always_Terminates on "Is_Acyclic" has been proved, subprogram will terminate
+sml-dom.ads:139:11: info: data dependencies proved
+sml-dom.ads:142:13: info: implicit aspect Always_Terminates on "Has_Consistent_Parent_Child_Links" has been proved, subprogram will terminate
+sml-dom.ads:144:11: info: data dependencies proved
+sml-dom.ads:147:13: info: implicit aspect Always_Terminates on "Has_Valid_Depth" has been proved, subprogram will terminate
+sml-dom.ads:149:11: info: data dependencies proved
+sml-dom.ads:158:11: info: data dependencies proved
+sml-dom.ads:161:13: info: implicit aspect Always_Terminates on "Is_Valid_Name" has been proved, subprogram will terminate
+sml-dom.ads:163:11: info: data dependencies proved
+sml-dom.ads:170:13: info: implicit aspect Always_Terminates on "Is_Name_Char" has been proved, subprogram will terminate
+sml-dom.ads:172:11: info: data dependencies proved
+sml-dom.ads:185:13: info: implicit aspect Always_Terminates on "Owns_Node" has been proved, subprogram will terminate
+sml-dom.ads:187:11: info: data dependencies proved
+sml-dom.ads:190:13: info: implicit aspect Always_Terminates on "Node_Count" has been proved, subprogram will terminate
+sml-dom.ads:192:11: info: data dependencies proved
+sml-dom.ads:195:13: info: implicit aspect Always_Terminates on "No_Memory_Leaks" has been proved, subprogram will terminate
+sml-dom.ads:197:11: info: data dependencies proved
+sml-entities.adb:25:07: info: initialization of "End_Pos" proved
+sml-entities.adb:26:07: info: initialization of "Name_Start" proved
+sml-entities.adb:27:07: info: initialization of "Name_End" proved
+
+sml-entities.adb:37:35: medium: implicit aspect Always_Terminates on "Has_Valid_Entity_At" could be incorrect, loop might be nonterminating
+   37 |            Text (End_Pos) /= ';' loop
+      |                                  ^~~~
+  possible fix: add loop variant in the loop body
+sml-entities.adb:89:07: info: initialization of "End_Pos" proved
+sml-entities.adb:90:07: info: initialization of "Name_Start" proved
+sml-entities.adb:91:07: info: initialization of "Name_End" proved
+
+sml-entities.adb:95:65: medium: implicit aspect Always_Terminates on "Get_Entity_At" could be incorrect, loop might be nonterminating
+   95 |      while End_Pos <= Text'Last and then Text (End_Pos) /= ';' loop
