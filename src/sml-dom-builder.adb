@@ -30,40 +30,40 @@ is
    ---------------------------------------------------------------------------
 
    function Create_Document (Root_Name : String) return Document is
-      Result     : Document;
       Root_Index : SML.Memory_Model.Node_Index;
       Name_Ref   : SML.Memory_Model.String_Ref;
    begin
-      --  Initialize arena pool
-      SML.Memory_Model.Reset_Arena (Result.Pool);
+      --  Use extended return for limited type
+      return Result : Document do
+         --  Initialize arena pool
+         SML.Memory_Model.Reset_Arena (Result.Pool);
 
-      --  Allocate root node
-      SML.Memory_Model.Allocate_Node
-        (Result.Pool, SML.Memory_Model.Element, Root_Index);
+         --  Allocate root node
+         SML.Memory_Model.Allocate_Node
+           (Result.Pool, SML.Memory_Model.Element, Root_Index);
 
-      --  Allocate and store element name
-      SML.Memory_Model.Allocate_String (Result.Pool, Root_Name, Name_Ref);
-      SML.Memory_Model.Store_String (Result.Pool, Name_Ref, Root_Name);
+         --  Allocate and store element name
+         SML.Memory_Model.Allocate_String (Result.Pool, Root_Name, Name_Ref);
+         SML.Memory_Model.Store_String (Result.Pool, Name_Ref, Root_Name);
 
-      --  Initialize root node
-      declare
-         Root_Node : SML.Memory_Model.Node (SML.Memory_Model.Element);
-      begin
-         Root_Node.Parent_Index := SML.Memory_Model.No_Node_Index;
-         Root_Node.First_Child_Index := SML.Memory_Model.No_Node_Index;
-         Root_Node.Next_Sibling_Index := SML.Memory_Model.No_Node_Index;
-         Root_Node.Is_Deleted := False;
-         Root_Node.Element_Name_Ref := Name_Ref;
-         Root_Node.Num_Children := 0;
+         --  Initialize root node
+         declare
+            Root_Node : SML.Memory_Model.Node (SML.Memory_Model.Element);
+         begin
+            Root_Node.Parent_Index := SML.Memory_Model.No_Node_Index;
+            Root_Node.First_Child_Index := SML.Memory_Model.No_Node_Index;
+            Root_Node.Next_Sibling_Index := SML.Memory_Model.No_Node_Index;
+            Root_Node.Is_Deleted := False;
+            Root_Node.Element_Name_Ref := Name_Ref;
+            Root_Node.Num_Children := 0;
 
-         SML.Memory_Model.Set_Node (Result.Pool, Root_Index, Root_Node);
-      end;
+            SML.Memory_Model.Set_Node (Result.Pool, Root_Index, Root_Node);
+         end;
 
-      --  Set document root
-      Result.Root_Node := Node_Id (Root_Index);
-      Result.Total_Nodes := 1;
-
-      return Result;
+         --  Set document root
+         Result.Root_Node := Node_Id (Root_Index);
+         Result.Total_Nodes := 1;
+      end return;
    end Create_Document;
 
    ---------------------------------------------------------------------------

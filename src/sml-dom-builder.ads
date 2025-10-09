@@ -79,7 +79,7 @@ is
        Is_Well_Formed (Doc)
        and then New_Text /= Null_Node
        and then Is_Valid_Node (Doc, New_Text)
-       and then Kind (Doc, New_Text) = Text
+       and then Kind (Doc, New_Text) = SML.DOM.Text
        and then Not_Deleted (Doc, New_Text);
 
    ---------------------------------------------------------------------------
