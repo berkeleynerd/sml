@@ -75,8 +75,10 @@ is
    end Parent;
 
    function First_Child (Doc : Document; Node : Node_Id) return Node_Id is
-      Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
-      N   : SML.Memory_Model.Node;
+      Idx     : constant SML.Memory_Model.Node_Index := To_Index (Node);
+      N       : SML.Memory_Model.Node;
+      Current : Node_Id;
+      Count   : Natural := 0;
    begin
       if Node = Null_Node then
          return Null_Node;
@@ -92,11 +94,38 @@ is
          return Null_Node;
       end if;
 
-      return To_Node_Id (N.First_Child_Index);
+      --  Find first non-deleted child
+      Current := To_Node_Id (N.First_Child_Index);
+
+      while Current /= Null_Node loop
+         pragma Loop_Variant (Increases => Count);
+
+         if not SML.Memory_Model.Valid_Node_Index (Doc.Pool, To_Index (Current))
+         then
+            return Null_Node;
+         end if;
+
+         N := Doc.Pool.Nodes (To_Index (Current));
+
+         --  Return if not deleted
+         exit when not N.Is_Deleted;
+
+         --  Move to next sibling
+         Current := To_Node_Id (N.Next_Sibling_Index);
+         Count := Count + 1;
+
+         --  Safety: prevent infinite loop
+         exit when Count >= Max_Children;
+      end loop;
+
+      return Current;
    end First_Child;
 
    function Next_Sibling (Doc : Document; Node : Node_Id) return Node_Id is
-      Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
+      Idx     : constant SML.Memory_Model.Node_Index := To_Index (Node);
+      Current : Node_Id;
+      N       : SML.Memory_Model.Node;
+      Count   : Natural := 0;
    begin
       if Node = Null_Node then
          return Null_Node;
@@ -106,12 +135,39 @@ is
          return Null_Node;
       end if;
 
-      return To_Node_Id (Doc.Pool.Nodes (Idx).Next_Sibling_Index);
+      --  Find next non-deleted sibling
+      Current := To_Node_Id (Doc.Pool.Nodes (Idx).Next_Sibling_Index);
+
+      while Current /= Null_Node loop
+         pragma Loop_Variant (Increases => Count);
+
+         if not SML.Memory_Model.Valid_Node_Index (Doc.Pool, To_Index (Current))
+         then
+            return Null_Node;
+         end if;
+
+         N := Doc.Pool.Nodes (To_Index (Current));
+
+         --  Return if not deleted
+         exit when not N.Is_Deleted;
+
+         --  Move to next sibling
+         Current := To_Node_Id (N.Next_Sibling_Index);
+         Count := Count + 1;
+
+         --  Safety: prevent infinite loop
+         exit when Count >= Max_Children;
+      end loop;
+
+      return Current;
    end Next_Sibling;
 
    function Child_Count (Doc : Document; Node : Node_Id) return Natural is
-      Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
-      N   : SML.Memory_Model.Node;
+      Idx     : constant SML.Memory_Model.Node_Index := To_Index (Node);
+      N       : SML.Memory_Model.Node;
+      Current : Node_Id;
+      Count   : Natural := 0;
+      Iter    : Natural := 0;
    begin
       if Node = Null_Node then
          return 0;
@@ -127,7 +183,31 @@ is
          return 0;
       end if;
 
-      return N.Num_Children;
+      --  Count non-deleted children
+      Current := To_Node_Id (N.First_Child_Index);
+
+      while Current /= Null_Node loop
+         pragma Loop_Variant (Increases => Iter);
+
+         if SML.Memory_Model.Valid_Node_Index (Doc.Pool, To_Index (Current)) then
+            N := Doc.Pool.Nodes (To_Index (Current));
+
+            if not N.Is_Deleted then
+               Count := Count + 1;
+            end if;
+
+            Current := To_Node_Id (N.Next_Sibling_Index);
+         else
+            exit;
+         end if;
+
+         Iter := Iter + 1;
+
+         --  Safety: prevent infinite loop
+         exit when Iter >= Max_Children;
+      end loop;
+
+      return Count;
    end Child_Count;
 
    function Child_At
@@ -164,12 +244,23 @@ is
             return Null_Node;
          end if;
 
-         Current :=
-           To_Node_Id (Doc.Pool.Nodes (Current_Idx).Next_Sibling_Index);
-         Count := Count + 1;
+         N := Doc.Pool.Nodes (Current_Idx);
+
+         --  Only count non-deleted nodes
+         if not N.Is_Deleted then
+            Count := Count + 1;
+         end if;
+
+         --  If we found the target index, exit
+         if Count = Index and then not N.Is_Deleted then
+            return Current;
+         end if;
+
+         --  Move to next sibling
+         Current := To_Node_Id (N.Next_Sibling_Index);
       end loop;
 
-      return Current;
+      return Null_Node;
    end Child_At;
 
    function Kind (Doc : Document; Node : Node_Id) return Node_Kind is
