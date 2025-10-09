@@ -4,7 +4,9 @@
 --  SPARK Ada Implementation
 ------------------------------------------------------------------------------
 
-package SML with SPARK_Mode => On, Pure is
+package SML
+  with SPARK_Mode => On, Pure
+is
 
    --  Root package for the Simple Markup Language (SML) implementation.
    --  SML is a strict subset of XML with the following restrictions:

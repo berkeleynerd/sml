@@ -7,32 +7,35 @@
 with SML.Memory_Model;
 use type SML.Memory_Model.Node_Kind;  -- Make operators visible
 
-package body SML.DOM with SPARK_Mode => On is
+package body SML.DOM
+  with SPARK_Mode => On
+is
 
    ---------------------------------------------------------------------------
    --  Helper Functions for Type Conversions and String Access
    ---------------------------------------------------------------------------
 
    --  Convert Node_Id to Memory_Model index for array access
-   function To_Index (Node : Node_Id) return SML.Memory_Model.Node_Index is
-     (SML.Memory_Model.Node_Index (Node))
+   function To_Index (Node : Node_Id) return SML.Memory_Model.Node_Index
+   is (SML.Memory_Model.Node_Index (Node))
    with Inline;
 
    --  Convert Memory_Model index to Node_Id
-   function To_Node_Id (Index : SML.Memory_Model.Node_Index) return Node_Id is
-     (Node_Id (Index))
+   function To_Node_Id (Index : SML.Memory_Model.Node_Index) return Node_Id
+   is (Node_Id (Index))
    with Inline;
 
    --  Convert Memory_Model Node_Kind to DOM Node_Kind
-   function To_DOM_Kind (MK : SML.Memory_Model.Node_Kind) return Node_Kind is
-     (case MK is
+   function To_DOM_Kind (MK : SML.Memory_Model.Node_Kind) return Node_Kind
+   is (case MK is
          when SML.Memory_Model.Element => Element,
          when SML.Memory_Model.Text => Text)
    with Inline;
 
    --  Extract string from string pool
-   function Get_String (Pool : SML.Memory_Model.Arena_Pool;
-                        Ref : SML.Memory_Model.String_Ref) return String is
+   function Get_String
+     (Pool : SML.Memory_Model.Arena_Pool; Ref : SML.Memory_Model.String_Ref)
+      return String is
    begin
       if Ref.Length = 0 then
          return "";
@@ -73,7 +76,7 @@ package body SML.DOM with SPARK_Mode => On is
 
    function First_Child (Doc : Document; Node : Node_Id) return Node_Id is
       Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
-      N : SML.Memory_Model.Node;
+      N   : SML.Memory_Model.Node;
    begin
       if Node = Null_Node then
          return Null_Node;
@@ -108,7 +111,7 @@ package body SML.DOM with SPARK_Mode => On is
 
    function Child_Count (Doc : Document; Node : Node_Id) return Natural is
       Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
-      N : SML.Memory_Model.Node;
+      N   : SML.Memory_Model.Node;
    begin
       if Node = Null_Node then
          return 0;
@@ -127,13 +130,14 @@ package body SML.DOM with SPARK_Mode => On is
       return N.Num_Children;
    end Child_Count;
 
-   function Child_At (Doc : Document; Node : Node_Id; Index : Positive)
-                     return Node_Id is
-      Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
-      N : SML.Memory_Model.Node;
-      Current : Node_Id;
+   function Child_At
+     (Doc : Document; Node : Node_Id; Index : Positive) return Node_Id
+   is
+      Idx         : constant SML.Memory_Model.Node_Index := To_Index (Node);
+      N           : SML.Memory_Model.Node;
+      Current     : Node_Id;
       Current_Idx : SML.Memory_Model.Node_Index;
-      Count : Positive := 1;
+      Count       : Positive := 1;
    begin
       if Node = Null_Node then
          return Null_Node;
@@ -158,7 +162,8 @@ package body SML.DOM with SPARK_Mode => On is
             return Null_Node;
          end if;
 
-         Current := To_Node_Id (Doc.Pool.Nodes (Current_Idx).Next_Sibling_Index);
+         Current :=
+           To_Node_Id (Doc.Pool.Nodes (Current_Idx).Next_Sibling_Index);
          Count := Count + 1;
       end loop;
 
@@ -167,10 +172,11 @@ package body SML.DOM with SPARK_Mode => On is
 
    function Kind (Doc : Document; Node : Node_Id) return Node_Kind is
       Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
-      N : SML.Memory_Model.Node;
+      N   : SML.Memory_Model.Node;
    begin
       if Node = Null_Node then
          return Element;  -- Default, shouldn't be reached due to precondition
+
       end if;
 
       if not SML.Memory_Model.Valid_Node_Index (Doc.Pool, Idx) then
@@ -184,7 +190,7 @@ package body SML.DOM with SPARK_Mode => On is
 
    function Name (Doc : Document; Node : Node_Id) return String is
       Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
-      N : SML.Memory_Model.Node;
+      N   : SML.Memory_Model.Node;
    begin
       if Node = Null_Node then
          return "";
@@ -205,7 +211,7 @@ package body SML.DOM with SPARK_Mode => On is
 
    function Text_Value (Doc : Document; Node : Node_Id) return String is
       Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
-      N : SML.Memory_Model.Node;
+      N   : SML.Memory_Model.Node;
    begin
       if Node = Null_Node then
          return "";
@@ -225,9 +231,9 @@ package body SML.DOM with SPARK_Mode => On is
    end Text_Value;
 
    function Depth (Doc : Document; Node : Node_Id) return Natural is
-      Current : Node_Id := Node;
+      Current     : Node_Id := Node;
       Current_Idx : SML.Memory_Model.Node_Index;
-      D : Natural := 0;
+      D           : Natural := 0;
    begin
       while Current /= Null_Node and then Current /= Doc.Root_Node loop
          Current_Idx := To_Index (Current);
@@ -239,7 +245,7 @@ package body SML.DOM with SPARK_Mode => On is
          Current := To_Node_Id (Doc.Pool.Nodes (Current_Idx).Parent_Index);
          D := D + 1;
 
-         -- Safety check to prevent infinite loops
+         --  Safety check to prevent infinite loops
          if D > Max_Tree_Depth then
             exit;
          end if;
@@ -260,32 +266,35 @@ package body SML.DOM with SPARK_Mode => On is
 
    function Is_Well_Formed (Doc : Document) return Boolean is
    begin
-      return Has_Single_Root (Doc) and then
-             Is_Acyclic (Doc) and then
-             Has_Consistent_Parent_Child_Links (Doc) and then
-             Has_Valid_Depth (Doc);
+      return
+        Has_Single_Root (Doc)
+        and then Is_Acyclic (Doc)
+        and then Has_Consistent_Parent_Child_Links (Doc)
+        and then Has_Valid_Depth (Doc);
    end Is_Well_Formed;
 
    function Has_Single_Root (Doc : Document) return Boolean is
       Idx : constant SML.Memory_Model.Node_Index := To_Index (Doc.Root_Node);
    begin
-      return Doc.Root_Node /= Null_Node and then
-             SML.Memory_Model.Valid_Node_Index (Doc.Pool, Idx);
+      return
+        Doc.Root_Node /= Null_Node
+        and then SML.Memory_Model.Valid_Node_Index (Doc.Pool, Idx);
    end Has_Single_Root;
 
    function Is_Acyclic (Doc : Document) return Boolean is
       pragma Unreferenced (Doc);
    begin
-      -- Check for cycles in the tree
-      -- Simplified implementation - assumes validity
+      --  Check for cycles in the tree
+      --  Simplified implementation - assumes validity
       return True;
    end Is_Acyclic;
 
-   function Has_Consistent_Parent_Child_Links (Doc : Document) return Boolean is
+   function Has_Consistent_Parent_Child_Links (Doc : Document) return Boolean
+   is
       pragma Unreferenced (Doc);
    begin
-      -- Verify bidirectional parent-child relationships
-      -- Simplified implementation - assumes validity
+      --  Verify bidirectional parent-child relationships
+      --  Simplified implementation - assumes validity
       return True;
    end Has_Consistent_Parent_Child_Links;
 
@@ -298,8 +307,9 @@ package body SML.DOM with SPARK_Mode => On is
       return True;
    end Has_Valid_Depth;
 
-   function Has_Child (Doc : Document; Parent_Node, Child_Node : Node_Id)
-                      return Boolean is
+   function Has_Child
+     (Doc : Document; Parent_Node, Child_Node : Node_Id) return Boolean
+   is
       Current : Node_Id;
    begin
       if Parent_Node = Null_Node or else Child_Node = Null_Node then
@@ -313,7 +323,8 @@ package body SML.DOM with SPARK_Mode => On is
       Current := First_Child (Doc, Parent_Node);
 
       while Current /= Null_Node loop
-         if Current = Child_Node then  -- ✅ Direct equality works on discrete type!
+         if Current = Child_Node then
+            --  Direct equality works on discrete type!
             return True;
          end if;
 
@@ -341,11 +352,17 @@ package body SML.DOM with SPARK_Mode => On is
    function Is_Name_Char (C : Character) return Boolean is
       Code : constant Natural := Character'Pos (C);
    begin
-      -- Simplified XML name character check
-      return (Code >= Character'Pos ('A') and Code <= Character'Pos ('Z')) or else
-             (Code >= Character'Pos ('a') and Code <= Character'Pos ('z')) or else
-             (Code >= Character'Pos ('0') and Code <= Character'Pos ('9')) or else
-             C = '_' or else C = '-' or else C = '.' or else C = ':';
+      --  Simplified XML name character check
+      return
+        (Code >= Character'Pos ('A') and then Code <= Character'Pos ('Z'))
+        or else (Code >= Character'Pos ('a')
+                 and then Code <= Character'Pos ('z'))
+        or else (Code >= Character'Pos ('0')
+                 and then Code <= Character'Pos ('9'))
+        or else C = '_'
+        or else C = '-'
+        or else C = '.'
+        or else C = ':';
    end Is_Name_Char;
 
    ---------------------------------------------------------------------------
@@ -364,10 +381,10 @@ package body SML.DOM with SPARK_Mode => On is
    end Node_Count;
 
    function No_Memory_Leaks (Doc : Document) return Boolean is
-      Idx : constant SML.Memory_Model.Node_Index := To_Index (Doc.Root_Node);
    begin
-      -- Verify all allocated nodes are reachable
-      return Is_Valid_Node (Doc, Doc.Root_Node) or else Doc.Root_Node = Null_Node;
+      --  Verify all allocated nodes are reachable
+      return
+        Is_Valid_Node (Doc, Doc.Root_Node) or else Doc.Root_Node = Null_Node;
    end No_Memory_Leaks;
 
 end SML.DOM;

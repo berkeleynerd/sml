@@ -4,7 +4,9 @@
 --  SPARK Ada Implementation with Formal Verification Support
 ------------------------------------------------------------------------------
 
-package body SML.Entities with SPARK_Mode => On is
+package body SML.Entities
+  with SPARK_Mode => On
+is
 
    ---------------------------------------------------------------------------
    --  Entity Detection and Validation
@@ -20,11 +22,12 @@ package body SML.Entities with SPARK_Mode => On is
       return C = '<' or C = '>' or C = '&' or C = '"' or C = ''';
    end Needs_Entity_In_Attribute;
 
-   function Has_Valid_Entity_At (Text : String; Position : Natural)
-                                return Boolean is
-      End_Pos : Natural;
+   function Has_Valid_Entity_At
+     (Text : String; Position : Natural) return Boolean
+   is
+      End_Pos    : Natural;
       Name_Start : Natural;
-      Name_End : Natural;
+      Name_End   : Natural;
    begin
       if Position > Text'Last or else Text (Position) /= '&' then
          return False;
@@ -32,9 +35,13 @@ package body SML.Entities with SPARK_Mode => On is
 
       -- Find semicolon
       End_Pos := Position + 1;
-      while End_Pos <= Text'Last and then
-            End_Pos <= Position + 6 and then  -- Max entity length
-            Text (End_Pos) /= ';' loop
+      while End_Pos <= Text'Last
+        and then End_Pos <= Position + 6
+        and then  -- Max entity length
+                                         Text
+                                            (End_Pos)
+                                       /= ';'
+      loop
          End_Pos := End_Pos + 1;
       end loop;
 
@@ -76,19 +83,21 @@ package body SML.Entities with SPARK_Mode => On is
       return False;
    end Has_Valid_Entity_At;
 
-   function Is_Entity_Reference (Text : String; Position : Natural)
-                                return Boolean is
+   function Is_Entity_Reference
+     (Text : String; Position : Natural) return Boolean is
    begin
-      return Position <= Text'Last and then
-             Text (Position) = '&' and then
-             Has_Valid_Entity_At (Text, Position);
+      return
+        Position <= Text'Last
+        and then Text (Position) = '&'
+        and then Has_Valid_Entity_At (Text, Position);
    end Is_Entity_Reference;
 
-   function Get_Entity_At (Text : String; Position : Natural)
-                          return Standard_Entity is
-      End_Pos : Natural;
+   function Get_Entity_At
+     (Text : String; Position : Natural) return Standard_Entity
+   is
+      End_Pos    : Natural;
       Name_Start : Natural;
-      Name_End : Natural;
+      Name_End   : Natural;
    begin
       -- Find semicolon (we know it exists from precondition)
       End_Pos := Position + 1;
@@ -125,8 +134,8 @@ package body SML.Entities with SPARK_Mode => On is
       return Lt;
    end Get_Entity_At;
 
-   function Entity_Length_At (Text : String; Position : Natural)
-                             return Natural is
+   function Entity_Length_At (Text : String; Position : Natural) return Natural
+   is
       End_Pos : Natural;
    begin
       -- Find semicolon (we know it exists from precondition)
@@ -144,7 +153,7 @@ package body SML.Entities with SPARK_Mode => On is
 
    function Expanded_Length (Text : String) return Natural is
       Count : Natural := 0;
-      I : Natural := Text'First;
+      I     : Natural := Text'First;
    begin
       while I <= Text'Last loop
          if Text (I) = '&' and then Has_Valid_Entity_At (Text, I) then
@@ -161,10 +170,10 @@ package body SML.Entities with SPARK_Mode => On is
 
    function Expand_Entities (Text : String) return String is
       Result_Len : constant Natural := Expanded_Length (Text);
-      Result : String (1 .. Result_Len);
-      J : Natural := 1;
-      I : Natural := Text'First;
-      Entity : Standard_Entity;
+      Result     : String (1 .. Result_Len);
+      J          : Natural := 1;
+      I          : Natural := Text'First;
+      Entity     : Standard_Entity;
    begin
       while I <= Text'Last loop
          if Text (I) = '&' and then Has_Valid_Entity_At (Text, I) then
@@ -182,8 +191,9 @@ package body SML.Entities with SPARK_Mode => On is
       return Result;
    end Expand_Entities;
 
-   function Expand_Entities_Range (Text : String; First, Last : Natural)
-                                  return String is
+   function Expand_Entities_Range
+     (Text : String; First, Last : Natural) return String
+   is
       Substring : constant String := Text (First .. Last);
    begin
       return Expand_Entities (Substring);
@@ -206,21 +216,34 @@ package body SML.Entities with SPARK_Mode => On is
    function Get_Entity_For_Char (C : Character) return String is
    begin
       case C is
-         when '<' => return "&lt;";
-         when '>' => return "&gt;";
-         when '&' => return "&amp;";
-         when '"' => return "&quot;";
-         when ''' => return "&apos;";
-         when others => return "" & C;  -- Should not happen due to precondition
+         when '<' =>
+            return "&lt;";
+
+         when '>' =>
+            return "&gt;";
+
+         when '&' =>
+            return "&amp;";
+
+         when '"' =>
+            return "&quot;";
+
+         when ''' =>
+            return "&apos;";
+
+         when others =>
+            return "" & C;  -- Should not happen due to precondition
       end case;
    end Get_Entity_For_Char;
 
-   function Encode_Entities (Text : String; In_Attribute : Boolean := False)
-                           return String is
+   function Encode_Entities
+     (Text : String; In_Attribute : Boolean := False) return String
+   is
       -- Calculate maximum possible result size
-      Max_Len : constant Natural := Text'Length * 6;  -- Worst case: all &apos;
-      Result : String (1 .. Max_Len);
-      J : Natural := 0;
+      Max_Len    : constant Natural :=
+        Text'Length * 6;  -- Worst case: all &apos;
+      Result     : String (1 .. Max_Len);
+      J          : Natural := 0;
       Entity_Str : String (1 .. 6);
       Entity_Len : Natural;
    begin
@@ -230,18 +253,23 @@ package body SML.Entities with SPARK_Mode => On is
                when '<' =>
                   Entity_Str := "&lt;  ";
                   Entity_Len := 4;
+
                when '>' =>
                   Entity_Str := "&gt;  ";
                   Entity_Len := 4;
+
                when '&' =>
                   Entity_Str := "&amp; ";
                   Entity_Len := 5;
+
                when '"' =>
                   Entity_Str := "&quot;";
                   Entity_Len := 6;
+
                when ''' =>
                   Entity_Str := "&apos;";
                   Entity_Len := 6;
+
                when others =>
                   Entity_Str (1) := Text (I);
                   Entity_Len := 1;
@@ -250,17 +278,21 @@ package body SML.Entities with SPARK_Mode => On is
             Result (J + 1 .. J + Entity_Len) := Entity_Str (1 .. Entity_Len);
             J := J + Entity_Len;
 
-         elsif not In_Attribute and then Needs_Entity_In_Content (Text (I)) then
+         elsif not In_Attribute and then Needs_Entity_In_Content (Text (I))
+         then
             case Text (I) is
                when '<' =>
                   Entity_Str := "&lt;  ";
                   Entity_Len := 4;
+
                when '>' =>
                   Entity_Str := "&gt;  ";
                   Entity_Len := 4;
+
                when '&' =>
                   Entity_Str := "&amp; ";
                   Entity_Len := 5;
+
                when others =>
                   Entity_Str (1) := Text (I);
                   Entity_Len := 1;
@@ -278,19 +310,21 @@ package body SML.Entities with SPARK_Mode => On is
       return Result (1 .. J);
    end Encode_Entities;
 
-   function Is_Entity_Safe (Text : String; In_Attribute : Boolean)
-                          return Boolean is
+   function Is_Entity_Safe
+     (Text : String; In_Attribute : Boolean) return Boolean is
    begin
       for I in Text'Range loop
          if In_Attribute then
             if Needs_Entity_In_Attribute (Text (I)) then
-               if Text (I) /= '&' or else not Has_Valid_Entity_At (Text, I) then
+               if Text (I) /= '&' or else not Has_Valid_Entity_At (Text, I)
+               then
                   return False;
                end if;
             end if;
          else
             if Needs_Entity_In_Content (Text (I)) then
-               if Text (I) /= '&' or else not Has_Valid_Entity_At (Text, I) then
+               if Text (I) /= '&' or else not Has_Valid_Entity_At (Text, I)
+               then
                   return False;
                end if;
             end if;
@@ -305,7 +339,7 @@ package body SML.Entities with SPARK_Mode => On is
    ---------------------------------------------------------------------------
 
    function Check_Entities (Text : String) return Entity_Check_Result is
-      I : Natural := Text'First;
+      I       : Natural := Text'First;
       End_Pos : Natural;
    begin
       while I <= Text'Last loop
@@ -314,38 +348,46 @@ package body SML.Entities with SPARK_Mode => On is
             End_Pos := I + 1;
 
             -- Look for semicolon within reasonable distance
-            while End_Pos <= Text'Last and then
-                  End_Pos <= I + 10 and then  -- Reasonable limit
-                  Text (End_Pos) /= ';' loop
+            while End_Pos <= Text'Last
+              and then End_Pos <= I + 10
+              and then  -- Reasonable limit
+                                              Text
+                                                 (End_Pos)
+                                            /= ';'
+            loop
                End_Pos := End_Pos + 1;
             end loop;
 
             if End_Pos > Text'Last or else End_Pos > I + 10 then
                -- No semicolon found
-               return (Valid => False,
-                      Error_Kind => Unterminated_Entity,
-                      Error_Position => I);
+               return
+                 (Valid          => False,
+                  Error_Kind     => Unterminated_Entity,
+                  Error_Position => I);
             end if;
 
             if Text (End_Pos) /= ';' then
                -- No semicolon within reasonable distance
-               return (Valid => False,
-                      Error_Kind => Unterminated_Entity,
-                      Error_Position => I);
+               return
+                 (Valid          => False,
+                  Error_Kind     => Unterminated_Entity,
+                  Error_Position => I);
             end if;
 
             if End_Pos = I + 1 then
                -- Empty entity &;
-               return (Valid => False,
-                      Error_Kind => Bare_Ampersand,
-                      Error_Position => I);
+               return
+                 (Valid          => False,
+                  Error_Kind     => Bare_Ampersand,
+                  Error_Position => I);
             end if;
 
             -- Check if it's a valid entity
             if not Has_Valid_Entity_At (Text, I) then
-               return (Valid => False,
-                      Error_Kind => Invalid_Entity_Name,
-                      Error_Position => I);
+               return
+                 (Valid          => False,
+                  Error_Kind     => Invalid_Entity_Name,
+                  Error_Position => I);
             end if;
 
             I := End_Pos + 1;
@@ -354,9 +396,8 @@ package body SML.Entities with SPARK_Mode => On is
          end if;
       end loop;
 
-      return (Valid => True,
-             Error_Kind => No_Error,
-             Error_Position => Text'First);
+      return
+        (Valid => True, Error_Kind => No_Error, Error_Position => Text'First);
    end Check_Entities;
 
    function All_Entities_Valid (Text : String) return Boolean is
@@ -382,7 +423,7 @@ package body SML.Entities with SPARK_Mode => On is
 
    function Count_Entity_References (Text : String) return Natural is
       Count : Natural := 0;
-      I : Natural := Text'First;
+      I     : Natural := Text'First;
    begin
       while I <= Text'Last loop
          if Text (I) = '&' and then Has_Valid_Entity_At (Text, I) then
@@ -396,8 +437,9 @@ package body SML.Entities with SPARK_Mode => On is
       return Count;
    end Count_Entity_References;
 
-   function Expansion_Preserves_Content (Original, Expanded : String)
-                                        return Boolean is
+   function Expansion_Preserves_Content
+     (Original, Expanded : String) return Boolean
+   is
       pragma Unreferenced (Original, Expanded);
    begin
       -- This is a ghost function for specification
@@ -405,8 +447,9 @@ package body SML.Entities with SPARK_Mode => On is
       return True;
    end Expansion_Preserves_Content;
 
-   function Encoding_Is_Reversible (Original : String;
-                                    In_Attribute : Boolean) return Boolean is
+   function Encoding_Is_Reversible
+     (Original : String; In_Attribute : Boolean) return Boolean
+   is
       Encoded : constant String := Encode_Entities (Original, In_Attribute);
       Decoded : constant String := Expand_Entities (Encoded);
    begin
@@ -429,8 +472,9 @@ package body SML.Entities with SPARK_Mode => On is
       null;  -- Proof by SMT solver
    end Lemma_Encoding_Is_Safe;
 
-   procedure Lemma_Double_Encoding_Idempotent (Text : String;
-                                               In_Attribute : Boolean) is
+   procedure Lemma_Double_Encoding_Idempotent
+     (Text : String; In_Attribute : Boolean)
+   is
       pragma Unreferenced (Text, In_Attribute);
    begin
       null;  -- Proof by SMT solver

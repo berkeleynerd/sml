@@ -4,24 +4,26 @@
 --  SPARK Ada Implementation
 ------------------------------------------------------------------------------
 
-package body SML.Memory_Model with SPARK_Mode => On is
+package body SML.Memory_Model
+  with SPARK_Mode => On
+is
 
    --  Allocation procedures (SPARK-compatible)
 
-   procedure Allocate_Node (Pool : in out Arena_Pool;
-                            Kind : Node_Kind;
-                            Index : out Node_Index) is
+   procedure Allocate_Node
+     (Pool : in out Arena_Pool; Kind : Node_Kind; Index : out Node_Index) is
+      pragma Unreferenced (Kind);
    begin
       Index := Pool.Next_Node_Index;
-      -- Node discriminant is set during array initialization
-      -- Individual assignment after allocation if needed
+      --  Node discriminant is set during array initialization
+      --  Individual assignment after allocation if needed
       Pool.Next_Node_Index := Pool.Next_Node_Index + 1;
       Pool.Allocated_Nodes := Pool.Allocated_Nodes + 1;
    end Allocate_Node;
 
-   procedure Allocate_String (Pool : in out Arena_Pool;
-                              Text : String;
-                              Ref : out String_Ref) is
+   procedure Allocate_String
+     (Pool : in out Arena_Pool; Text : String; Ref : out String_Ref)
+   is
       Start_Pos : constant String_Index := Pool.Next_String_Pos;
    begin
       Ref := (Start => Start_Pos, Length => Text'Length);
@@ -42,8 +44,8 @@ package body SML.Memory_Model with SPARK_Mode => On is
       return Pool.Next_Node_Index <= Max_Document_Nodes;
    end Can_Allocate_Node;
 
-   function Can_Allocate_String (Pool : Arena_Pool;
-                                 Size : Natural) return Boolean is
+   function Can_Allocate_String
+     (Pool : Arena_Pool; Size : Natural) return Boolean is
    begin
       return Size <= Max_String_Storage - Pool.Next_String_Pos + 1;
    end Can_Allocate_String;
@@ -88,9 +90,8 @@ package body SML.Memory_Model with SPARK_Mode => On is
 
    --  String operations
 
-   procedure Store_String (Pool : in out Arena_Pool;
-                          Ref : String_Ref;
-                          Text : String) is
+   procedure Store_String
+     (Pool : in out Arena_Pool; Ref : String_Ref; Text : String) is
    begin
       if Text'Length > 0 and then Ref.Start > 0 then
          for I in 1 .. Text'Length loop
@@ -113,19 +114,20 @@ package body SML.Memory_Model with SPARK_Mode => On is
       return Result;
    end Get_String;
 
-   function Valid_String_Ref (Pool : Arena_Pool;
-                              Ref : String_Ref) return Boolean is
+   function Valid_String_Ref
+     (Pool : Arena_Pool; Ref : String_Ref) return Boolean is
    begin
-      return Ref.Length = 0 or else
-             (Ref.Start > 0 and then
-              Ref.Start + Ref.Length - 1 <= Pool.Next_String_Pos - 1);
+      return
+        Ref.Length = 0
+        or else (Ref.Start > 0
+                 and then Ref.Start + Ref.Length - 1
+                          <= Pool.Next_String_Pos - 1);
    end Valid_String_Ref;
 
    --  Ghost functions
 
-   function String_Stored (Pool : Arena_Pool;
-                           Ref : String_Ref;
-                           Text : String) return Boolean is
+   function String_Stored
+     (Pool : Arena_Pool; Ref : String_Ref; Text : String) return Boolean is
    begin
       if Text'Length /= Ref.Length then
          return False;
@@ -140,19 +142,20 @@ package body SML.Memory_Model with SPARK_Mode => On is
       return True;
    end String_Stored;
 
-   function Memory_Bounded_By_Input (Pool : Arena_Pool;
-                                     Input_Size : Natural) return Boolean is
+   function Memory_Bounded_By_Input
+     (Pool : Arena_Pool; Input_Size : Natural) return Boolean is
    begin
       return Memory_Used (Pool) <= Input_Size * Memory_Expansion_Factor;
    end Memory_Bounded_By_Input;
 
    function Arena_Invariants (Pool : Arena_Pool) return Boolean is
    begin
-      return Pool.Next_Node_Index >= 1 and then
-             Pool.Next_String_Pos >= 1 and then
-             Pool.Allocated_Nodes < Pool.Next_Node_Index and then
-             Pool.Allocated_Bytes < Pool.Next_String_Pos and then
-             Pool.High_Water_Mark >= Pool.Allocated_Bytes;
+      return
+        Pool.Next_Node_Index >= 1
+        and then Pool.Next_String_Pos >= 1
+        and then Pool.Allocated_Nodes < Pool.Next_Node_Index
+        and then Pool.Allocated_Bytes < Pool.Next_String_Pos
+        and then Pool.High_Water_Mark >= Pool.Allocated_Bytes;
    end Arena_Invariants;
 
    --  Node access
@@ -162,15 +165,14 @@ package body SML.Memory_Model with SPARK_Mode => On is
       return Pool.Nodes (Index);
    end Get_Node;
 
-   procedure Set_Node (Pool : in out Arena_Pool;
-                      Index : Node_Index;
-                      N : Node) is
+   procedure Set_Node (Pool : in out Arena_Pool; Index : Node_Index; N : Node)
+   is
    begin
       Pool.Nodes (Index) := N;
    end Set_Node;
 
-   function Valid_Node_Index (Pool : Arena_Pool;
-                              Index : Node_Index) return Boolean is
+   function Valid_Node_Index
+     (Pool : Arena_Pool; Index : Node_Index) return Boolean is
    begin
       return Index > No_Node_Index and then Index < Pool.Next_Node_Index;
    end Valid_Node_Index;
@@ -195,8 +197,9 @@ package body SML.Memory_Model with SPARK_Mode => On is
       null;
    end Lemma_Memory_Monotonic;
 
-   procedure Lemma_Reset_Deallocates_All (Pool_Before : Arena_Pool;
-                                          Pool_After : Arena_Pool) is
+   procedure Lemma_Reset_Deallocates_All
+     (Pool_Before : Arena_Pool; Pool_After : Arena_Pool)
+   is
       pragma Unreferenced (Pool_Before, Pool_After);
    begin
       null;

@@ -6,11 +6,13 @@
 
 with Interfaces; use Interfaces;
 
-package body SML.UTF8 with SPARK_Mode => On is
+package body SML.UTF8
+  with SPARK_Mode => On
+is
 
    --  Helper function for bitwise AND on Natural values
-   function Bitwise_And (Left : Natural; Right : Unsigned_8) return Natural is
-     (Natural (Unsigned_8 (Left) and Right))
+   function Bitwise_And (Left : Natural; Right : Unsigned_8) return Natural
+   is (Natural (Unsigned_8 (Left) and Right))
    with Inline;
 
    ---------------------------------------------------------------------------
@@ -38,9 +40,10 @@ package body SML.UTF8 with SPARK_Mode => On is
    --  UTF-8 Sequence Length Detection
    ---------------------------------------------------------------------------
 
-   function UTF8_Sequence_Length (Text : String; Position : Natural)
-                                 return Natural is
-      C : Character;
+   function UTF8_Sequence_Length
+     (Text : String; Position : Natural) return Natural
+   is
+      C    : Character;
       Byte : Natural;
    begin
       if Position > Text'Last then
@@ -71,8 +74,9 @@ package body SML.UTF8 with SPARK_Mode => On is
 
    function Is_Valid_Code_Point (Code : Natural) return Boolean is
    begin
-      return Code <= 16#10FFFF# and then
-             Code not in 16#D800# .. 16#DFFF#;  -- Not surrogate
+      return
+        Code <= 16#10FFFF#
+        and then Code not in 16#D800# .. 16#DFFF#;  -- Not surrogate
    end Is_Valid_Code_Point;
 
    ---------------------------------------------------------------------------
@@ -80,9 +84,9 @@ package body SML.UTF8 with SPARK_Mode => On is
    ---------------------------------------------------------------------------
 
    function Is_Valid_UTF8_At (Text : String; I : Natural) return Boolean is
-      Len : Natural;
+      Len                        : Natural;
       Byte1, Byte2, Byte3, Byte4 : Natural;
-      Code : Natural;
+      Code                       : Natural;
    begin
       if I > Text'Last then
          return False;
@@ -126,19 +130,22 @@ package body SML.UTF8 with SPARK_Mode => On is
             Byte3 := Character'Pos (Text (I + 2));
 
             -- Check continuation bytes
-            if Byte2 not in 16#80# .. 16#BF# or else
-               Byte3 not in 16#80# .. 16#BF# then
+            if Byte2 not in 16#80# .. 16#BF#
+              or else Byte3 not in 16#80# .. 16#BF#
+            then
                return False;
             end if;
 
             -- Extract code point
-            Code := Bitwise_And (Byte1, 16#0F#) * 16#1000# +
-                   Bitwise_And (Byte2, 16#3F#) * 16#40# +
-                   Bitwise_And (Byte3, 16#3F#);
+            Code :=
+              Bitwise_And (Byte1, 16#0F#) * 16#1000#
+              + Bitwise_And (Byte2, 16#3F#) * 16#40#
+              + Bitwise_And (Byte3, 16#3F#);
 
             -- Check for overlong encoding
             if Byte1 = 16#E0# and then Byte2 < 16#A0# then
                return False;  -- Would encode < U+0800
+
             end if;
 
             -- Check for surrogate halves
@@ -154,21 +161,24 @@ package body SML.UTF8 with SPARK_Mode => On is
             Byte4 := Character'Pos (Text (I + 3));
 
             -- Check continuation bytes
-            if Byte2 not in 16#80# .. 16#BF# or else
-               Byte3 not in 16#80# .. 16#BF# or else
-               Byte4 not in 16#80# .. 16#BF# then
+            if Byte2 not in 16#80# .. 16#BF#
+              or else Byte3 not in 16#80# .. 16#BF#
+              or else Byte4 not in 16#80# .. 16#BF#
+            then
                return False;
             end if;
 
             -- Extract code point
-            Code := Bitwise_And (Byte1, 16#07#) * 16#40000# +
-                   Bitwise_And (Byte2, 16#3F#) * 16#1000# +
-                   Bitwise_And (Byte3, 16#3F#) * 16#40# +
-                   Bitwise_And (Byte4, 16#3F#);
+            Code :=
+              Bitwise_And (Byte1, 16#07#) * 16#40000#
+              + Bitwise_And (Byte2, 16#3F#) * 16#1000#
+              + Bitwise_And (Byte3, 16#3F#) * 16#40#
+              + Bitwise_And (Byte4, 16#3F#);
 
             -- Check for overlong encoding
             if Byte1 = 16#F0# and then Byte2 < 16#90# then
                return False;  -- Would encode < U+10000
+
             end if;
 
             -- Check for out-of-range code points
@@ -184,7 +194,7 @@ package body SML.UTF8 with SPARK_Mode => On is
    end Is_Valid_UTF8_At;
 
    function Is_Valid_UTF8 (Text : String) return Boolean is
-      I : Natural := Text'First;
+      I   : Natural := Text'First;
       Len : Natural;
    begin
       while I <= Text'Last loop
@@ -203,9 +213,10 @@ package body SML.UTF8 with SPARK_Mode => On is
       return True;
    end Is_Valid_UTF8;
 
-   function Is_Valid_UTF8_Range (Text : String; First, Last : Natural)
-                                return Boolean is
-      I : Natural := First;
+   function Is_Valid_UTF8_Range
+     (Text : String; First, Last : Natural) return Boolean
+   is
+      I   : Natural := First;
       Len : Natural;
    begin
       while I <= Last loop
@@ -228,8 +239,9 @@ package body SML.UTF8 with SPARK_Mode => On is
    --  UTF-8 Navigation Functions
    ---------------------------------------------------------------------------
 
-   function Next_UTF8_Position (Text : String; Position : Natural)
-                               return Natural is
+   function Next_UTF8_Position
+     (Text : String; Position : Natural) return Natural
+   is
       Len : Natural;
    begin
       Len := UTF8_Sequence_Length (Text, Position);
@@ -242,8 +254,9 @@ package body SML.UTF8 with SPARK_Mode => On is
       end if;
    end Next_UTF8_Position;
 
-   function Previous_UTF8_Position (Text : String; Position : Natural)
-                                   return Natural is
+   function Previous_UTF8_Position
+     (Text : String; Position : Natural) return Natural
+   is
       Pos : Natural := Position - 1;
    begin
       -- Move back to find start of UTF-8 sequence
@@ -256,8 +269,8 @@ package body SML.UTF8 with SPARK_Mode => On is
 
    function UTF8_Length (Text : String) return Natural is
       Count : Natural := 0;
-      I : Natural := Text'First;
-      Len : Natural;
+      I     : Natural := Text'First;
+      Len   : Natural;
    begin
       while I <= Text'Last loop
          Count := Count + 1;
@@ -279,25 +292,27 @@ package body SML.UTF8 with SPARK_Mode => On is
    ---------------------------------------------------------------------------
 
    function Validate_UTF8 (Text : String) return UTF8_Validation_Result is
-      I : Natural := Text'First;
-      Len : Natural;
+      I                          : Natural := Text'First;
+      Len                        : Natural;
       Byte1, Byte2, Byte3, Byte4 : Natural;
-      Code : Natural;
+      Code                       : Natural;
    begin
       while I <= Text'Last loop
          Len := UTF8_Sequence_Length (Text, I);
 
          if Len = 0 then
-            return (Valid => False,
-                   Error_Kind => Invalid_Start_Byte,
-                   Error_Position => I);
+            return
+              (Valid          => False,
+               Error_Kind     => Invalid_Start_Byte,
+               Error_Position => I);
          end if;
 
          -- Check if sequence fits in string
          if I + Len - 1 > Text'Last then
-            return (Valid => False,
-                   Error_Kind => Truncated_Sequence,
-                   Error_Position => I);
+            return
+              (Valid          => False,
+               Error_Kind     => Truncated_Sequence,
+               Error_Position => I);
          end if;
 
          Byte1 := Character'Pos (Text (I));
@@ -311,15 +326,17 @@ package body SML.UTF8 with SPARK_Mode => On is
                Byte2 := Character'Pos (Text (I + 1));
 
                if Byte2 not in 16#80# .. 16#BF# then
-                  return (Valid => False,
-                         Error_Kind => Invalid_Continuation,
-                         Error_Position => I + 1);
+                  return
+                    (Valid          => False,
+                     Error_Kind     => Invalid_Continuation,
+                     Error_Position => I + 1);
                end if;
 
                if Byte1 < 16#C2# then
-                  return (Valid => False,
-                         Error_Kind => Overlong_Encoding,
-                         Error_Position => I);
+                  return
+                    (Valid          => False,
+                     Error_Kind     => Overlong_Encoding,
+                     Error_Position => I);
                end if;
 
             when 3 =>
@@ -327,31 +344,36 @@ package body SML.UTF8 with SPARK_Mode => On is
                Byte3 := Character'Pos (Text (I + 2));
 
                if Byte2 not in 16#80# .. 16#BF# then
-                  return (Valid => False,
-                         Error_Kind => Invalid_Continuation,
-                         Error_Position => I + 1);
+                  return
+                    (Valid          => False,
+                     Error_Kind     => Invalid_Continuation,
+                     Error_Position => I + 1);
                end if;
 
                if Byte3 not in 16#80# .. 16#BF# then
-                  return (Valid => False,
-                         Error_Kind => Invalid_Continuation,
-                         Error_Position => I + 2);
+                  return
+                    (Valid          => False,
+                     Error_Kind     => Invalid_Continuation,
+                     Error_Position => I + 2);
                end if;
 
-               Code := Bitwise_And (Byte1, 16#0F#) * 16#1000# +
-                      Bitwise_And (Byte2, 16#3F#) * 16#40# +
-                      Bitwise_And (Byte3, 16#3F#);
+               Code :=
+                 Bitwise_And (Byte1, 16#0F#) * 16#1000#
+                 + Bitwise_And (Byte2, 16#3F#) * 16#40#
+                 + Bitwise_And (Byte3, 16#3F#);
 
                if Byte1 = 16#E0# and then Byte2 < 16#A0# then
-                  return (Valid => False,
-                         Error_Kind => Overlong_Encoding,
-                         Error_Position => I);
+                  return
+                    (Valid          => False,
+                     Error_Kind     => Overlong_Encoding,
+                     Error_Position => I);
                end if;
 
                if Code in 16#D800# .. 16#DFFF# then
-                  return (Valid => False,
-                         Error_Kind => Surrogate_Half,
-                         Error_Position => I);
+                  return
+                    (Valid          => False,
+                     Error_Kind     => Surrogate_Half,
+                     Error_Position => I);
                end if;
 
             when 4 =>
@@ -360,63 +382,70 @@ package body SML.UTF8 with SPARK_Mode => On is
                Byte4 := Character'Pos (Text (I + 3));
 
                if Byte2 not in 16#80# .. 16#BF# then
-                  return (Valid => False,
-                         Error_Kind => Invalid_Continuation,
-                         Error_Position => I + 1);
+                  return
+                    (Valid          => False,
+                     Error_Kind     => Invalid_Continuation,
+                     Error_Position => I + 1);
                end if;
 
                if Byte3 not in 16#80# .. 16#BF# then
-                  return (Valid => False,
-                         Error_Kind => Invalid_Continuation,
-                         Error_Position => I + 2);
+                  return
+                    (Valid          => False,
+                     Error_Kind     => Invalid_Continuation,
+                     Error_Position => I + 2);
                end if;
 
                if Byte4 not in 16#80# .. 16#BF# then
-                  return (Valid => False,
-                         Error_Kind => Invalid_Continuation,
-                         Error_Position => I + 3);
+                  return
+                    (Valid          => False,
+                     Error_Kind     => Invalid_Continuation,
+                     Error_Position => I + 3);
                end if;
 
-               Code := Bitwise_And (Byte1, 16#07#) * 16#40000# +
-                      Bitwise_And (Byte2, 16#3F#) * 16#1000# +
-                      Bitwise_And (Byte3, 16#3F#) * 16#40# +
-                      Bitwise_And (Byte4, 16#3F#);
+               Code :=
+                 Bitwise_And (Byte1, 16#07#) * 16#40000#
+                 + Bitwise_And (Byte2, 16#3F#) * 16#1000#
+                 + Bitwise_And (Byte3, 16#3F#) * 16#40#
+                 + Bitwise_And (Byte4, 16#3F#);
 
                if Byte1 = 16#F0# and then Byte2 < 16#90# then
-                  return (Valid => False,
-                         Error_Kind => Overlong_Encoding,
-                         Error_Position => I);
+                  return
+                    (Valid          => False,
+                     Error_Kind     => Overlong_Encoding,
+                     Error_Position => I);
                end if;
 
                if Code > 16#10FFFF# then
-                  return (Valid => False,
-                         Error_Kind => Out_Of_Range,
-                         Error_Position => I);
+                  return
+                    (Valid          => False,
+                     Error_Kind     => Out_Of_Range,
+                     Error_Position => I);
                end if;
 
             when others =>
-               return (Valid => False,
-                      Error_Kind => Invalid_Start_Byte,
-                      Error_Position => I);
+               return
+                 (Valid          => False,
+                  Error_Kind     => Invalid_Start_Byte,
+                  Error_Position => I);
          end case;
 
          I := I + Len;
       end loop;
 
-      return (Valid => True,
-             Error_Kind => No_Error,
-             Error_Position => Text'First);
+      return
+        (Valid => True, Error_Kind => No_Error, Error_Position => Text'First);
    end Validate_UTF8;
 
    ---------------------------------------------------------------------------
    --  UTF-8 Code Point Extraction
    ---------------------------------------------------------------------------
 
-   function Get_Code_Point (Text : String; Position : Natural)
-                          return UTF8_Code_Point is
-      Len : Natural;
+   function Get_Code_Point
+     (Text : String; Position : Natural) return UTF8_Code_Point
+   is
+      Len                        : Natural;
       Byte1, Byte2, Byte3, Byte4 : Natural;
-      Code : UTF8_Code_Point;
+      Code                       : UTF8_Code_Point;
    begin
       Len := UTF8_Sequence_Length (Text, Position);
       Byte1 := Character'Pos (Text (Position));
@@ -427,24 +456,27 @@ package body SML.UTF8 with SPARK_Mode => On is
 
          when 2 =>
             Byte2 := Character'Pos (Text (Position + 1));
-            Code := Bitwise_And (Byte1, 16#1F#) * 16#40# +
-                   Bitwise_And (Byte2, 16#3F#);
+            Code :=
+              Bitwise_And (Byte1, 16#1F#) * 16#40#
+              + Bitwise_And (Byte2, 16#3F#);
 
          when 3 =>
             Byte2 := Character'Pos (Text (Position + 1));
             Byte3 := Character'Pos (Text (Position + 2));
-            Code := Bitwise_And (Byte1, 16#0F#) * 16#1000# +
-                   Bitwise_And (Byte2, 16#3F#) * 16#40# +
-                   Bitwise_And (Byte3, 16#3F#);
+            Code :=
+              Bitwise_And (Byte1, 16#0F#) * 16#1000#
+              + Bitwise_And (Byte2, 16#3F#) * 16#40#
+              + Bitwise_And (Byte3, 16#3F#);
 
          when 4 =>
             Byte2 := Character'Pos (Text (Position + 1));
             Byte3 := Character'Pos (Text (Position + 2));
             Byte4 := Character'Pos (Text (Position + 3));
-            Code := Bitwise_And (Byte1, 16#07#) * 16#40000# +
-                   Bitwise_And (Byte2, 16#3F#) * 16#1000# +
-                   Bitwise_And (Byte3, 16#3F#) * 16#40# +
-                   Bitwise_And (Byte4, 16#3F#);
+            Code :=
+              Bitwise_And (Byte1, 16#07#) * 16#40000#
+              + Bitwise_And (Byte2, 16#3F#) * 16#1000#
+              + Bitwise_And (Byte3, 16#3F#) * 16#40#
+              + Bitwise_And (Byte4, 16#3F#);
 
          when others =>
             Code := 16#FFFD#;  -- Replacement character
@@ -459,40 +491,47 @@ package body SML.UTF8 with SPARK_Mode => On is
 
    function Is_Valid_XML_Char (Code : UTF8_Code_Point) return Boolean is
    begin
-      return Code = 16#09# or Code = 16#0A# or Code = 16#0D# or
-            (Code >= 16#20# and Code <= 16#D7FF#) or
-            (Code >= 16#E000# and Code <= 16#FFFD#) or
-            (Code >= 16#10000# and Code <= 16#10FFFF#);
+      return
+        Code = 16#09#
+        or Code = 16#0A#
+        or Code = 16#0D#
+        or (Code >= 16#20# and Code <= 16#D7FF#)
+        or (Code >= 16#E000# and Code <= 16#FFFD#)
+        or (Code >= 16#10000# and Code <= 16#10FFFF#);
    end Is_Valid_XML_Char;
 
    function Is_Valid_Name_Start_Char (Code : UTF8_Code_Point) return Boolean is
    begin
       -- Simplified XML name start characters
-      return (Code >= Character'Pos ('A') and Code <= Character'Pos ('Z')) or
-            (Code >= Character'Pos ('a') and Code <= Character'Pos ('z')) or
-            Code = Character'Pos ('_') or Code = Character'Pos (':') or
-            (Code >= 16#C0# and Code <= 16#D6#) or
-            (Code >= 16#D8# and Code <= 16#F6#) or
-            (Code >= 16#F8# and Code <= 16#2FF#) or
-            (Code >= 16#370# and Code <= 16#37D#) or
-            (Code >= 16#37F# and Code <= 16#1FFF#) or
-            (Code >= 16#200C# and Code <= 16#200D#) or
-            (Code >= 16#2070# and Code <= 16#218F#) or
-            (Code >= 16#2C00# and Code <= 16#2FEF#) or
-            (Code >= 16#3001# and Code <= 16#D7FF#) or
-            (Code >= 16#F900# and Code <= 16#FDCF#) or
-            (Code >= 16#FDF0# and Code <= 16#FFFD#) or
-            (Code >= 16#10000# and Code <= 16#EFFFF#);
+      return
+        (Code >= Character'Pos ('A') and Code <= Character'Pos ('Z'))
+        or (Code >= Character'Pos ('a') and Code <= Character'Pos ('z'))
+        or Code = Character'Pos ('_')
+        or Code = Character'Pos (':')
+        or (Code >= 16#C0# and Code <= 16#D6#)
+        or (Code >= 16#D8# and Code <= 16#F6#)
+        or (Code >= 16#F8# and Code <= 16#2FF#)
+        or (Code >= 16#370# and Code <= 16#37D#)
+        or (Code >= 16#37F# and Code <= 16#1FFF#)
+        or (Code >= 16#200C# and Code <= 16#200D#)
+        or (Code >= 16#2070# and Code <= 16#218F#)
+        or (Code >= 16#2C00# and Code <= 16#2FEF#)
+        or (Code >= 16#3001# and Code <= 16#D7FF#)
+        or (Code >= 16#F900# and Code <= 16#FDCF#)
+        or (Code >= 16#FDF0# and Code <= 16#FFFD#)
+        or (Code >= 16#10000# and Code <= 16#EFFFF#);
    end Is_Valid_Name_Start_Char;
 
    function Is_Valid_Name_Char (Code : UTF8_Code_Point) return Boolean is
    begin
-      return Is_Valid_Name_Start_Char (Code) or
-            Code = Character'Pos ('-') or Code = Character'Pos ('.') or
-            (Code >= Character'Pos ('0') and Code <= Character'Pos ('9')) or
-            Code = 16#B7# or
-            (Code >= 16#0300# and Code <= 16#036F#) or
-            (Code >= 16#203F# and Code <= 16#2040#);
+      return
+        Is_Valid_Name_Start_Char (Code)
+        or Code = Character'Pos ('-')
+        or Code = Character'Pos ('.')
+        or (Code >= Character'Pos ('0') and Code <= Character'Pos ('9'))
+        or Code = 16#B7#
+        or (Code >= 16#0300# and Code <= 16#036F#)
+        or (Code >= 16#203F# and Code <= 16#2040#);
    end Is_Valid_Name_Char;
 
    ---------------------------------------------------------------------------
@@ -506,13 +545,12 @@ package body SML.UTF8 with SPARK_Mode => On is
 
    function Is_XML_Whitespace_Code (Code : UTF8_Code_Point) return Boolean is
    begin
-      return Code = 16#20# or Code = 16#09# or
-            Code = 16#0D# or Code = 16#0A#;
+      return Code = 16#20# or Code = 16#09# or Code = 16#0D# or Code = 16#0A#;
    end Is_XML_Whitespace_Code;
 
    function Normalize_Whitespace (Text : String) return String is
-      Result : String (1 .. Text'Length);
-      J : Natural := 0;
+      Result   : String (1 .. Text'Length);
+      J        : Natural := 0;
       In_Space : Boolean := False;
    begin
       for I in Text'Range loop
@@ -534,7 +572,7 @@ package body SML.UTF8 with SPARK_Mode => On is
 
    function Trim_Whitespace (Text : String) return String is
       First : Natural := Text'First;
-      Last : Natural := Text'Last;
+      Last  : Natural := Text'Last;
    begin
       -- Find first non-whitespace
       while First <= Last and then Is_XML_Whitespace (Text (First)) loop
@@ -576,16 +614,18 @@ package body SML.UTF8 with SPARK_Mode => On is
 
    function Is_Trimmed (Text : String) return Boolean is
    begin
-      return Text'Length = 0 or else
-            (not Is_XML_Whitespace (Text (Text'First)) and then
-             not Is_XML_Whitespace (Text (Text'Last)));
+      return
+        Text'Length = 0
+        or else (not Is_XML_Whitespace (Text (Text'First))
+                 and then not Is_XML_Whitespace (Text (Text'Last)));
    end Is_Trimmed;
 
-   function Count_UTF8_Sequences (Text : String; First, Last : Natural)
-                                 return Natural is
+   function Count_UTF8_Sequences
+     (Text : String; First, Last : Natural) return Natural
+   is
       Count : Natural := 0;
-      I : Natural := First;
-      Len : Natural;
+      I     : Natural := First;
+      Len   : Natural;
    begin
       while I <= Last loop
          Count := Count + 1;
@@ -605,8 +645,7 @@ package body SML.UTF8 with SPARK_Mode => On is
    --  Lemmas for UTF-8 Properties
    ---------------------------------------------------------------------------
 
-   procedure Lemma_Substring_Valid
-     (Text : String; First, Last : Natural) is
+   procedure Lemma_Substring_Valid (Text : String; First, Last : Natural) is
    begin
       null;  -- Proof by SMT solver
    end Lemma_Substring_Valid;
