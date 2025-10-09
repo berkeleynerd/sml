@@ -17,4 +17,10 @@ project Examples is
       for Executable ("parse_and_traverse.adb") use "parse_and_traverse";
    end Builder;
 
+   package Linker is
+      for Linker_Options use (
+         "-L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib",
+         "-Wl,-stack_size,0x2000000");  -- 32MB stack for examples
+   end Linker;
+
 end Examples;

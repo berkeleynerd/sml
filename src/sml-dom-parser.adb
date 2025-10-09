@@ -19,6 +19,13 @@ package body SML.DOM.Parser with SPARK_Mode => On is
    --  Maximum tag name length (for stack allocation)
    Max_Tag_Name_Length : constant := 100;
 
+   --  Exception for carrying parse error information
+   Parse_Failed : exception;
+
+   --  Package-level variable to store error info when exception is raised
+   --  (Ada doesn't allow data in exceptions, so we use this workaround)
+   Last_Parse_Error : Parse_Error;
+
    --  Element stack entry for tracking open tags
    type Element_Stack_Entry is record
       Name : String (1 .. Max_Tag_Name_Length);
@@ -559,6 +566,9 @@ package body SML.DOM.Parser with SPARK_Mode => On is
       begin
          Had_Error := False;
 
+         --  Initialize arena pool
+         SML.Memory_Model.Reset_Arena (Doc.Pool);
+
          --  Initialize parser context
          Ctx.Position := Input_Str'First;
          Ctx.Line := 1;
@@ -602,7 +612,7 @@ package body SML.DOM.Parser with SPARK_Mode => On is
               Position => Ctx.Position,
               Line => Ctx.Line,
               Column => Ctx.Column,
-              Message => "Out of memory for nodes");
+              Message => "Node limit reached. Increase stack or see SML.Memory_Model");
             return;
          end if;
 
@@ -625,7 +635,7 @@ package body SML.DOM.Parser with SPARK_Mode => On is
                  Position => Ctx.Position,
                  Line => Ctx.Line,
                  Column => Ctx.Column,
-                 Message => "Out of memory for strings");
+                 Message => "String limit reached. Increase stack or see SML.Memory_Model");
                return;
             end if;
 
@@ -775,7 +785,7 @@ package body SML.DOM.Parser with SPARK_Mode => On is
                           Position => Ctx.Position,
                           Line => Ctx.Line,
                           Column => Ctx.Column,
-                          Message => "Out of memory for nodes");
+                          Message => "Node limit reached. Increase stack or see SML.Memory_Model");
                         return;
                      end if;
 
@@ -800,7 +810,7 @@ package body SML.DOM.Parser with SPARK_Mode => On is
                              Position => Ctx.Position,
                              Line => Ctx.Line,
                              Column => Ctx.Column,
-                             Message => "Out of memory for strings");
+                             Message => "String limit reached. Increase stack or see SML.Memory_Model");
                            return;
                         end if;
 
@@ -892,7 +902,7 @@ package body SML.DOM.Parser with SPARK_Mode => On is
                                 Position => Ctx.Position,
                                 Line => Ctx.Line,
                                 Column => Ctx.Column,
-                                Message => "Out of memory for text nodes");
+                                Message => "Node limit reached. Increase stack or see SML.Memory_Model");
                               return;
                            end if;
 
@@ -920,7 +930,7 @@ package body SML.DOM.Parser with SPARK_Mode => On is
                                    Position => Ctx.Position,
                                    Line => Ctx.Line,
                                    Column => Ctx.Column,
-                                   Message => "Out of memory for text");
+                                   Message => "String limit reached. Increase stack or see SML.Memory_Model");
                                  return;
                               end if;
 
@@ -1023,6 +1033,19 @@ package body SML.DOM.Parser with SPARK_Mode => On is
                    Message => "Empty input document"));
       end if;
 
+      --  Check if input is too large for current memory limits
+      --  Heuristic: input should be at most 1/3 of string storage
+      --  (allows for entity expansion and internal overhead)
+      if Input'Length > SML.Memory_Model.Max_String_Storage / 3 then
+         return (Success => False,
+                Error => Make_Error (
+                   Kind => Malformed_Structure,
+                   Position => 0,
+                   Line => 1,
+                   Column => 1,
+                   Message => "Input exceeds memory limits. See SML.Memory_Model"));
+      end if;
+
       --  Validate UTF-8 encoding
       if not SML.UTF8.Is_Valid_UTF8 (Input) then
          declare
@@ -1056,29 +1079,26 @@ package body SML.DOM.Parser with SPARK_Mode => On is
       end;
 
       --  Build DOM tree with privileged access
+      --  Build directly in return object due to limited type
       return Result : Parse_Result (Success => True) do
          declare
-            Had_Error : Boolean;
+            Had_Error : Boolean := False;
             Err_Info : Parse_Error;
          begin
             Build_DOM (Input, Result.Doc, Had_Error, Err_Info);
 
             if Had_Error then
-               --  Raise exception to trigger exception handler
-               raise Program_Error with Err_Info.Message (1 .. Err_Info.Msg_Length);
+               --  Store error info and raise exception to return failure result
+               Last_Parse_Error := Err_Info;
+               raise Parse_Failed;
             end if;
          end;
       end return;
 
    exception
-      when others =>
-         return (Success => False,
-                Error => Make_Error (
-                   Kind => Malformed_Structure,
-                   Position => 0,
-                   Line => 1,
-                   Column => 1,
-                   Message => "Internal parser error"));
+      when Parse_Failed =>
+         --  Parse failed, return error result with stored error info
+         return (Success => False, Error => Last_Parse_Error);
    end Parse_With_Options;
 
    ---------------------------------------------------------------------------

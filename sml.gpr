@@ -39,6 +39,10 @@ project Sml is
       for Switches ("Ada") use ("-Es"); --  Symbolic traceback
    end Binder;
 
+   package Linker is
+      for Linker_Options use ("-L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib");
+   end Linker;
+
    package Install is
       for Artifacts (".") use ("share");
    end Install;

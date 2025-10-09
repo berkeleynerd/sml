@@ -17,4 +17,10 @@ project Test is
       for Executable ("test_parser.adb") use "test_parser";
    end Builder;
 
+   package Linker is
+      for Linker_Options use (
+         "-L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib",
+         "-Wl,-stack_size,0x2000000");  -- 32MB stack for tests
+   end Linker;
+
 end Test;

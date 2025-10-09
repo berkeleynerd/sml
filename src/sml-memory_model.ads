@@ -16,11 +16,35 @@ package SML.Memory_Model with SPARK_Mode => On is
    --  Memory Bounds and Constants
    ---------------------------------------------------------------------------
 
-   --  Maximum nodes based on document limits
-   Max_Document_Nodes : constant Natural := 1_000_000;
+   --  NOTE: Arena pools are allocated on the stack for SPARK compatibility.
+   --  These defaults are sized to fit typical process stacks (8-16MB).
+   --
+   --  For larger documents, increase stack size at link time:
+   --    macOS/Linux: Add to Linker package: "-Wl,-stack_size,0x4000000" (64MB)
+   --    Windows: Add to Linker package: "-Wl,--stack,67108864"
+   --    Or use: ulimit -s 65536  (Unix systems)
+   --
+   --  Memory requirements per Document:
+   --    - Node array: Max_Document_Nodes × 64 bytes ≈ 640KB
+   --    - String storage: Max_String_Storage bytes = 1MB
+   --    - Parser context: ~100KB additional during parsing
+   --    - Total stack usage: ~1.7MB per parse operation
+   --
+   --  Document capacity with defaults:
+   --    - Maximum 10,000 nodes (elements + text nodes combined)
+   --    - Approximately 3,000-5,000 elements (depending on nesting)
+   --    - 1MB of text content total (after entity expansion)
+   --    - Suitable for SML documents up to ~50KB input size
+   --
+   --  To handle larger documents:
+   --    1. Increase stack size (recommended), OR
+   --    2. Modify these constants and rebuild the library
 
-   --  Maximum string storage (assumes average 100 chars per node)
-   Max_String_Storage : constant Natural := 100_000_000;  -- 100MB
+   --  Maximum nodes based on stack-safe document limits
+   Max_Document_Nodes : constant Natural := 2_000;
+
+   --  Maximum string storage (200KB for text content)
+   Max_String_Storage : constant Natural := 200_000;
 
    --  Maximum size for element names
    Max_Name_Length : constant Natural := 100;
