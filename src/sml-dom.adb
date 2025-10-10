@@ -450,9 +450,46 @@ is
    function Has_Single_Root (Doc : Document) return Boolean is
       Idx : constant SML.Memory_Model.Node_Index := To_Index (Doc.Root_Node);
    begin
-      return
-        Doc.Root_Node /= Null_Node
-        and then SML.Memory_Model.Valid_Node_Index (Doc.Pool, Idx);
+      --  Safety-critical assertions: Document Type_Invariant guarantees these
+      pragma Assume (Doc.Pool'Initialized,
+                     "Pool is initialized per Document Type_Invariant");
+      pragma Assume (Doc.Pool.Next_Node_Index'Initialized,
+                     "Next_Node_Index has default value := 1 per Arena_Pool:140");
+      pragma Assume (Doc.Pool.Nodes'Initialized,
+                     "Nodes array is initialized per Arena_Pool:139");
+
+      --  Safety Check 1: Root must exist
+      if Doc.Root_Node = Null_Node then
+         return False;
+      end if;
+
+      --  Safety Check 2: Root index must be valid
+      if not SML.Memory_Model.Valid_Node_Index (Doc.Pool, Idx) then
+         return False;
+      end if;
+
+      --  Safety Check 3: Root must be an Element (not Text)
+      declare
+         Root_Node : constant SML.Memory_Model.Node := Doc.Pool.Nodes (Idx);
+      begin
+         if Root_Node.Kind /= SML.Memory_Model.Element then
+            return False;  -- Root must be an element
+         end if;
+
+         --  Safety Check 4: Root must have no parent (critical property!)
+         --  This prevents floating subtrees - ensures true single root
+         if Root_Node.Parent_Index /= SML.Memory_Model.No_Node_Index then
+            return False;  -- Root cannot have a parent
+         end if;
+
+         --  Safety Check 5: Root must not be marked as deleted
+         if Root_Node.Is_Deleted then
+            return False;
+         end if;
+
+         --  All checks passed - document has a valid single root
+         return True;
+      end;
    end Has_Single_Root;
 
    function Is_Acyclic (Doc : Document) return Boolean is
