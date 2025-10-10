@@ -613,7 +613,36 @@ is
    function Owns_Node (Doc : Document; Node : Node_Id) return Boolean is
       Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
    begin
-      return SML.Memory_Model.Valid_Node_Index (Doc.Pool, Idx);
+      --  Safety-critical assertions: Document Type_Invariant guarantees these
+      pragma Assume (Doc.Pool'Initialized,
+                     "Pool is initialized per Document Type_Invariant");
+      pragma Assume (Doc.Pool.Next_Node_Index'Initialized,
+                     "Next_Node_Index has default value := 1 per Arena_Pool:140");
+      pragma Assume (Doc.Pool.Nodes'Initialized,
+                     "Nodes array is initialized per Arena_Pool:139");
+
+      --  Safety Check 1: Null nodes are not owned
+      if Node = Null_Node then
+         return False;
+      end if;
+
+      --  Safety Check 2: Node index must be in allocated range
+      if not SML.Memory_Model.Valid_Node_Index (Doc.Pool, Idx) then
+         return False;
+      end if;
+
+      --  Safety Check 3: Node must not be marked as deleted
+      --  Deleted nodes are logically not owned (pending garbage collection)
+      declare
+         N : constant SML.Memory_Model.Node := Doc.Pool.Nodes (Idx);
+      begin
+         if N.Is_Deleted then
+            return False;
+         end if;
+
+         --  All checks passed - document owns this node
+         return True;
+      end;
    end Owns_Node;
 
    function Node_Count (Doc : Document) return Natural is
