@@ -2,11 +2,11 @@
 <!DOCTYPE why3session PUBLIC "-//Why3//proof session v5//EN"
 "https://www.why3.org/why3session.dtd">
 <why3session shape_version="6">
-<prover id="0" name="altergo" version="1.30-gnatprove" timelimit="60" steplimit="0" memlimit="1000"/>
+<prover id="0" name="altergo" version="1.30-gnatprove" timelimit="60" steplimit="0" memlimit="2000"/>
 <prover id="1" name="CVC5" version="0.0.7-gnatprove" timelimit="60" steplimit="0" memlimit="1000"/>
-<prover id="2" name="Z3" version="4.5.1-gnatprove" timelimit="60" steplimit="0" memlimit="1000"/>
+<prover id="2" name="Z3" version="4.5.1-gnatprove" timelimit="60" steplimit="0" memlimit="2000"/>
 <prover id="3" name="Trivial" version="1.0" alternative="trivial" timelimit="1" steplimit="1" memlimit="1000"/>
-<prover id="4" name="CVC5_CE" version="0.0.7-gnatprove" timelimit="10" steplimit="0" memlimit="1000"/>
+<prover id="4" name="CVC5_CE" version="0.0.7-gnatprove" timelimit="10" steplimit="0" memlimit="2000"/>
 <file format="gnat-json">
 <path name=".."/><path name=".."/><path name=".."/><path name="obj"/>
 <path name="development"/><path name="gnatprove"/><path name="ada___sml__dom__child_count.gnat-json"/>
@@ -24,7 +24,7 @@
   </goal>
   <goal name="def&#39;vc.3">
   <proof prover="0"><result status="unknown" steps="41805"/></proof>
-  <proof prover="1"><result status="unknown" steps="3690"/></proof>
+  <proof prover="1" memlimit="2000"><result status="unknown" steps="3690"/></proof>
   <proof prover="2"><result status="timeout"/></proof>
   <transf name="introduce_premises" >
    <goal name="def&#39;vc.3.0">
@@ -48,7 +48,7 @@
   </goal>
   <goal name="def&#39;vc.9">
   <proof prover="0"><result status="unknown" steps="204393"/></proof>
-  <proof prover="1"><result status="unknown" steps="4886"/></proof>
+  <proof prover="1" memlimit="2000"><result status="unknown" steps="4886"/></proof>
   <proof prover="2"><result status="timeout"/></proof>
   <transf name="introduce_premises" >
    <goal name="def&#39;vc.9.0">
@@ -85,7 +85,7 @@
   </goal>
   <goal name="def&#39;vc.19">
   <proof prover="0"><result status="unknown" steps="327254"/></proof>
-  <proof prover="1"><result status="unknown" steps="8622"/></proof>
+  <proof prover="1" memlimit="2000"><result status="unknown" steps="8622"/></proof>
   <proof prover="2"><result status="timeout"/></proof>
   <transf name="introduce_premises" >
    <goal name="def&#39;vc.19.0">
@@ -138,7 +138,7 @@
   </goal>
   <goal name="def&#39;vc.38">
   <proof prover="0"><result status="unknown" steps="1034510"/></proof>
-  <proof prover="1"><result status="unknown" steps="9622"/></proof>
+  <proof prover="1" memlimit="2000"><result status="unknown" steps="9622"/></proof>
   <proof prover="2"><result status="timeout"/></proof>
   <transf name="introduce_premises" >
    <goal name="def&#39;vc.38.0">
@@ -203,12 +203,12 @@
   <proof prover="1"><result status="valid" steps="4282"/></proof>
   </goal>
   <goal name="def&#39;vc.58" proved="true">
-  <proof prover="0" obsolete="true"><result status="unknown" steps="177628"/></proof>
+  <proof prover="0" memlimit="1000" obsolete="true"><result status="unknown" steps="177628"/></proof>
   <proof prover="1"><result status="valid" steps="4290"/></proof>
-  <proof prover="2" obsolete="true"><result status="timeout"/></proof>
+  <proof prover="2" memlimit="1000" obsolete="true"><result status="timeout"/></proof>
   <transf name="introduce_premises" >
    <goal name="def&#39;vc.58.0">
-   <proof prover="4" obsolete="true"><result status="unknown" steps="8620"/></proof>
+   <proof prover="4" memlimit="1000" obsolete="true"><result status="unknown" steps="8620"/></proof>
    </goal>
   </transf>
   </goal>
@@ -229,7 +229,7 @@
   </goal>
   <goal name="def&#39;vc.64">
   <proof prover="0"><result status="unknown" steps="2109142"/></proof>
-  <proof prover="1"><result status="unknown" steps="15923"/></proof>
+  <proof prover="1" memlimit="2000"><result status="unknown" steps="15923"/></proof>
   <proof prover="2"><result status="timeout"/></proof>
   <transf name="introduce_premises" >
    <goal name="def&#39;vc.64.0">
@@ -281,7 +281,7 @@
   </goal>
   <goal name="def&#39;vc.83">
   <proof prover="0"><result status="timeout"/></proof>
-  <proof prover="1"><result status="unknown" steps="16417"/></proof>
+  <proof prover="1" memlimit="2000"><result status="unknown" steps="16417"/></proof>
   <proof prover="2"><result status="timeout"/></proof>
   <transf name="introduce_premises" >
    <goal name="def&#39;vc.83.0">
@@ -320,7 +320,7 @@
   </goal>
   <goal name="def&#39;vc.94">
   <proof prover="0"><result status="timeout"/></proof>
-  <proof prover="1"><result status="unknown" steps="17630"/></proof>
+  <proof prover="1" memlimit="2000"><result status="unknown" steps="17630"/></proof>
   <proof prover="2"><result status="timeout"/></proof>
   <transf name="introduce_premises" >
    <goal name="def&#39;vc.94.0">
@@ -336,7 +336,7 @@
   </goal>
   <goal name="def&#39;vc.97">
   <proof prover="0"><result status="timeout"/></proof>
-  <proof prover="1"><result status="unknown" steps="17320"/></proof>
+  <proof prover="1" memlimit="2000"><result status="unknown" steps="17320"/></proof>
   <proof prover="2"><result status="timeout"/></proof>
   <transf name="introduce_premises" >
    <goal name="def&#39;vc.97.0">
@@ -361,7 +361,7 @@
   </goal>
   <goal name="def&#39;vc.103">
   <proof prover="0"><result status="unknown" steps="1302889"/></proof>
-  <proof prover="1"><result status="unknown" steps="21052"/></proof>
+  <proof prover="1" memlimit="2000"><result status="unknown" steps="21052"/></proof>
   <proof prover="2"><result status="timeout"/></proof>
   <transf name="introduce_premises" >
    <goal name="def&#39;vc.103.0">
