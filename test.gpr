@@ -10,7 +10,7 @@ project Test is
    for Main use ("test_parser.adb");
 
    package Compiler is
-      for Default_Switches ("Ada") use ("-gnatwa", "-gnatwe");
+      for Default_Switches ("Ada") use ("-gnatwa", "-gnatwe", "-gnat2022");
    end Compiler;
 
    package Builder is
