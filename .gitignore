@@ -11,3 +11,9 @@ proof/sessions/
 gnatprove.log
 gnatprove_results.txt
 gnatprove.out
+
+# All gnatprove log files
+gnatprove*.log
+
+# Compiled binaries
+bin/
