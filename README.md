@@ -13,8 +13,7 @@ A formally verified parser and Document Object Model (DOM) for Simple Markup Lan
 
 ```bash
 # Build library and examples
-./build.sh
-# or: alr build
+alr build -- -cargs:ada -gnat2022 -gnatX0
 
 # Run comprehensive example
 alr run sml_example

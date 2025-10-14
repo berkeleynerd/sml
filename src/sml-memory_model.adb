@@ -81,11 +81,13 @@ is
 
    procedure Reset_Arena (Pool : in out Arena_Pool) is
    begin
-      Pool.Next_Node_Index := 1;
-      Pool.Next_String_Pos := 1;
+      --  Reset allocation counters first to satisfy predicate
       Pool.Allocated_Nodes := 0;
       Pool.Allocated_Bytes := 0;
       Pool.High_Water_Mark := 0;
+      --  Then reset indices (predicate: Allocated_Nodes <= Next_Node_Index)
+      Pool.Next_Node_Index := 1;
+      Pool.Next_String_Pos := 1;
    end Reset_Arena;
 
    --  String operations
@@ -157,6 +159,11 @@ is
         and then Pool.Allocated_Bytes < Pool.Next_String_Pos
         and then Pool.High_Water_Mark >= Pool.Allocated_Bytes;
    end Arena_Invariants;
+
+   function Has_Exact_Allocation_Count (Pool : Arena_Pool) return Boolean is
+   begin
+      return Pool.Allocated_Nodes = Pool.Next_Node_Index - 1;
+   end Has_Exact_Allocation_Count;
 
    --  Node access
 

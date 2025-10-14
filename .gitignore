@@ -1,6 +1,7 @@
 /obj/
 /lib/
 /alire/
+/proof/
 /config/
 
 # SPARK proof session files

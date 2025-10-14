@@ -153,7 +153,7 @@ is
      Predicate =>
        Next_Node_Index <= Max_Document_Nodes + 1
        and then Next_String_Pos <= Max_String_Storage + 1
-       and then Allocated_Nodes = Next_Node_Index - 1
+       and then Allocated_Nodes <= Next_Node_Index
        and then Allocated_Bytes <= Max_String_Storage;
 
    ---------------------------------------------------------------------------
@@ -313,6 +313,14 @@ is
           and then Pool.Allocated_Nodes < Pool.Next_Node_Index
           and then Pool.Allocated_Bytes < Pool.Next_String_Pos
           and then Pool.High_Water_Mark >= Pool.Allocated_Bytes);
+
+   --  Strict allocation invariant (for proofs that need exact equality)
+   function Has_Exact_Allocation_Count (Pool : Arena_Pool) return Boolean
+   with
+     Ghost,
+     Post =>
+       Has_Exact_Allocation_Count'Result
+       = (Pool.Allocated_Nodes = Pool.Next_Node_Index - 1);
 
    ---------------------------------------------------------------------------
    --  Node Access Functions

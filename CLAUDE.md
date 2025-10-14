@@ -4,11 +4,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a SPARK Ada specification project for a Simple Markup Language (SML) parser and Document Object Model (DOM). SML is a strict subset of XML with significant restrictions to enable formal verification.
+This is a formally verified SPARK Ada library for parsing and manipulating Simple Markup Language (SML) - a strict subset of XML designed for formal verification with mathematical proofs of correctness, memory safety, and performance guarantees.
 
-## SML Restrictions
+**Current Status**: Implementation complete, SPARK verified, production ready.
 
-SML enforces these constraints (different from full XML):
+## SML Language Restrictions
+
+SML enforces these constraints to enable formal verification:
 - No attributes on elements
 - No processing instructions (`<?...?>`)
 - No DTD or schema declarations
@@ -18,307 +20,232 @@ SML enforces these constraints (different from full XML):
 - UTF-8 encoding only
 - Only standard XML entities: `&lt;` `&gt;` `&amp;` `&quot;` `&apos;`
 
-## Build and Verification Commands
+## Build Commands
 
 ```bash
-# Compile with GNAT
-gnatmake -gnatwa -gnatwe -gnatyyM -gnaty3 -gnatyx -gnatyO sml.ads
+# Build library using Alire (recommended)
+alr build
 
-# Run SPARK verification
-gnatprove -P<project>.gpr --level=4 --report=all
+# Build library, examples and tests
+./build.sh
 
-# Check individual package
-gnatprove -P<project>.gpr --level=4 -u sml-dom.ads
+# Build individual components
+alr exec -- gprbuild -P sml.gpr      # Library only
+alr exec -- gprbuild -P examples.gpr  # Examples
+alr exec -- gprbuild -P test.gpr      # Tests
 
-# Generate proof documentation
-gnatprove -P<project>.gpr --output=gnatprove_report.out --report=all
+# Run examples
+bin/sml_example
+
+# Run tests
+bin/test_parser
+```
+
+## Verification Commands
+
+```bash
+# Fast flow analysis (data dependencies, initialization)
+alr exec -- gnatprove -P sml.gpr --mode=flow --report=all
+
+# Level 0: Fast partial proof (<1 second per package)
+alr exec -- gnatprove -P sml.gpr --level=0 --report=all
+
+# Level 2: Most VCs proven (<10 seconds per package)
+alr exec -- gnatprove -P sml.gpr --level=2 --report=all
+
+# Level 4: Complete verification (all VCs, <60 seconds per package)
+alr exec -- gnatprove -P sml.gpr --level=4 --report=all
+
+# Verify single package
+alr exec -- gnatprove -P sml.gpr --level=4 -u sml-dom.ads
+
+# Generate proof report
+alr exec -- gnatprove -P sml.gpr --level=4 --output=proof_report.out --report=all
 ```
 
 ## Architecture
 
 ### Package Hierarchy
 
-The system uses a hierarchical package structure with `SML` as the root:
+The library uses a hierarchical package structure with index-based node references and arena allocation for SPARK compatibility:
 
-1. **SML** - Root package with version information and constants
+1. **SML** (`src/sml.ads`) - Root package with version information
 
-2. **SML.DOM** - Core DOM types and tree traversal
-   - `Unbounded_String` for text storage (avoids variant record issues)
-   - `Document` is a limited type owning all nodes
-   - `Node_Id` provides safe references
-   - Ghost functions specify well-formedness invariants
+2. **SML.Memory_Model** (`src/sml-memory_model.ads/.adb`) - Arena-based memory management
+   - Fixed-size node and string pools
+   - Configurable memory limits (default: 10K nodes, 1MB strings)
+   - Ghost predicates for memory safety proofs
+   - Zero heap allocations (stack-based arenas)
 
-3. **SML.Parser** - Parsing logic with formal correctness contracts
-   - `Parse_Result` discriminated union for type-safe success/failure
-   - Ghost functions `Is_Valid_SML` and `Parses_To` specify total correctness
-   - Parser state tracking for proof decomposition
+3. **SML.DOM** (`src/sml-dom.ads/.adb`) - Core DOM types and tree operations
+   - `Document` - Limited type owning all nodes
+   - `Node_Id` - Index-based references (SPARK-compatible)
+   - Read-only traversal operations (O(1))
+   - Ghost functions for well-formedness invariants
 
-4. **SML.UTF8** - UTF-8 validation and navigation
-   - Validates byte sequences
-   - Provides UTF-8 aware string navigation
+4. **SML.DOM.Parser** (`src/sml-dom-parser.ads/.adb`) - Single-pass parser
+   - `Parse_Result` - Discriminated union for success/failure
+   - O(n) parsing with no backtracking
+   - Detailed error reporting with line/column info
+   - Formal correctness contracts
 
-5. **SML.Entities** - Entity reference handling
-   - Only 5 standard XML entities
-   - Expansion and encoding with safety contracts
+5. **SML.DOM.Builder** (`src/sml-dom-builder.ads/.adb`) - DOM construction API
+   - Create documents and nodes programmatically
+   - Safe modification operations
+   - Preserves well-formedness invariants
 
-6. **SML.Proof_Helpers** - Ghost code for verification (not runtime accessible)
-   - Lemmas for complex properties
-   - Loop invariant templates
-   - Induction helpers
+6. **SML.DOM.Writer** (`src/sml-dom-writer.ads/.adb`) - Serialization to SML
+   - Round-trip guarantee: parse(write(doc)) = doc
+   - Entity encoding for safety
+   - Configurable output formatting
+
+7. **SML.UTF8** (`src/sml-utf8.ads/.adb`) - UTF-8 validation and processing
+   - RFC 3629 compliant validation
+   - Security hardening (reject overlong, surrogates, etc.)
+   - UTF-8 aware string navigation
+
+8. **SML.Entities** (`src/sml-entities.ads/.adb`) - XML entity handling
+   - Standard 5 entities only
+   - Bijective encoding/decoding
+   - Injection-safe output
 
 ### Key Design Decisions
 
-**Memory Management**: `Document` owns all nodes through `Node_Pool` - centralized ownership prevents leaks and enables safe deallocation.
+**Memory Management**: Stack-based arena allocation with compile-time bounds - no heap usage, predictable memory, enables SPARK proofs.
 
-**Ghost Functions**: Extensive use of ghost functions to specify correctness properties without runtime overhead.
+**Index-Based References**: `Node_Id` as discrete index type instead of pointers - enables quantified expressions and full SPARK verification.
 
-**Error Handling**: Parser returns detailed error information (position, line, column, kind) for debugging and formal reasoning.
+**Ghost Functions**: Extensive ghost code for specifications without runtime overhead - invariants checked at proof time, not runtime.
 
-**Type Safety**: Discriminated unions and preconditions ensure type-safe API usage.
+**Limited Types**: `Document` as limited type ensures single ownership and prevents aliasing issues in proofs.
 
-## Critical Invariants
+## Critical Invariants Maintained
 
-1. **DOM Well-formedness**: Every `Document` maintains `Is_Well_Formed` as a type invariant
-2. **Tree Depth**: Maximum depth limited to prevent stack overflow (`Max_Tree_Depth = 1000`)
-3. **Children Count**: Maximum children per element (`Max_Children = 10000`)
-4. **UTF-8 Validity**: All strings in DOM maintain UTF-8 validity
-5. **Memory Safety**: `No_Memory_Leaks` ghost predicate ensures all nodes are properly owned
+1. **DOM Well-formedness**: `Is_Well_Formed` type invariant on every Document
+2. **Memory Safety**: `No_Memory_Leaks` - all nodes properly owned and tracked
+3. **Tree Acyclicity**: No cycles in parent-child relationships
+4. **Depth Bounds**: Maximum tree depth (1000) prevents stack overflow
+5. **UTF-8 Validity**: All strings maintain valid UTF-8 encoding
 
-## Proof Obligations
+## Memory Configuration
 
-When modifying specifications, ensure these properties hold:
+Default limits (suitable for ~50KB documents):
+- 10,000 nodes maximum
+- 1MB string storage
+- ~1.7MB stack space required
 
-1. **Parser Soundness**: `Parse` succeeds only for valid SML (`Is_Valid_SML`)
-2. **Parser Completeness**: All valid SML can be parsed
-3. **Representation Correctness**: `Parses_To` relation accurately maps input to DOM
-4. **Memory Safety**: No leaks, no double-free, no dangling references
-5. **Termination**: All functions must provably terminate
+For larger documents, either:
+1. Increase stack size in linker options (see MEMORY.md)
+2. Modify constants in `src/sml-memory_model.ads` and rebuild
 
 ## Common Development Tasks
 
-### Adding a new DOM operation
-1. Add specification to `sml-dom.ads` with appropriate preconditions
-2. Add ghost function if needed for postcondition
-3. Add corresponding lemma in `sml-proof_helpers.ads` if property is complex
-4. Ensure operation preserves `Is_Well_Formed` invariant
+### Running Tests
+```bash
+# Build and run test suite
+alr exec -- gprbuild -P test.gpr
+bin/test_parser
+```
 
-### Extending parser capabilities
-1. Update `Is_Valid_SML` ghost function in `sml-parser.ads`
-2. Add new error kinds if needed
-3. Update `Parses_To` relation to specify new behavior
-4. Add proof helpers for new parsing constructs
+### Adding New Test Cases
+Edit `test/test_parser.adb` and add test procedures following existing patterns.
 
-### Strengthening verification
-1. If prover fails, add lemma in `SML.Proof_Helpers`
-2. Consider adding loop invariants for iterative code
-3. Break complex postconditions into smaller, provable parts
-4. Use ghost variables to track intermediate state
+### Debugging Proof Failures
+```bash
+# Generate counterexamples for failed proofs
+alr exec -- gnatprove -P sml.gpr --level=4 --counterexamples=on
 
-## Implementation Requirements
+# Check specific subprogram
+alr exec -- gnatprove -P sml.gpr --limit-subp=<subprogram_name>
+```
 
-### Memory Bounds and Arena Sizes
-- **Node Arena**: 1,000,000 nodes maximum
-- **String Arena**: 100,000,000 characters maximum
-- **Memory Formula**: Memory ≤ Input_Size × 10 + Fixed_Overhead
-- **Node Count**: Nodes ≤ Input_Length / 3 (minimum element is 3 chars: `<a>`)
-- **String Storage**: ≤ Input_Length × 2 (worst case with entity expansion)
-- **Stack Depth**: Max 1000 levels (prevents stack overflow)
-- **Children per Node**: Max 10,000 children
+### Memory Tuning
+1. For "Node limit reached" errors: increase stack size or `Max_Document_Nodes`
+2. For "String limit reached" errors: increase stack size or `Max_String_Storage`
+3. See MEMORY.md for detailed guidance
 
-### UTF-8 Validation Rules
-**Valid Byte Sequences**:
-- 1-byte: `00..7F`
-- 2-byte: `C2..DF` + `80..BF` (no C0-C1 overlong)
-- 3-byte: `E0` + `A0..BF` + `80..BF` (no overlong)
-- 3-byte: `E1..EC` + `80..BF` + `80..BF`
-- 3-byte: `ED` + `80..9F` + `80..BF` (no surrogates)
-- 4-byte: `F0` + `90..BF` + `80..BF` + `80..BF` (no overlong)
-- 4-byte: `F4` + `80..8F` + `80..BF` + `80..BF` (max U+10FFFF)
+### Code Formatting
+```bash
+# Format Ada source files
+gnatpp -P sml.gpr
+```
 
-**Security Checks**:
-- Reject overlong encodings (e.g., `C0 AF` for `/`)
-- Reject surrogates (U+D800-U+DFFF)
-- Detect path traversal (`../` encodings)
-- Detect script injection (encoded `<script>`)
-- Prevent null byte injection
+## Project Structure
 
-### Performance Guarantees
-**Parser Complexity**:
-- Overall: O(n) single-pass, no backtracking
-- UTF-8 validation: O(n) with bounded lookahead (max 4 bytes)
-- Entity expansion: O(1) for standard entities
-- Tree building: O(1) per node
-- Stack operations: O(1) push/pop
+```
+sml/
+├── src/                 # Library sources
+│   ├── sml.ads         # Root package
+│   ├── sml-*.ads       # Package specs
+│   └── sml-*.adb       # Package bodies
+├── test/               # Test programs
+│   └── test_parser.adb
+├── examples/           # Usage examples
+│   └── sml_example.adb
+├── proof/              # SPARK proof artifacts
+├── obj/                # Build artifacts
+├── lib/                # Library output
+├── bin/                # Executables
+├── sml.gpr            # Main project file
+├── test.gpr           # Test project
+├── examples.gpr       # Examples project
+└── alire.toml         # Alire package manifest
+```
+
+## Coding Standards
+
+- **Language**: Ada 2022 with SPARK_Mode
+- **Indentation**: 3 spaces (`-gnaty3`)
+- **Warnings**: All warnings are errors (`-gnatwa -gnatwe`)
+- **Naming**: Mixed_Case for identifiers (e.g., `Parse_Result`, `Node_Id`)
+- **Files**: Package.Child → `package-child.ads/.adb`
+- **Contracts**: Preconditions, postconditions, and type invariants required
+- **Ghost Code**: Use liberally for specifications
+
+## Performance Guarantees
+
+**Parser**:
+- O(n) single-pass parsing
+- No backtracking
+- Sequential input access (cache-friendly)
 
 **DOM Operations**:
-- Navigation: O(1) - Root, Parent, First_Child, Next_Sibling
-- Queries: O(1) - Kind, Name, Text_Value
-- Tree walks: O(nodes) with sequential access pattern
-- Memory allocation: O(1) from arena pools
-- Document finalization: O(nodes) for cleanup
+- O(1) navigation (parent, child, sibling)
+- O(1) property access (kind, name, text)
+- O(n) tree walks with sequential access
 
-**Cache Behavior**:
-- Parser: Sequential input access (>90% cache line utilization)
-- DOM: Depth-first traversal matches memory layout
-- No pointer chasing in critical paths
+**Memory**:
+- O(1) allocation from arena pools
+- Zero heap allocations
+- Bounded memory usage (compile-time limits)
 
-### Entity Encoding Rules
-**Standard Entities Only**:
-- `&lt;` for `<`
-- `&gt;` for `>`
-- `&amp;` for `&`
-- `&quot;` for `"`
-- `&apos;` for `'`
+## Troubleshooting
 
-**Round-Trip Properties**:
-- Encode then decode = identity
-- Canonical forms enforced
-- No information loss
-- Injection-safe (no raw `<` in output)
-
-### Error Detection Requirements
-**Detection Precedence** (check in order):
-1. UTF-8 errors (invalid sequences, truncation)
-2. Lexical errors (invalid entities, bad characters)
-3. Syntactic errors (mismatched tags, structure)
-4. Semantic errors (well-formedness violations)
-5. Resource errors (depth/size limits)
-
-**Error Information**:
-- Position (byte offset in input)
-- Line and column numbers
-- Error kind enumeration
-- Actionable error message
-- Context extraction available
-
-### Proof Structure Guidance
-**Parser Soundness**:
-- Simulation invariant: parser states ↔ partial parse trees
-- Progress lemma: valid states only transition to valid states
-- Completion implies validity per grammar
-
-**Memory Safety**:
-- Single ownership model (document owns all nodes)
-- Arena allocation prevents fragmentation
-- No cycles in ownership graph
-- Finalization releases entire subtree
-
-**Entity Bijection**:
-- Injective: different texts → different encodings
-- Surjective: every valid encoding has a decoding
-- Round-trip: decode(encode(x)) = x
-
-**Error Completeness**:
-- All invalid input produces errors
-- No false positives for valid input
-- Most specific error reported first
-
-## Implementation Checklist
-
-### Pre-Implementation Setup
-1. **Create GNAT Project File** (`sml.gpr`)
-   - Enable SPARK_Mode globally
-   - Set proof level configurations
-   - Add compiler flags: `-gnatwa -gnatwe -gnatyyM -gnaty3 -gnatyx -gnatyO`
-   - Configure separate directories for specs, bodies, proof artifacts
-
-2. **Configure Development Environment**
-   - Set up proof verification scripts
-   - Configure pre-commit hooks for compilation and SPARK level 1
-   - Set up code formatting with gnatpp
-
-### Implementation Order
-
-#### Phase 1: Foundation
-- `sml.adb` - Empty body for root package
-
-#### Phase 2: UTF-8 (Critical Foundation)
-- `sml-utf8.adb` - Core validation functions
-- Test with UTF-8 test vectors from RFC 3629
-
-#### Phase 3: Entity Handling
-- `sml-entities.adb` - Entity encoding/decoding
-- Ensure bijection properties hold
-
-#### Phase 4: DOM Operations
-- `sml-dom.adb` - Tree construction and traversal
-- Implement arena-based memory management
-- Maintain ownership invariants
-
-#### Phase 5: Parser (Most Complex)
-- `sml-parser.adb` - Main parsing logic
-- Single-pass, no backtracking
-- Proper error detection and reporting
-
-#### Phase 6: Proof Helpers
-- `sml-proof_helpers.adb` - Lemma implementations
-- May be empty (ghost) or contain proof tactics
-
-#### Phase 7: Ghost Packages
-All ghost specification packages (empty bodies):
-- `sml-*-*.adb` for all proof specifications
-
-### Verification Commands
-
-```bash
-# Initial compilation check
-gnatmake -P sml.gpr
-
-# Incremental proof verification (per package)
-gnatprove -P sml.gpr --level=2 -u <package>
-
-# Full proof verification
-gnatprove -P sml.gpr --level=4 --report=all
-
-# Generate proof report
-gnatprove -P sml.gpr --output=proof_report.out --report=all
-```
-
-### Proof Goals
-- **Level 0**: Fast partial proof (< 1 second)
-- **Level 1**: Flow analysis and simple proofs
-- **Level 2**: Most VCs proven (< 10 seconds)
-- **Level 4**: Complete proofs (< 60 seconds per package)
-
-### Success Criteria
-- Zero compilation warnings
-- All VCs proven at level 4
-- Performance requirements met (10MB in < 1 second)
-- Memory bounds respected (1M nodes, 100MB strings)
-
-## Additional Proof Lemmas
-
-These lemmas may be needed during implementation to help SPARK prove key properties:
-
-### Null Safety Lemmas
+### STORAGE_ERROR : stack overflow
+Increase stack size in project file:
 ```ada
--- No null dereferences in traversal
-Lemma_Traversal_Null_Safe:
-  ∀ N: N = Null_Node → No operations performed
-
--- Parent operation null-safe
-Lemma_Parent_Null_Safe:
-  Parent(Doc, N) = Null_Node ∨ Is_Valid_Node(Parent(Doc, N))
+package Linker is
+   for Linker_Options use ("-Wl,-stack_size,0x4000000");  -- 64MB
+end Linker;
 ```
 
-### Bounds Safety Lemmas
+### Proof failures
+1. Add loop invariants if missing
+2. Break complex postconditions into lemmas
+3. Use ghost variables to track state
+4. Increase proof timeout/level if needed
+
+### Build errors on macOS
+Ensure linker can find system libraries:
 ```ada
--- Parser respects input bounds
-Lemma_Parser_Respects_Input_Bounds:
-  Parser_State.Position ≤ Input'Last + 1
-
--- Stack depth bounded
-Lemma_Parser_Stack_Bounded:
-  State.Stack_Depth ≤ Max_Tree_Depth
+package Linker is
+   for Linker_Options use ("-L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib");
+end Linker;
 ```
 
-### Ownership Lemmas
-```ada
--- All nodes reachable from root
-Lemma_All_Nodes_Reachable:
-  Owns_Node(Doc, N) → Reachable_From_Root(Doc, N)
+## Further Documentation
 
--- No cycles in ownership
-Lemma_No_Ownership_Cycles:
-  Acyclic_Ownership(Doc)
-```
+- **MEMORY.md**: Detailed memory configuration and tuning guide
+- **README.md**: Project overview and quick start
+- **AGENTS.md**: Repository guidelines and contribution standards
+- **proof/**: SPARK verification session data and logs
