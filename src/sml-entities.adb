@@ -33,9 +33,15 @@ is
          return False;
       end if;
 
-      -- Find semicolon
+      --  Check for overflow before incrementing Position
+      if Position = Natural'Last then
+         return False;
+      end if;
+
+      --  Find semicolon
       End_Pos := Position + 1;
       while End_Pos <= Text'Last
+        and then End_Pos <= Natural'Last - 6  -- Prevent overflow
         and then End_Pos <= Position + 6
         and then  -- Max entity length
                                          Text
@@ -244,9 +250,10 @@ is
    function Encode_Entities
      (Text : String; In_Attribute : Boolean := False) return String
    is
-      -- Calculate maximum possible result size
+      --  Calculate maximum possible result size, preventing overflow
       Max_Len    : constant Natural :=
-        Text'Length * 6;  -- Worst case: all &apos;
+        (if Text'Length > Natural'Last / 6 then Natural'Last
+         else Text'Length * 6);  -- Worst case: all &apos;
       Result     : String (1 .. Max_Len) := [others => ' '];
       J          : Natural := 0;
       Entity_Str : String (1 .. 6) := [others => ' '];

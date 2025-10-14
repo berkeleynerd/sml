@@ -19,7 +19,7 @@ alr build -- -cargs:ada -gnat2022 -gnatX0
 alr run sml_example
 
 # Run SPARK verification
-alr exec -- gnatprove -P sml.gpr --mode=flow
+alr exec -- gnatprove -P sml.gpr --mode=prove --level=4 --prover=cvc5 >> proof.log 2>&1
 ```
 
 ### Example Usage

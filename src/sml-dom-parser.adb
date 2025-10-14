@@ -1387,62 +1387,72 @@ is
    function No_Attributes (Input : String) return Boolean is
    begin
       --  Look for attribute patterns (space after tag name before >)
-      for I in Input'First .. Input'Last - 1 loop
-         if Input (I) = '<' and then I + 1 <= Input'Last then
-            --  Inside a tag - look for attributes
-            for J in I + 1 .. Input'Last loop
-               if Input (J) = '>' then
-                  exit;  -- End of tag
-               elsif Input (J) = '=' then
-                  return False;  -- Found attribute assignment
-               end if;
-            end loop;
-         end if;
-      end loop;
+      if Input'Length >= 2 then
+         for I in Input'First .. Input'Last - 1 loop
+            if Input (I) = '<' and then I + 1 <= Input'Last then
+               --  Inside a tag - look for attributes
+               for J in I + 1 .. Input'Last loop
+                  if Input (J) = '>' then
+                     exit;  -- End of tag
+                  elsif Input (J) = '=' then
+                     return False;  -- Found attribute assignment
+                  end if;
+               end loop;
+            end if;
+         end loop;
+      end if;
 
       return True;
    end No_Attributes;
 
    function No_Processing_Instructions (Input : String) return Boolean is
    begin
-      for I in Input'First .. Input'Last - 1 loop
-         if Input (I) = '<' and then Input (I + 1) = '?' then
-            return False;
-         end if;
-      end loop;
+      if Input'Length >= 2 then
+         for I in Input'First .. Input'Last - 1 loop
+            if Input (I) = '<' and then Input (I + 1) = '?' then
+               return False;
+            end if;
+         end loop;
+      end if;
 
       return True;
    end No_Processing_Instructions;
 
    function No_DTD (Input : String) return Boolean is
    begin
-      for I in Input'First .. Input'Last - 8 loop
-         if Input (I .. I + 8) = "<!DOCTYPE" then
-            return False;
-         end if;
-      end loop;
+      if Input'Length >= 9 then  --  "<!DOCTYPE" is 9 characters
+         for I in Input'First .. Input'Last - 8 loop
+            if Input (I .. I + 8) = "<!DOCTYPE" then
+               return False;
+            end if;
+         end loop;
+      end if;
 
       return True;
    end No_DTD;
 
    function No_CDATA (Input : String) return Boolean is
    begin
-      for I in Input'First .. Input'Last - 8 loop
-         if Input (I .. I + 8) = "<![CDATA[" then
-            return False;
-         end if;
-      end loop;
+      if Input'Length >= 9 then  --  "<![CDATA[" is 9 characters
+         for I in Input'First .. Input'Last - 8 loop
+            if Input (I .. I + 8) = "<![CDATA[" then
+               return False;
+            end if;
+         end loop;
+      end if;
 
       return True;
    end No_CDATA;
 
    function No_Comments (Input : String) return Boolean is
    begin
-      for I in Input'First .. Input'Last - 3 loop
-         if Input (I .. I + 3) = "<!--" then
-            return False;
-         end if;
-      end loop;
+      if Input'Length >= 4 then  --  "<!--" is 4 characters
+         for I in Input'First .. Input'Last - 3 loop
+            if Input (I .. I + 3) = "<!--" then
+               return False;
+            end if;
+         end loop;
+      end if;
 
       return True;
    end No_Comments;
