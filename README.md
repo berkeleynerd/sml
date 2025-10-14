@@ -15,6 +15,14 @@ A formally verified parser and Document Object Model (DOM) for Simple Markup Lan
 # Build library and examples
 alr build -- -cargs:ada -gnat2022 -gnatX0
 
+# Build the test suite
+alr exec -- gprbuild -P test_parser.gpr
+alr exec -- gprbuild -P test_schema.gpr
+
+# Run the tests
+bin/test_parser
+bin/test_schema
+
 # Run comprehensive example
 alr exec -- gprbuild -P examples.gpr
 alr run sml_example
