@@ -12,6 +12,7 @@ proof/sessions/
 gnatprove.log
 gnatprove_results.txt
 gnatprove.out
+proof.log
 
 # All gnatprove log files
 gnatprove*.log

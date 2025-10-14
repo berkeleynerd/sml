@@ -118,6 +118,33 @@ is
    --  Array of simple type definitions
    type Simple_Type_Array is array (1 .. Max_Types) of Simple_Type_Definition;
 
+   --  Maximum children in a sequence or choice
+   Max_Sequence_Elements : constant Natural := 20;
+
+   --  Element reference in sequences/choices
+   type Element_Ref is record
+      Element_Name : Bounded_String;
+      Min_Occurs   : Natural := 1;
+      Max_Occurs   : Natural := 1;  --  Natural'Last = unbounded
+   end record;
+
+   --  Array of element references for sequences/choices
+   type Element_Ref_Array is array (1 .. Max_Sequence_Elements) of Element_Ref;
+
+   --  Complex type definition with content model
+   type Complex_Type_Definition is record
+      Name          : Bounded_String;
+      Content_Model : Content_Model_Kind := Sequence_Model;
+      Children      : Element_Ref_Array := [others =>
+                        (Element_Name => Empty_String,
+                         Min_Occurs => 1,
+                         Max_Occurs => 1)];
+      Child_Count   : Natural := 0;
+   end record;
+
+   --  Array of complex type definitions
+   type Complex_Type_Array is array (1 .. Max_Types) of Complex_Type_Definition;
+
    ---------------------------------------------------------------------------
    --  Schema Document Type
    ---------------------------------------------------------------------------
@@ -154,6 +181,14 @@ is
      with
        Pre  => Type_Def.Name.Length > 0;
 
+   --  Add a complex type definition to the schema
+   procedure Add_Complex_Type (
+      Schema    : in out Schema_Document;
+      Type_Def  : Complex_Type_Definition;
+      Success   : out Boolean)
+     with
+       Pre  => Type_Def.Name.Length > 0;
+
    --  Get count of element definitions (Ghost function for proofs)
    function Element_Count (Schema : Schema_Document) return Natural
      with Ghost,
@@ -185,6 +220,20 @@ is
    function Validate_Document (
       Schema : Schema_Document;
       Doc    : DOM.Document) return Validation_Result;
+
+   --  Validate element children against complex type structure
+   function Validate_Structure (
+      Schema      : Schema_Document;
+      Doc         : DOM.Document;
+      Parent_Node : DOM.Node_Id;
+      Type_Name   : Bounded_String) return Validation_Result;
+
+   --  Check cardinality constraints for child elements
+   function Check_Cardinality (
+      Expected_Min : Natural;
+      Expected_Max : Natural;
+      Actual_Count : Natural;
+      Element_Name : String) return Validation_Result;
 
    ---------------------------------------------------------------------------
    --  Utility Functions
@@ -221,7 +270,17 @@ private
                      Base_Type => String_Type,
                      Min_Value => Integer'First,
                      Max_Value => Integer'Last)];
-      Type_Count    : Natural := 0;
+      Simple_Type_Count : Natural := 0;
+
+      --  Complex type definitions
+      Complex_Types : Complex_Type_Array :=
+         [others => (Name => Empty_String,
+                     Content_Model => Sequence_Model,
+                     Children => [others => (Element_Name => Empty_String,
+                                           Min_Occurs => 1,
+                                           Max_Occurs => 1)],
+                     Child_Count => 0)];
+      Complex_Type_Count : Natural := 0;
 
       --  Root element name (if specified)
       Root_Element  : Bounded_String := Empty_String;
@@ -229,12 +288,14 @@ private
 
    --  Ghost function implementations
    function Is_Empty (Schema : Schema_Document) return Boolean is
-      (Schema.Element_Count = 0 and then Schema.Type_Count = 0);
+      (Schema.Element_Count = 0 and then
+       Schema.Simple_Type_Count = 0 and then
+       Schema.Complex_Type_Count = 0);
 
    function Element_Count (Schema : Schema_Document) return Natural is
       (Schema.Element_Count);
 
    function Type_Count (Schema : Schema_Document) return Natural is
-      (Schema.Type_Count);
+      (Schema.Simple_Type_Count + Schema.Complex_Type_Count);
 
 end SML.Schema;

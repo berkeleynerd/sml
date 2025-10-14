@@ -16,6 +16,7 @@ procedure Test_Schema is
    procedure Test_Basic_Schema;
    procedure Test_Document_Validation;
    procedure Test_Simple_Types;
+   procedure Test_Structure_Validation;
 
    procedure Test_Basic_Schema is
       Schema : Schema_Document;
@@ -194,6 +195,138 @@ procedure Test_Schema is
       Put_Line ("PASSED");
    end Test_Simple_Types;
 
+   procedure Test_Structure_Validation is
+      Schema : Schema_Document;
+      Success : Boolean;
+   begin
+      Put ("Test: Structure and Cardinality Validation... ");
+
+      Initialize (Schema);
+
+      --  Define a complex type for configuration
+      declare
+         Config_Type : Complex_Type_Definition;
+      begin
+         Config_Type.Name := To_Bounded_String ("configType");
+         Config_Type.Content_Model := Sequence_Model;
+         Config_Type.Child_Count := 2;
+
+         --  Database element (required, 1 occurrence)
+         Config_Type.Children (1) :=
+            (Element_Name => To_Bounded_String ("database"),
+             Min_Occurs => 1,
+             Max_Occurs => 1);
+
+         --  Server element (optional, multiple)
+         Config_Type.Children (2) :=
+            (Element_Name => To_Bounded_String ("server"),
+             Min_Occurs => 0,
+             Max_Occurs => Natural'Last);  --  unbounded
+
+         Add_Complex_Type (Schema, Config_Type, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add complex type");
+            return;
+         end if;
+      end;
+
+      --  Add element definitions
+      declare
+         Config_Element : constant Element_Definition :=
+            (Name => To_Bounded_String ("config"),
+             Type_Name => To_Bounded_String ("configType"),
+             Min_Occurs => 1,
+             Max_Occurs => 1);
+
+         Database_Element : constant Element_Definition :=
+            (Name => To_Bounded_String ("database"),
+             Type_Name => Empty_String,
+             Min_Occurs => 1,
+             Max_Occurs => 1);
+
+         Server_Element : constant Element_Definition :=
+            (Name => To_Bounded_String ("server"),
+             Type_Name => Empty_String,
+             Min_Occurs => 0,
+             Max_Occurs => Natural'Last);
+      begin
+         Add_Element (Schema, Config_Element, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add config element");
+            return;
+         end if;
+
+         Add_Element (Schema, Database_Element, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add database element");
+            return;
+         end if;
+
+         Add_Element (Schema, Server_Element, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add server element");
+            return;
+         end if;
+      end;
+
+      --  Test valid document with correct structure
+      declare
+         Valid_Doc : constant SML.DOM.Parser.Parse_Result :=
+            SML.DOM.Parser.Parse (
+               "<config>" &
+               "  <database>db1</database>" &
+               "  <server>srv1</server>" &
+               "  <server>srv2</server>" &
+               "</config>");
+      begin
+         if not Valid_Doc.Success then
+            Put_Line ("FAILED: Could not parse valid test document");
+            return;
+         end if;
+
+         declare
+            Result : constant Validation_Result :=
+               Validate_Document (Schema, Valid_Doc.Doc);
+         begin
+            if Result.Status = Valid then
+               Put ("✓ Valid structure accepted, ");
+            else
+               Put_Line ("FAILED: Valid structure rejected: " &
+                        To_String (Result.Error_Message));
+               return;
+            end if;
+         end;
+      end;
+
+      --  Test missing required element
+      declare
+         Invalid_Doc : constant SML.DOM.Parser.Parse_Result :=
+            SML.DOM.Parser.Parse (
+               "<config>" &
+               "  <server>srv1</server>" &
+               "</config>");
+      begin
+         if not Invalid_Doc.Success then
+            Put_Line ("FAILED: Could not parse invalid test document");
+            return;
+         end if;
+
+         declare
+            Result : constant Validation_Result :=
+               Validate_Document (Schema, Invalid_Doc.Doc);
+         begin
+            if Result.Status = Invalid then
+               Put_Line ("✓ Missing required element detected");
+            else
+               Put_Line ("FAILED: Missing required element not detected");
+               return;
+            end if;
+         end;
+      end;
+
+      Put_Line ("PASSED");
+   end Test_Structure_Validation;
+
 begin
    Put_Line ("=== SML Schema Tests ===");
    New_Line;
@@ -201,6 +334,7 @@ begin
    Test_Basic_Schema;
    Test_Document_Validation;
    Test_Simple_Types;
+   Test_Structure_Validation;
 
    New_Line;
    Put_Line ("=== All Tests Completed ===");

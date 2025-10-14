@@ -16,6 +16,7 @@ A formally verified parser and Document Object Model (DOM) for Simple Markup Lan
 alr build -- -cargs:ada -gnat2022 -gnatX0
 
 # Run comprehensive example
+alr exec -- gprbuild -P examples.gpr
 alr run sml_example
 
 # Run SPARK verification
