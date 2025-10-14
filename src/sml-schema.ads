@@ -331,7 +331,10 @@ private
       --  Root element name (if specified)
       Root_Element : Bounded_String := Empty_String;
    end record
-   with Type_Invariant => Schema_Invariant (Schema_Document);
+   with Type_Invariant =>
+     Schema_Document.Element_Count <= Max_Elements
+     and then Schema_Document.Simple_Type_Count <= Max_Types
+     and then Schema_Document.Complex_Type_Count <= Max_Types;
 
    --  Ghost function implementations
    function Schema_Invariant (Schema : Schema_Document) return Boolean
