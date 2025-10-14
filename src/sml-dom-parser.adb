@@ -131,7 +131,8 @@ is
 
    --  Peek at current character without advancing
    function Peek (Input_Str : String; Ctx : Parser_Context) return Character
-   is (if Ctx.Position <= Input_Str'Last then Input_Str (Ctx.Position)
+   is (if Ctx.Position >= Input_Str'First and then Ctx.Position <= Input_Str'Last
+       then Input_Str (Ctx.Position)
        else ASCII.NUL)
    with Inline;
 

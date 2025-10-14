@@ -665,400 +665,377 @@ sml-entities.adb:28:07: info: initialization of "End_Pos" proved
 sml-entities.adb:29:07: info: initialization of "Name_Start" proved
 sml-entities.adb:30:07: info: initialization of "Name_End" proved
 sml-entities.adb:32:45: info: index check proved
+sml-entities.adb:42:27: info: overflow check proved
+sml-entities.adb:45:38: info: overflow check proved
 
-sml-entities.adb:37:27: high: overflow check might fail, cannot prove upper bound for Position + 1
-   37 |      End_Pos := Position + 1;
-      |                 ~~~~~~~~~^~~
-  e.g. when Position = Natural'Last
-  reason for check: result of addition must fit in a 32-bits machine integer
-  possible fix: add precondition (Position <= Integer'Last - 1) to subprogram at sml-entities.ads:61
-   61 |   function Has_Valid_Entity_At (Text : String; Position : Natural)
-      |            ^ here
-
-sml-entities.adb:39:38: high: overflow check might fail, cannot prove upper bound for Position + 6
-   39 |        and then End_Pos <= Position + 6
-      |                            ~~~~~~~~~^~~
-  e.g. when Position = 2147483642
-  reason for check: result of addition must fit in a 32-bits machine integer
-  possible fix: add precondition (Position <= Integer'Last - 6) to subprogram at sml-entities.ads:61
-   61 |   function Has_Valid_Entity_At (Text : String; Position : Natural)
-      |            ^ here
-
-sml-entities.adb:42:46: medium: array index check might fail
-   42 |                                            (End_Pos)
+sml-entities.adb:48:46: medium: array index check might fail
+   48 |                                            (End_Pos)
       |                                             ^~~~~~~
   reason for check: value must be a valid index into the array
-sml-entities.adb:45:31: info: loop variant proved
-
-sml-entities.adb:46:29: medium: overflow check might fail, cannot prove upper bound for End_Pos + 1
-   46 |         End_Pos := End_Pos + 1;
-      |                    ~~~~~~~~^~~
-  reason for check: result of addition must fit in a 32-bits machine integer
-sml-entities.adb:49:44: info: index check proved
-sml-entities.adb:54:30: info: overflow check proved
-sml-entities.adb:55:27: info: range check proved
-sml-entities.adb:62:50: info: overflow check proved
-sml-entities.adb:62:63: info: overflow check proved
-sml-entities.adb:62:63: info: range check proved
-sml-entities.adb:66:16: info: range check proved
-sml-entities.adb:68:19: info: range check proved
+sml-entities.adb:51:31: info: loop variant proved
+sml-entities.adb:52:29: info: overflow check proved
+sml-entities.adb:55:44: info: index check proved
+sml-entities.adb:60:30: info: overflow check proved
+sml-entities.adb:61:27: info: range check proved
+sml-entities.adb:68:50: info: overflow check proved
+sml-entities.adb:68:63: info: overflow check proved
+sml-entities.adb:68:63: info: range check proved
 sml-entities.adb:72:16: info: range check proved
-sml-entities.adb:76:16: info: range check proved
-sml-entities.adb:78:19: info: range check proved
-sml-entities.adb:92:24: info: index check proved
-sml-entities.adb:93:18: info: precondition proved
-sml-entities.adb:99:07: info: initialization of "End_Pos" proved
-sml-entities.adb:100:07: info: initialization of "Name_Start" proved
-sml-entities.adb:101:07: info: initialization of "Name_End" proved
+sml-entities.adb:74:19: info: range check proved
+sml-entities.adb:78:16: info: range check proved
+sml-entities.adb:82:16: info: range check proved
+sml-entities.adb:84:19: info: range check proved
+sml-entities.adb:98:24: info: index check proved
+sml-entities.adb:99:18: info: precondition proved
+sml-entities.adb:105:07: info: initialization of "End_Pos" proved
+sml-entities.adb:106:07: info: initialization of "Name_Start" proved
+sml-entities.adb:107:07: info: initialization of "Name_End" proved
 
-sml-entities.adb:104:27: medium: overflow check might fail, cannot prove upper bound for Position + 1
-  104 |      End_Pos := Position + 1;
+sml-entities.adb:110:27: medium: overflow check might fail, cannot prove upper bound for Position + 1
+  110 |      End_Pos := Position + 1;
       |                 ~~~~~~~~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
   possible fix: add precondition (Position <= Integer'Last - 1) to subprogram at sml-entities.ads:68
    68 |   function Get_Entity_At (Text : String; Position : Natural)
       |            ^ here
 
-sml-entities.adb:105:49: medium: array index check might fail
-  105 |      while End_Pos <= Text'Last and then Text (End_Pos) /= ';' loop
+sml-entities.adb:111:49: medium: array index check might fail
+  111 |      while End_Pos <= Text'Last and then Text (End_Pos) /= ';' loop
       |                                                ^~~~~~~
   reason for check: value must be a valid index into the array
-sml-entities.adb:106:31: info: loop variant proved
+sml-entities.adb:112:31: info: loop variant proved
 
-sml-entities.adb:107:29: medium: overflow check might fail, cannot prove upper bound for End_Pos + 1
-  107 |         End_Pos := End_Pos + 1;
+sml-entities.adb:113:29: medium: overflow check might fail, cannot prove upper bound for End_Pos + 1
+  113 |         End_Pos := End_Pos + 1;
       |                    ~~~~~~~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
-sml-entities.adb:110:30: info: overflow check proved
-sml-entities.adb:111:27: info: range check proved
-sml-entities.adb:114:50: info: overflow check proved
-sml-entities.adb:114:63: info: overflow check proved
+sml-entities.adb:116:30: info: overflow check proved
+sml-entities.adb:117:27: info: range check proved
+sml-entities.adb:120:50: info: overflow check proved
+sml-entities.adb:120:63: info: overflow check proved
 
-sml-entities.adb:114:63: medium: range check might fail, cannot prove lower bound for Name_End - Name_Start + 1
-  114 |         Name_Len : constant Natural := Name_End - Name_Start + 1;
+sml-entities.adb:120:63: medium: range check might fail, cannot prove lower bound for Name_End - Name_Start + 1
+  120 |         Name_Len : constant Natural := Name_End - Name_Start + 1;
       |                                        ~~~~~~~~~~~~~~~~~~~~~~^~~
   reason for check: default component value must fit in the type
-sml-entities.adb:117:16: info: range check proved
-sml-entities.adb:119:19: info: range check proved
 sml-entities.adb:123:16: info: range check proved
-sml-entities.adb:127:16: info: range check proved
-sml-entities.adb:129:19: info: range check proved
-sml-entities.adb:141:07: info: initialization of "End_Pos" proved
+sml-entities.adb:125:19: info: range check proved
+sml-entities.adb:129:16: info: range check proved
+sml-entities.adb:133:16: info: range check proved
+sml-entities.adb:135:19: info: range check proved
+sml-entities.adb:147:07: info: initialization of "End_Pos" proved
 
-sml-entities.adb:144:27: medium: overflow check might fail, cannot prove upper bound for Position + 1
-  144 |      End_Pos := Position + 1;
+sml-entities.adb:150:27: medium: overflow check might fail, cannot prove upper bound for Position + 1
+  150 |      End_Pos := Position + 1;
       |                 ~~~~~~~~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
   possible fix: add precondition (Position <= Integer'Last - 1) to subprogram at sml-entities.ads:75
    75 |   function Entity_Length_At (Text : String; Position : Natural)
       |            ^ here
 
-sml-entities.adb:145:49: medium: array index check might fail
-  145 |      while End_Pos <= Text'Last and then Text (End_Pos) /= ';' loop
+sml-entities.adb:151:49: medium: array index check might fail
+  151 |      while End_Pos <= Text'Last and then Text (End_Pos) /= ';' loop
       |                                                ^~~~~~~
   reason for check: value must be a valid index into the array
-sml-entities.adb:146:31: info: loop variant proved
+sml-entities.adb:152:31: info: loop variant proved
 
-sml-entities.adb:147:29: medium: overflow check might fail, cannot prove upper bound for End_Pos + 1
-  147 |         End_Pos := End_Pos + 1;
+sml-entities.adb:153:29: medium: overflow check might fail, cannot prove upper bound for End_Pos + 1
+  153 |         End_Pos := End_Pos + 1;
       |                    ~~~~~~~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
-sml-entities.adb:150:22: info: overflow check proved
-sml-entities.adb:150:33: info: overflow check proved
+sml-entities.adb:156:22: info: overflow check proved
+sml-entities.adb:156:33: info: overflow check proved
 
-sml-entities.adb:150:33: medium: range check might fail, cannot prove lower bound for End_Pos - Position + 1
-  150 |      return End_Pos - Position + 1;
+sml-entities.adb:156:33: medium: range check might fail, cannot prove lower bound for End_Pos - Position + 1
+  156 |      return End_Pos - Position + 1;
       |             ~~~~~~~~~~~~~~~~~~~^~~
   reason for check: returned value must fit in the result type of the function
 
-sml-entities.adb:159:30: medium: range check might fail, cannot prove lower bound for Text'First
-  159 |      I     : Natural := Text'First;
+sml-entities.adb:165:30: medium: range check might fail, cannot prove lower bound for Text'First
+  165 |      I     : Natural := Text'First;
       |                         ~~~~^~~~~~
   reason for check: default component value must fit in the type
-sml-entities.adb:162:31: info: loop variant proved
+sml-entities.adb:168:31: info: loop variant proved
 
-sml-entities.adb:163:19: medium: array index check might fail
-  163 |         if Text (I) = '&' and then Has_Valid_Entity_At (Text, I) then
+sml-entities.adb:169:19: medium: array index check might fail
+  169 |         if Text (I) = '&' and then Has_Valid_Entity_At (Text, I) then
       |                  ^ here
   reason for check: value must be a valid index into the array
-sml-entities.adb:163:37: info: precondition proved
+sml-entities.adb:169:37: info: precondition proved
 
-sml-entities.adb:164:28: medium: overflow check might fail, cannot prove upper bound for Count + 1
-  164 |            Count := Count + 1;  -- Each entity becomes 1 character
+sml-entities.adb:170:28: medium: overflow check might fail, cannot prove upper bound for Count + 1
+  170 |            Count := Count + 1;  -- Each entity becomes 1 character
       |                     ~~~~~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
-  possible fix: loop at line 161 should mention Count in a loop invariant
-  161 |      while I <= Text'Last loop
+  possible fix: loop at line 167 should mention Count in a loop invariant
+  167 |      while I <= Text'Last loop
       |                           ^ here
 
-sml-entities.adb:165:20: medium: overflow check might fail, cannot prove upper bound for I + Entity_Length_At (Text, I)
-  165 |            I := I + Entity_Length_At (Text, I);
+sml-entities.adb:171:20: medium: overflow check might fail, cannot prove upper bound for I + Entity_Length_At (Text, I)
+  171 |            I := I + Entity_Length_At (Text, I);
       |                 ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~
   reason for check: result of addition must fit in a 32-bits machine integer
-sml-entities.adb:165:22: info: precondition proved
+sml-entities.adb:171:22: info: precondition proved
 
-sml-entities.adb:167:28: medium: overflow check might fail, cannot prove upper bound for Count + 1
-  167 |            Count := Count + 1;
+sml-entities.adb:173:28: medium: overflow check might fail, cannot prove upper bound for Count + 1
+  173 |            Count := Count + 1;
       |                     ~~~~~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
-  possible fix: loop at line 161 should mention Count in a loop invariant
-  161 |      while I <= Text'Last loop
+  possible fix: loop at line 167 should mention Count in a loop invariant
+  167 |      while I <= Text'Last loop
       |                           ^ here
 
-sml-entities.adb:168:20: medium: overflow check might fail, cannot prove upper bound for I + 1
-  168 |            I := I + 1;
+sml-entities.adb:174:20: medium: overflow check might fail, cannot prove upper bound for I + 1
+  174 |            I := I + 1;
       |                 ~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
-sml-entities.adb:177:07: info: range check proved
-sml-entities.adb:177:48: info: length check proved
+sml-entities.adb:183:07: info: range check proved
+sml-entities.adb:183:48: info: length check proved
 
-sml-entities.adb:179:35: medium: range check might fail, cannot prove lower bound for Text'First
-  179 |      I          : Natural := Text'First;
+sml-entities.adb:185:35: medium: range check might fail, cannot prove lower bound for Text'First
+  185 |      I          : Natural := Text'First;
       |                              ~~~~^~~~~~
   reason for check: default component value must fit in the type
-sml-entities.adb:180:07: info: initialization of "Entity" proved
-sml-entities.adb:183:31: info: loop variant proved
+sml-entities.adb:186:07: info: initialization of "Entity" proved
+sml-entities.adb:189:31: info: loop variant proved
 
-sml-entities.adb:184:19: medium: array index check might fail
-  184 |         if Text (I) = '&' and then Has_Valid_Entity_At (Text, I) then
+sml-entities.adb:190:19: medium: array index check might fail
+  190 |         if Text (I) = '&' and then Has_Valid_Entity_At (Text, I) then
       |                  ^ here
   reason for check: value must be a valid index into the array
-sml-entities.adb:184:37: info: precondition proved
-sml-entities.adb:185:23: info: precondition proved
+sml-entities.adb:190:37: info: precondition proved
+sml-entities.adb:191:23: info: precondition proved
 
-sml-entities.adb:186:21: medium: array index check might fail
-  186 |            Result (J) := Entity_Table (Entity).Char;
+sml-entities.adb:192:21: medium: array index check might fail
+  192 |            Result (J) := Entity_Table (Entity).Char;
       |                    ^ here
   reason for check: value must be a valid index into the array
-  possible fix: loop at line 182 should mention J in a loop invariant
-  182 |      while I <= Text'Last loop
+  possible fix: loop at line 188 should mention J in a loop invariant
+  188 |      while I <= Text'Last loop
       |                           ^ here
 
-sml-entities.adb:187:20: medium: overflow check might fail, cannot prove upper bound for J + 1
-  187 |            J := J + 1;
+sml-entities.adb:193:20: medium: overflow check might fail, cannot prove upper bound for J + 1
+  193 |            J := J + 1;
       |                 ~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
-  possible fix: loop at line 182 should mention J in a loop invariant
-  182 |      while I <= Text'Last loop
+  possible fix: loop at line 188 should mention J in a loop invariant
+  188 |      while I <= Text'Last loop
       |                           ^ here
 
-sml-entities.adb:188:20: medium: overflow check might fail, cannot prove upper bound for I + Entity_Length_At (Text, I)
-  188 |            I := I + Entity_Length_At (Text, I);
+sml-entities.adb:194:20: medium: overflow check might fail, cannot prove upper bound for I + Entity_Length_At (Text, I)
+  194 |            I := I + Entity_Length_At (Text, I);
       |                 ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~
   reason for check: result of addition must fit in a 32-bits machine integer
-sml-entities.adb:188:22: info: precondition proved
+sml-entities.adb:194:22: info: precondition proved
 
-sml-entities.adb:190:21: medium: array index check might fail
-  190 |            Result (J) := Text (I);
+sml-entities.adb:196:21: medium: array index check might fail
+  196 |            Result (J) := Text (I);
       |                    ^ here
   reason for check: value must be a valid index into the array
-  possible fix: loop at line 182 should mention J in a loop invariant
-  182 |      while I <= Text'Last loop
+  possible fix: loop at line 188 should mention J in a loop invariant
+  188 |      while I <= Text'Last loop
       |                           ^ here
-sml-entities.adb:190:33: info: index check proved
+sml-entities.adb:196:33: info: index check proved
 
-sml-entities.adb:191:20: medium: overflow check might fail, cannot prove upper bound for J + 1
-  191 |            J := J + 1;
+sml-entities.adb:197:20: medium: overflow check might fail, cannot prove upper bound for J + 1
+  197 |            J := J + 1;
       |                 ~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
-  possible fix: loop at line 182 should mention J in a loop invariant
-  182 |      while I <= Text'Last loop
+  possible fix: loop at line 188 should mention J in a loop invariant
+  188 |      while I <= Text'Last loop
       |                           ^ here
 
-sml-entities.adb:192:20: medium: overflow check might fail, cannot prove upper bound for I + 1
-  192 |            I := I + 1;
+sml-entities.adb:198:20: medium: overflow check might fail, cannot prove upper bound for I + 1
+  198 |            I := I + 1;
       |                 ~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
-sml-entities.adb:202:38: info: range check proved
-sml-entities.adb:240:23: info: range check proved
-sml-entities.adb:249:13: info: range check proved
+sml-entities.adb:208:38: info: range check proved
+sml-entities.adb:246:23: info: range check proved
+sml-entities.adb:255:17: info: range check proved
+sml-entities.adb:256:19: info: range check proved
+sml-entities.adb:256:27: info: overflow check proved
+sml-entities.adb:257:07: info: range check proved
+sml-entities.adb:257:45: info: length check proved
+sml-entities.adb:260:07: info: initialization of "Entity_Len" proved
 
-sml-entities.adb:249:21: high: overflow check might fail, cannot prove upper bound for Text'Length * 6
-  249 |        Text'Length * 6;  -- Worst case: all &apos;
-      |        ~~~~~~~~~~~~^~~
-  e.g. when Text = (others => 'NUL')
-        and Text'First = 1
-        and Text'Last = 357913942
-  reason for check: result of multiplication must fit in a 32-bits machine integer
-sml-entities.adb:249:21: info: range check proved
-sml-entities.adb:250:07: info: range check proved
-sml-entities.adb:250:45: info: length check proved
-sml-entities.adb:253:07: info: initialization of "Entity_Len" proved
-
-sml-entities.adb:283:13: medium: range check might fail
-  283 |            Result (J + 1 .. J + Entity_Len) := Entity_Str (1 .. Entity_Len);
+sml-entities.adb:290:13: medium: range check might fail
+  290 |            Result (J + 1 .. J + Entity_Len) := Entity_Str (1 .. Entity_Len);
       |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   reason for check: slice bounds must fit in the underlying array
-  possible fix: loop at line 255 should mention Entity_Len and J and Result in a loop invariant
-  255 |      for I in Text'Range loop
+  possible fix: loop at line 262 should mention Entity_Len and J and Result in a loop invariant
+  262 |      for I in Text'Range loop
       |                          ^ here
-sml-entities.adb:283:23: info: overflow check proved
-sml-entities.adb:283:23: info: index check proved
+sml-entities.adb:290:23: info: overflow check proved
+sml-entities.adb:290:23: info: index check proved
 
-sml-entities.adb:283:32: medium: overflow check might fail, cannot prove upper bound for J + Entity_Len
-  283 |            Result (J + 1 .. J + Entity_Len) := Entity_Str (1 .. Entity_Len);
+sml-entities.adb:290:32: medium: overflow check might fail, cannot prove upper bound for J + Entity_Len
+  290 |            Result (J + 1 .. J + Entity_Len) := Entity_Str (1 .. Entity_Len);
       |                             ~~^~~~~~~~~~~~
   reason for check: result of addition must fit in a 32-bits machine integer
-  possible fix: loop at line 255 should mention Entity_Len and J in a loop invariant
-  255 |      for I in Text'Range loop
+  possible fix: loop at line 262 should mention Entity_Len and J in a loop invariant
+  262 |      for I in Text'Range loop
       |                          ^ here
-sml-entities.adb:283:32: info: overflow check proved
-sml-entities.adb:283:32: info: index check proved
-sml-entities.adb:283:46: info: length check proved
-sml-entities.adb:283:49: info: range check proved
-sml-entities.adb:283:49: info: length check proved
-sml-entities.adb:284:20: info: overflow check proved
+sml-entities.adb:290:32: info: overflow check proved
+sml-entities.adb:290:32: info: index check proved
+sml-entities.adb:290:46: info: length check proved
+sml-entities.adb:290:49: info: range check proved
+sml-entities.adb:290:49: info: length check proved
+sml-entities.adb:291:20: info: overflow check proved
 
-sml-entities.adb:306:13: medium: range check might fail
-  306 |            Result (J + 1 .. J + Entity_Len) := Entity_Str (1 .. Entity_Len);
+sml-entities.adb:313:13: medium: range check might fail
+  313 |            Result (J + 1 .. J + Entity_Len) := Entity_Str (1 .. Entity_Len);
       |            ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   reason for check: slice bounds must fit in the underlying array
-  possible fix: loop at line 255 should mention Entity_Len and J and Result in a loop invariant
-  255 |      for I in Text'Range loop
+  possible fix: loop at line 262 should mention Entity_Len and J and Result in a loop invariant
+  262 |      for I in Text'Range loop
       |                          ^ here
-sml-entities.adb:306:23: info: overflow check proved
-sml-entities.adb:306:23: info: index check proved
+sml-entities.adb:313:23: info: overflow check proved
+sml-entities.adb:313:23: info: index check proved
 
-sml-entities.adb:306:32: medium: overflow check might fail, cannot prove upper bound for J + Entity_Len
-  306 |            Result (J + 1 .. J + Entity_Len) := Entity_Str (1 .. Entity_Len);
+sml-entities.adb:313:32: medium: overflow check might fail, cannot prove upper bound for J + Entity_Len
+  313 |            Result (J + 1 .. J + Entity_Len) := Entity_Str (1 .. Entity_Len);
       |                             ~~^~~~~~~~~~~~
+  e.g. when Entity_Len = 5
+        and J = Natural'Last-4
+        and Result'First = 1
+        and Result'Last = Integer'Last
   reason for check: result of addition must fit in a 32-bits machine integer
-  possible fix: loop at line 255 should mention Entity_Len and J in a loop invariant
-  255 |      for I in Text'Range loop
+  possible fix: loop at line 262 should mention Entity_Len and J in a loop invariant
+  262 |      for I in Text'Range loop
       |                          ^ here
-sml-entities.adb:306:32: info: overflow check proved
-sml-entities.adb:306:32: info: index check proved
-sml-entities.adb:306:46: info: length check proved
-sml-entities.adb:306:49: info: range check proved
-sml-entities.adb:306:49: info: length check proved
-sml-entities.adb:307:20: info: overflow check proved
+sml-entities.adb:313:32: info: overflow check proved
+sml-entities.adb:313:32: info: index check proved
+sml-entities.adb:313:46: info: length check proved
+sml-entities.adb:313:49: info: range check proved
+sml-entities.adb:313:49: info: length check proved
+sml-entities.adb:314:20: info: overflow check proved
 
-sml-entities.adb:310:20: medium: overflow check might fail, cannot prove upper bound for J + 1
-  310 |            J := J + 1;
+sml-entities.adb:317:20: medium: overflow check might fail, cannot prove upper bound for J + 1
+  317 |            J := J + 1;
       |                 ~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
-  possible fix: loop at line 255 should mention J in a loop invariant
-  255 |      for I in Text'Range loop
+  possible fix: loop at line 262 should mention J in a loop invariant
+  262 |      for I in Text'Range loop
       |                          ^ here
 
-sml-entities.adb:311:21: medium: array index check might fail
-  311 |            Result (J) := Text (I);
+sml-entities.adb:318:21: medium: array index check might fail
+  318 |            Result (J) := Text (I);
       |                    ^ here
   reason for check: value must be a valid index into the array
-  possible fix: loop at line 255 should mention J in a loop invariant
-  255 |      for I in Text'Range loop
+  possible fix: loop at line 262 should mention J in a loop invariant
+  262 |      for I in Text'Range loop
       |                          ^ here
-sml-entities.adb:315:14: info: range check proved
-sml-entities.adb:324:47: info: precondition proved
-sml-entities.adb:324:74: info: range check proved
+sml-entities.adb:322:14: info: range check proved
 sml-entities.adb:331:47: info: precondition proved
 sml-entities.adb:331:74: info: range check proved
+sml-entities.adb:338:47: info: precondition proved
+sml-entities.adb:338:74: info: range check proved
 
-sml-entities.adb:347:32: medium: range check might fail, cannot prove lower bound for Text'First
-  347 |      I       : Natural := Text'First;
+sml-entities.adb:354:32: medium: range check might fail, cannot prove lower bound for Text'First
+  354 |      I       : Natural := Text'First;
       |                           ~~~~^~~~~~
   reason for check: default component value must fit in the type
-sml-entities.adb:348:07: info: initialization of "End_Pos" proved
+sml-entities.adb:355:07: info: initialization of "End_Pos" proved
 
-sml-entities.adb:351:31: medium: loop variant might fail
-  351 |         pragma Loop_Variant (Increases => I);
+sml-entities.adb:358:31: medium: loop variant might fail
+  358 |         pragma Loop_Variant (Increases => I);
       |                              ^~~~~~~~~
 
-sml-entities.adb:352:19: medium: array index check might fail
-  352 |         if Text (I) = '&' then
+sml-entities.adb:359:19: medium: array index check might fail
+  359 |         if Text (I) = '&' then
       |                  ^ here
   reason for check: value must be a valid index into the array
 
-sml-entities.adb:354:26: medium: overflow check might fail, cannot prove upper bound for I + 1
-  354 |            End_Pos := I + 1;
+sml-entities.adb:361:26: medium: overflow check might fail, cannot prove upper bound for I + 1
+  361 |            End_Pos := I + 1;
       |                       ~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
 
-sml-entities.adb:358:37: medium: overflow check might fail, cannot prove upper bound for I + 10
-  358 |              and then End_Pos <= I + 10
+sml-entities.adb:365:37: medium: overflow check might fail, cannot prove upper bound for I + 10
+  365 |              and then End_Pos <= I + 10
       |                                  ~~^~~~
   reason for check: result of addition must fit in a 32-bits machine integer
 
-sml-entities.adb:361:51: medium: array index check might fail
-  361 |                                                 (End_Pos)
+sml-entities.adb:368:51: medium: array index check might fail
+  368 |                                                 (End_Pos)
       |                                                  ^~~~~~~
   reason for check: value must be a valid index into the array
-  possible fix: loop at line 350 should mention End_Pos in a loop invariant
-  350 |      while I <= Text'Last loop
+  possible fix: loop at line 357 should mention End_Pos in a loop invariant
+  357 |      while I <= Text'Last loop
       |                           ^ here
-sml-entities.adb:364:37: info: loop variant proved
+sml-entities.adb:371:37: info: loop variant proved
 
-sml-entities.adb:365:35: medium: overflow check might fail, cannot prove upper bound for End_Pos + 1
-  365 |               End_Pos := End_Pos + 1;
+sml-entities.adb:372:35: medium: overflow check might fail, cannot prove upper bound for End_Pos + 1
+  372 |               End_Pos := End_Pos + 1;
       |                          ~~~~~~~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
-sml-entities.adb:368:56: info: overflow check proved
-sml-entities.adb:376:22: info: index check proved
-sml-entities.adb:384:28: info: overflow check proved
-sml-entities.adb:393:20: info: precondition proved
+sml-entities.adb:375:56: info: overflow check proved
+sml-entities.adb:383:22: info: index check proved
+sml-entities.adb:391:28: info: overflow check proved
+sml-entities.adb:400:20: info: precondition proved
 
-sml-entities.adb:400:26: medium: overflow check might fail, cannot prove upper bound for End_Pos + 1
-  400 |            I := End_Pos + 1;
+sml-entities.adb:407:26: medium: overflow check might fail, cannot prove upper bound for End_Pos + 1
+  407 |            I := End_Pos + 1;
       |                 ~~~~~~~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
 
-sml-entities.adb:402:20: medium: overflow check might fail, cannot prove upper bound for I + 1
-  402 |            I := I + 1;
+sml-entities.adb:409:20: medium: overflow check might fail, cannot prove upper bound for I + 1
+  409 |            I := I + 1;
       |                 ~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
-sml-entities.adb:407:71: info: range check proved
+sml-entities.adb:414:71: info: range check proved
 
-sml-entities.adb:411:26: medium: range check might fail, cannot prove lower bound for Text'First
-  411 |      I : Natural := Text'First;
+sml-entities.adb:418:26: medium: range check might fail, cannot prove lower bound for Text'First
+  418 |      I : Natural := Text'First;
       |                     ~~~~^~~~~~
   reason for check: default component value must fit in the type
-sml-entities.adb:414:31: info: loop variant proved
+sml-entities.adb:421:31: info: loop variant proved
 
-sml-entities.adb:415:19: medium: array index check might fail
-  415 |         if Text (I) = '&' then
+sml-entities.adb:422:19: medium: array index check might fail
+  422 |         if Text (I) = '&' then
       |                  ^ here
   reason for check: value must be a valid index into the array
-sml-entities.adb:416:20: info: precondition proved
+sml-entities.adb:423:20: info: precondition proved
 
-sml-entities.adb:419:20: medium: overflow check might fail, cannot prove upper bound for I + Entity_Length_At (Text, I)
-  419 |            I := I + Entity_Length_At (Text, I);
+sml-entities.adb:426:20: medium: overflow check might fail, cannot prove upper bound for I + Entity_Length_At (Text, I)
+  426 |            I := I + Entity_Length_At (Text, I);
       |                 ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~
   reason for check: result of addition must fit in a 32-bits machine integer
-sml-entities.adb:419:22: info: precondition proved
+sml-entities.adb:426:22: info: precondition proved
 
-sml-entities.adb:421:20: medium: overflow check might fail, cannot prove upper bound for I + 1
-  421 |            I := I + 1;
+sml-entities.adb:428:20: medium: overflow check might fail, cannot prove upper bound for I + 1
+  428 |            I := I + 1;
       |                 ~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
 
-sml-entities.adb:434:30: medium: range check might fail, cannot prove lower bound for Text'First
-  434 |      I     : Natural := Text'First;
+sml-entities.adb:441:30: medium: range check might fail, cannot prove lower bound for Text'First
+  441 |      I     : Natural := Text'First;
       |                         ~~~~^~~~~~
   reason for check: default component value must fit in the type
-sml-entities.adb:437:31: info: loop variant proved
+sml-entities.adb:444:31: info: loop variant proved
 
-sml-entities.adb:438:19: medium: array index check might fail
-  438 |         if Text (I) = '&' and then Has_Valid_Entity_At (Text, I) then
+sml-entities.adb:445:19: medium: array index check might fail
+  445 |         if Text (I) = '&' and then Has_Valid_Entity_At (Text, I) then
       |                  ^ here
   reason for check: value must be a valid index into the array
-sml-entities.adb:438:37: info: precondition proved
+sml-entities.adb:445:37: info: precondition proved
 
-sml-entities.adb:439:28: medium: overflow check might fail, cannot prove upper bound for Count + 1
-  439 |            Count := Count + 1;
+sml-entities.adb:446:28: medium: overflow check might fail, cannot prove upper bound for Count + 1
+  446 |            Count := Count + 1;
       |                     ~~~~~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
-  possible fix: loop at line 436 should mention Count in a loop invariant
-  436 |      while I <= Text'Last loop
+  possible fix: loop at line 443 should mention Count in a loop invariant
+  443 |      while I <= Text'Last loop
       |                           ^ here
 
-sml-entities.adb:440:20: medium: overflow check might fail, cannot prove upper bound for I + Entity_Length_At (Text, I)
-  440 |            I := I + Entity_Length_At (Text, I);
+sml-entities.adb:447:20: medium: overflow check might fail, cannot prove upper bound for I + Entity_Length_At (Text, I)
+  447 |            I := I + Entity_Length_At (Text, I);
       |                 ~~^~~~~~~~~~~~~~~~~~~~~~~~~~~
   reason for check: result of addition must fit in a 32-bits machine integer
-sml-entities.adb:440:22: info: precondition proved
+sml-entities.adb:447:22: info: precondition proved
 
-sml-entities.adb:442:20: medium: overflow check might fail, cannot prove upper bound for I + 1
-  442 |            I := I + 1;
+sml-entities.adb:449:20: medium: overflow check might fail, cannot prove upper bound for I + 1
+  449 |            I := I + 1;
       |                 ~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
 sml-entities.ads:41:13: info: implicit aspect Always_Terminates on "Needs_Entity_In_Content" has been proved, subprogram will terminate
@@ -2053,17 +2030,11 @@ sml-dom-parser.adb:53:13: info: implicit aspect Always_Terminates on "Is_Whitesp
 sml-dom-parser.adb:58:13: info: implicit aspect Always_Terminates on "Is_Name_Start_Char" has been proved, subprogram will terminate
 sml-dom-parser.adb:66:13: info: implicit aspect Always_Terminates on "Is_Name_Char" has been proved, subprogram will terminate
 sml-dom-parser.adb:77:13: info: implicit aspect Always_Terminates on "Make_Error" has been proved, subprogram will terminate
-sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:1149
-sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:1098
+sml-dom-parser.adb:84:07: info: initialization of "Error" proved
 sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:1131
 sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:1113
-sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:770
-sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:788
-sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:806
-sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:638
-sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:821
-sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:651
-sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:834
+sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:1149
+sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:1098
 sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:674
 sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:1053
 sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:859
@@ -2074,7 +2045,13 @@ sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inline
 sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:624
 sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:986
 sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:712
-sml-dom-parser.adb:84:07: info: initialization of "Error" proved
+sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:770
+sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:788
+sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:806
+sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:638
+sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:821
+sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:651
+sml-dom-parser.adb:84:07: info: initialization of "Error" proved, in call inlined at sml-dom-parser.adb:834
 sml-dom-parser.adb:85:44: info: range check proved, in call inlined at sml-dom-parser.adb:624
 sml-dom-parser.adb:85:44: info: range check proved, in call inlined at sml-dom-parser.adb:754
 sml-dom-parser.adb:85:50: info: range check proved, in call inlined at sml-dom-parser.adb:624
@@ -2894,67 +2871,37 @@ sml-dom-parser.adb:1359:17: medium: overflow check might fail, cannot prove uppe
  1359 |         I := I + 1;
       |              ~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
+sml-dom-parser.adb:1391:45: info: overflow check proved
+sml-dom-parser.adb:1392:23: info: index check proved
+sml-dom-parser.adb:1392:43: info: overflow check proved
+sml-dom-parser.adb:1394:27: info: overflow check proved
+sml-dom-parser.adb:1395:29: info: index check proved
+sml-dom-parser.adb:1397:32: info: index check proved
+sml-dom-parser.adb:1411:45: info: overflow check proved
+sml-dom-parser.adb:1412:23: info: index check proved
+sml-dom-parser.adb:1412:50: info: overflow check proved
+sml-dom-parser.adb:1412:50: info: index check proved
+sml-dom-parser.adb:1424:45: info: overflow check proved
+sml-dom-parser.adb:1425:16: info: range check proved
+sml-dom-parser.adb:1425:30: info: overflow check proved
+sml-dom-parser.adb:1437:45: info: overflow check proved
+sml-dom-parser.adb:1438:16: info: range check proved
+sml-dom-parser.adb:1438:30: info: overflow check proved
+sml-dom-parser.adb:1450:45: info: overflow check proved
+sml-dom-parser.adb:1451:16: info: range check proved
+sml-dom-parser.adb:1451:30: info: overflow check proved
 
-sml-dom-parser.adb:1390:42: high: overflow check might fail, cannot prove lower bound for Input'Last - 1
- 1390 |      for I in Input'First .. Input'Last - 1 loop
-      |                              ~~~~~~~~~~~^~~
-  e.g. when Input'First = 0
-        and Input'Last = Integer'First
-  reason for check: result of subtraction must fit in a 32-bits machine integer
-sml-dom-parser.adb:1391:20: info: index check proved
-sml-dom-parser.adb:1391:40: info: overflow check proved
-sml-dom-parser.adb:1393:24: info: overflow check proved
-sml-dom-parser.adb:1394:26: info: index check proved
-sml-dom-parser.adb:1396:29: info: index check proved
-
-sml-dom-parser.adb:1408:42: high: overflow check might fail, cannot prove lower bound for Input'Last - 1
- 1408 |      for I in Input'First .. Input'Last - 1 loop
-      |                              ~~~~~~~~~~~^~~
-  e.g. when Input'First = 0
-        and Input'Last = Integer'First
-  reason for check: result of subtraction must fit in a 32-bits machine integer
-sml-dom-parser.adb:1409:20: info: index check proved
-sml-dom-parser.adb:1409:47: info: overflow check proved
-sml-dom-parser.adb:1409:47: info: index check proved
-
-sml-dom-parser.adb:1419:42: high: overflow check might fail, cannot prove lower bound for Input'Last - 8
- 1419 |      for I in Input'First .. Input'Last - 8 loop
-      |                              ~~~~~~~~~~~^~~
-  e.g. when Input'First = 0
-        and Input'Last = -2147483641
-  reason for check: result of subtraction must fit in a 32-bits machine integer
-sml-dom-parser.adb:1420:13: info: range check proved
-sml-dom-parser.adb:1420:27: info: overflow check proved
-
-sml-dom-parser.adb:1430:42: high: overflow check might fail, cannot prove lower bound for Input'Last - 8
- 1430 |      for I in Input'First .. Input'Last - 8 loop
-      |                              ~~~~~~~~~~~^~~
-  e.g. when Input'First = 0
-        and Input'Last = -2147483641
-  reason for check: result of subtraction must fit in a 32-bits machine integer
-sml-dom-parser.adb:1431:13: info: range check proved
-sml-dom-parser.adb:1431:27: info: overflow check proved
-
-sml-dom-parser.adb:1441:42: high: overflow check might fail, cannot prove lower bound for Input'Last - 3
- 1441 |      for I in Input'First .. Input'Last - 3 loop
-      |                              ~~~~~~~~~~~^~~
-  e.g. when Input'First = 0
-        and Input'Last = Integer'First+2
-  reason for check: result of subtraction must fit in a 32-bits machine integer
-sml-dom-parser.adb:1442:13: info: range check proved
-sml-dom-parser.adb:1442:27: info: overflow check proved
-
-sml-dom-parser.adb:1454:40: medium: overflow check might fail, cannot prove upper bound for I + 5
- 1454 |         if Input (I) = '<' and then I + 5 <= Input'Last then
+sml-dom-parser.adb:1464:40: medium: overflow check might fail, cannot prove upper bound for I + 5
+ 1464 |         if Input (I) = '<' and then I + 5 <= Input'Last then
       |                                     ~~^~~
   reason for check: result of addition must fit in a 32-bits machine integer
-sml-dom-parser.adb:1455:24: info: overflow check proved
-sml-dom-parser.adb:1456:26: info: index check proved
-sml-dom-parser.adb:1458:29: info: index check proved
+sml-dom-parser.adb:1465:24: info: overflow check proved
+sml-dom-parser.adb:1466:26: info: index check proved
+sml-dom-parser.adb:1468:29: info: index check proved
 
-sml-dom-parser.adb:1506:09: medium: unexpected exception might be raised
- 1506>|        raise Program_Error
- 1507 |          with "Ghost function Partial_DOM is not implemented";
+sml-dom-parser.adb:1516:09: medium: unexpected exception might be raised
+ 1516>|        raise Program_Error
+ 1517 |          with "Ghost function Partial_DOM is not implemented";
 sml-dom-parser.ads:43:09: info: invariant check proved on default value
 sml-dom-parser.ads:58:13: info: implicit aspect Always_Terminates on "Parse" has been proved, subprogram will terminate
 sml-dom-parser.ads:58:13: info: invariant check proved
