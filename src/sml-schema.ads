@@ -36,6 +36,9 @@ is
    --  Maximum nesting depth for complex types
    Max_Type_Depth : constant Natural := 10;
 
+   --  Maximum string length restrictions
+   Max_String_Length : constant Natural := 1000;
+
    ---------------------------------------------------------------------------
    --  Basic Types
    ---------------------------------------------------------------------------
@@ -48,11 +51,12 @@ is
    end record;
 
    --  Compare two bounded strings for equality
-   overriding function "=" (Left, Right : Bounded_String) return Boolean;
+   overriding
+   function "=" (Left, Right : Bounded_String) return Boolean;
 
    --  Empty bounded string constant
    Empty_String : constant Bounded_String :=
-      (Length => 0, Data => [others => ' ']);
+     (Length => 0, Data => [others => ' ']);
 
    ---------------------------------------------------------------------------
    --  Validation Result Types
@@ -66,6 +70,7 @@ is
       case Status is
          when Valid =>
             null;
+
          when Invalid =>
             Error_Message : Bounded_String;
             Error_Path    : Bounded_String;  --  e.g., "/config/database/port"
@@ -82,19 +87,19 @@ is
    ---------------------------------------------------------------------------
 
    --  Simple type kinds (built-in types)
-   type Simple_Type_Kind is (
-      String_Type,    --  Any text content
+   type Simple_Type_Kind is
+     (String_Type,    --  Any text content
       Integer_Type,   --  Signed integer
       Boolean_Type,   --  true/false
       Decimal_Type    --  Decimal number
-   );
+     );
 
    --  Content model kinds for complex types
-   type Content_Model_Kind is (
-      Sequence_Model,  --  Elements must appear in order
+   type Content_Model_Kind is
+     (Sequence_Model,  --  Elements must appear in order
       Choice_Model,    --  Exactly one element must appear
       Simple_Model     --  Simple content (text only)
-   );
+     );
 
    --  Element definition with cardinality
    type Element_Definition is record
@@ -107,12 +112,22 @@ is
    --  Array of element definitions
    type Element_Array is array (1 .. Max_Elements) of Element_Definition;
 
-   --  Simple type definition with restrictions
+   --  Array type for enumeration values
+   type Enum_Value_Array is array (1 .. Max_Enum_Values) of Bounded_String;
+
+   --  Enhanced simple type definition with restrictions
    type Simple_Type_Definition is record
-      Name      : Bounded_String;
-      Base_Type : Simple_Type_Kind;
-      Min_Value : Integer := Integer'First;  --  For integer types
-      Max_Value : Integer := Integer'Last;   --  For integer types
+      Name        : Bounded_String;
+      Base_Type   : Simple_Type_Kind;
+      --  Integer restrictions
+      Min_Value   : Integer := Integer'First;
+      Max_Value   : Integer := Integer'Last;
+      --  String restrictions
+      Min_Length  : Natural := 0;
+      Max_Length  : Natural := Max_String_Length;
+      --  Enumeration values
+      Enum_Values : Enum_Value_Array := [others => Empty_String];
+      Enum_Count  : Natural := 0;
    end record;
 
    --  Array of simple type definitions
@@ -135,22 +150,26 @@ is
    type Complex_Type_Definition is record
       Name          : Bounded_String;
       Content_Model : Content_Model_Kind := Sequence_Model;
-      Children      : Element_Ref_Array := [others =>
-                        (Element_Name => Empty_String,
-                         Min_Occurs => 1,
-                         Max_Occurs => 1)];
+      Children      : Element_Ref_Array :=
+        [others =>
+           (Element_Name => Empty_String, Min_Occurs => 1, Max_Occurs => 1)];
       Child_Count   : Natural := 0;
    end record;
 
    --  Array of complex type definitions
-   type Complex_Type_Array is array (1 .. Max_Types) of Complex_Type_Definition;
+   type Complex_Type_Array is
+     array (1 .. Max_Types) of Complex_Type_Definition;
 
    ---------------------------------------------------------------------------
    --  Schema Document Type
    ---------------------------------------------------------------------------
 
-   --  Main schema document type (limited for SPARK safety)
+   --  Forward declaration for invariant function
    type Schema_Document is limited private;
+
+   --  Type invariant function
+   function Schema_Invariant (Schema : Schema_Document) return Boolean
+   with Ghost;
 
    ---------------------------------------------------------------------------
    --  Schema Construction Functions
@@ -158,82 +177,100 @@ is
 
    --  Initialize an empty schema
    procedure Initialize (Schema : out Schema_Document)
-     with
-       Post => Is_Empty (Schema);
+   with Post => Is_Empty (Schema);
 
    --  Check if schema is empty
    function Is_Empty (Schema : Schema_Document) return Boolean
-     with Ghost;
+   with Ghost;
 
    --  Add an element definition to the schema
-   procedure Add_Element (
-      Schema  : in out Schema_Document;
+   procedure Add_Element
+     (Schema  : in out Schema_Document;
       Element : Element_Definition;
       Success : out Boolean)
-     with
-       Pre  => Element.Name.Length > 0;
+   with Pre => Element.Name.Length > 0;
 
    --  Add a simple type definition to the schema
-   procedure Add_Simple_Type (
-      Schema    : in out Schema_Document;
-      Type_Def  : Simple_Type_Definition;
-      Success   : out Boolean)
-     with
-       Pre  => Type_Def.Name.Length > 0;
+   procedure Add_Simple_Type
+     (Schema   : in out Schema_Document;
+      Type_Def : Simple_Type_Definition;
+      Success  : out Boolean)
+   with Pre => Type_Def.Name.Length > 0;
 
    --  Add a complex type definition to the schema
-   procedure Add_Complex_Type (
-      Schema    : in out Schema_Document;
-      Type_Def  : Complex_Type_Definition;
-      Success   : out Boolean)
-     with
-       Pre  => Type_Def.Name.Length > 0;
+   procedure Add_Complex_Type
+     (Schema   : in out Schema_Document;
+      Type_Def : Complex_Type_Definition;
+      Success  : out Boolean)
+   with Pre => Type_Def.Name.Length > 0;
 
    --  Get count of element definitions (Ghost function for proofs)
    function Element_Count (Schema : Schema_Document) return Natural
-     with Ghost,
-          Post => Element_Count'Result <= Max_Elements;
+   with Ghost, Post => Element_Count'Result <= Max_Elements;
 
    --  Get count of type definitions (Ghost function for proofs)
    function Type_Count (Schema : Schema_Document) return Natural
-     with Ghost,
-          Post => Type_Count'Result <= Max_Types;
+   with Ghost, Post => Type_Count'Result <= Max_Types;
 
    ---------------------------------------------------------------------------
    --  Validation Functions
    ---------------------------------------------------------------------------
 
    --  Check if an element name is valid according to the schema
-   function Is_Valid_Element_Name (
-      Schema : Schema_Document;
-      Name   : String) return Boolean
-     with
-       Pre => Name'Length <= Max_Name_Length;
+   function Is_Valid_Element_Name
+     (Schema : Schema_Document; Name : String) return Boolean
+   with Pre => Name'Length <= Max_Name_Length;
 
    --  Validate an element node against the schema
-   function Validate_Element (
-      Schema : Schema_Document;
-      Doc    : DOM.Document;
-      Node   : DOM.Node_Id) return Validation_Result;
+   function Validate_Element
+     (Schema : Schema_Document; Doc : DOM.Document; Node : DOM.Node_Id)
+      return Validation_Result;
 
    --  Validate entire document against schema
-   function Validate_Document (
-      Schema : Schema_Document;
-      Doc    : DOM.Document) return Validation_Result;
+   function Validate_Document
+     (Schema : Schema_Document; Doc : DOM.Document) return Validation_Result;
 
    --  Validate element children against complex type structure
-   function Validate_Structure (
-      Schema      : Schema_Document;
+   function Validate_Structure
+     (Schema      : Schema_Document;
       Doc         : DOM.Document;
       Parent_Node : DOM.Node_Id;
       Type_Name   : Bounded_String) return Validation_Result;
 
    --  Check cardinality constraints for child elements
-   function Check_Cardinality (
-      Expected_Min : Natural;
+   function Check_Cardinality
+     (Expected_Min : Natural;
       Expected_Max : Natural;
       Actual_Count : Natural;
       Element_Name : String) return Validation_Result;
+
+   --  Validate text content against a simple type
+   function Validate_Content (
+      Schema    : Schema_Document;
+      Type_Name : Bounded_String;
+      Content   : String) return Validation_Result;
+
+   --  Helper to validate integer content
+   function Validate_Integer_Content (
+      Content   : String;
+      Min_Value : Integer;
+      Max_Value : Integer) return Validation_Result;
+
+   --  Helper to validate boolean content
+   function Validate_Boolean_Content (
+      Content : String) return Validation_Result;
+
+   --  Helper to validate decimal content
+   function Validate_Decimal_Content (
+      Content : String) return Validation_Result;
+
+   --  Helper to validate against enumeration
+   function Validate_Enum_Content (
+      Content     : String;
+      Enum_Values : Enum_Value_Array;
+      Enum_Count  : Natural) return Validation_Result
+     with Pre => Enum_Count <= Max_Enum_Values
+                 and then Content'Length <= Max_Name_Length;
 
    ---------------------------------------------------------------------------
    --  Utility Functions
@@ -241,14 +278,13 @@ is
 
    --  Create a bounded string from a regular string
    function To_Bounded_String (S : String) return Bounded_String
-     with
-       Pre  => S'Length <= Max_Name_Length,
-       Post => To_Bounded_String'Result.Length = S'Length;
+   with
+     Pre => S'Length <= Max_Name_Length,
+     Post => To_Bounded_String'Result.Length = S'Length;
 
    --  Convert bounded string to regular string
    function To_String (B : Bounded_String) return String
-     with
-       Post => To_String'Result'Length = B.Length;
+   with Post => To_String'Result'Length = B.Length;
 
 private
 
@@ -258,44 +294,60 @@ private
 
    type Schema_Document is limited record
       --  Element definitions
-      Elements      : Element_Array := [others => (Name => Empty_String,
-                                                   Type_Name => Empty_String,
-                                                   Min_Occurs => 1,
-                                                   Max_Occurs => 1)];
+      Elements      : Element_Array :=
+        [others =>
+           (Name       => Empty_String,
+            Type_Name  => Empty_String,
+            Min_Occurs => 1,
+            Max_Occurs => 1)];
       Element_Count : Natural := 0;
 
       --  Simple type definitions
-      Simple_Types  : Simple_Type_Array :=
-         [others => (Name => Empty_String,
-                     Base_Type => String_Type,
-                     Min_Value => Integer'First,
-                     Max_Value => Integer'Last)];
+      Simple_Types      : Simple_Type_Array :=
+        [others =>
+           (Name        => Empty_String,
+            Base_Type   => String_Type,
+            Min_Value   => Integer'First,
+            Max_Value   => Integer'Last,
+            Min_Length  => 0,
+            Max_Length  => Max_String_Length,
+            Enum_Values => [others => Empty_String],
+            Enum_Count  => 0)];
       Simple_Type_Count : Natural := 0;
 
       --  Complex type definitions
-      Complex_Types : Complex_Type_Array :=
-         [others => (Name => Empty_String,
-                     Content_Model => Sequence_Model,
-                     Children => [others => (Element_Name => Empty_String,
-                                           Min_Occurs => 1,
-                                           Max_Occurs => 1)],
-                     Child_Count => 0)];
+      Complex_Types      : Complex_Type_Array :=
+        [others =>
+           (Name          => Empty_String,
+            Content_Model => Sequence_Model,
+            Children      =>
+              [others =>
+                 (Element_Name => Empty_String,
+                  Min_Occurs   => 1,
+                  Max_Occurs   => 1)],
+            Child_Count   => 0)];
       Complex_Type_Count : Natural := 0;
 
       --  Root element name (if specified)
-      Root_Element  : Bounded_String := Empty_String;
-   end record;
+      Root_Element : Bounded_String := Empty_String;
+   end record
+   with Type_Invariant => Schema_Invariant (Schema_Document);
 
    --  Ghost function implementations
-   function Is_Empty (Schema : Schema_Document) return Boolean is
-      (Schema.Element_Count = 0 and then
-       Schema.Simple_Type_Count = 0 and then
-       Schema.Complex_Type_Count = 0);
+   function Schema_Invariant (Schema : Schema_Document) return Boolean
+   is (Schema.Element_Count <= Max_Elements
+       and then Schema.Simple_Type_Count <= Max_Types
+       and then Schema.Complex_Type_Count <= Max_Types);
 
-   function Element_Count (Schema : Schema_Document) return Natural is
-      (Schema.Element_Count);
+   function Is_Empty (Schema : Schema_Document) return Boolean
+   is (Schema.Element_Count = 0
+       and then Schema.Simple_Type_Count = 0
+       and then Schema.Complex_Type_Count = 0);
 
-   function Type_Count (Schema : Schema_Document) return Natural is
-      (Schema.Simple_Type_Count + Schema.Complex_Type_Count);
+   function Element_Count (Schema : Schema_Document) return Natural
+   is (Schema.Element_Count);
+
+   function Type_Count (Schema : Schema_Document) return Natural
+   is (Schema.Simple_Type_Count + Schema.Complex_Type_Count);
 
 end SML.Schema;
