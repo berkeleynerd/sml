@@ -20,18 +20,13 @@ is
 
    --  Serialize DOM tree to compact SML text (no formatting)
    function Serialize (Doc : SML.DOM.Document) return String
-   with
-     Pre => SML.DOM.Is_Well_Formed (Doc),
-     Global => null;
+   with Pre => SML.DOM.Is_Well_Formed (Doc), Global => null;
 
    --  Serialize DOM tree with pretty-printing (indentation and newlines)
    function Serialize_Formatted
-     (Doc           : SML.DOM.Document;
-      Indent_Spaces : Natural := 2) return String
+     (Doc : SML.DOM.Document; Indent_Spaces : Natural := 2) return String
    with
-     Pre =>
-       SML.DOM.Is_Well_Formed (Doc)
-       and then Indent_Spaces <= 10,
+     Pre => SML.DOM.Is_Well_Formed (Doc) and then Indent_Spaces <= 10,
      Global => null;
 
    ---------------------------------------------------------------------------
@@ -40,8 +35,6 @@ is
 
    --  Calculate maximum possible size of serialized output
    function Calculate_Max_Size (Doc : SML.DOM.Document) return Natural
-   with
-     Pre => SML.DOM.Is_Well_Formed (Doc),
-     Global => null;
+   with Pre => SML.DOM.Is_Well_Formed (Doc), Global => null;
 
 end SML.DOM.Writer;

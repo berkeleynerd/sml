@@ -25,7 +25,7 @@ is
    --    Or use: ulimit -s 65536  (Unix systems)
    --
    --  Memory requirements per Document:
-   --    - Node array: Max_Document_Nodes Ã 64 bytes â 640KB
+   --    - Node array: Max_Document_Nodes ÃÂ 64 bytes Ã¢ÂÂ 640KB
    --    - String storage: Max_String_Storage bytes = 1MB
    --    - Parser context: ~100KB additional during parsing
    --    - Total stack usage: ~1.7MB per parse operation
@@ -89,8 +89,8 @@ is
    with
      Predicate =>
        Length <= Max_String_Storage
-       and then (if Length > 0 then Start > 0
-                 and then Start <= Max_String_Storage);
+       and then (if Length > 0
+                 then Start > 0 and then Start <= Max_String_Storage);
 
    --  Null string reference
    Null_String_Ref : constant String_Ref := (Start => 0, Length => 0);

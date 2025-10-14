@@ -76,7 +76,8 @@ is
       Name      : String;
       New_Child : out Node_Id)
    is
-      Parent_Index   : constant SML.Memory_Model.Node_Index := To_Index (Parent);
+      Parent_Index   : constant SML.Memory_Model.Node_Index :=
+        To_Index (Parent);
       Child_Index    : SML.Memory_Model.Node_Index;
       Name_Ref       : SML.Memory_Model.String_Ref;
       Parent_Node    : SML.Memory_Model.Node;
@@ -157,10 +158,10 @@ is
       Text     : String;
       New_Text : out Node_Id)
    is
-      Parent_Index   : constant SML.Memory_Model.Node_Index := To_Index (Parent);
-      Text_Index     : SML.Memory_Model.Node_Index;
-      Text_Ref       : SML.Memory_Model.String_Ref;
-      Parent_Node    : SML.Memory_Model.Node;
+      Parent_Index : constant SML.Memory_Model.Node_Index := To_Index (Parent);
+      Text_Index   : SML.Memory_Model.Node_Index;
+      Text_Ref     : SML.Memory_Model.String_Ref;
+      Parent_Node  : SML.Memory_Model.Node;
    begin
       --  Allocate new text node
       SML.Memory_Model.Allocate_Node
@@ -192,7 +193,8 @@ is
       else
          --  Find last child and link as sibling
          declare
-            Current : SML.Memory_Model.Node_Index := Parent_Node.First_Child_Index;
+            Current : SML.Memory_Model.Node_Index :=
+              Parent_Node.First_Child_Index;
             N       : SML.Memory_Model.Node;
             Count   : Natural := 0;
          begin
@@ -233,11 +235,10 @@ is
    ---------------------------------------------------------------------------
 
    procedure Set_Text_Content
-     (Doc       : in out Document;
-      Text_Node : Node_Id;
-      New_Text  : String)
+     (Doc : in out Document; Text_Node : Node_Id; New_Text : String)
    is
-      Text_Index : constant SML.Memory_Model.Node_Index := To_Index (Text_Node);
+      Text_Index : constant SML.Memory_Model.Node_Index :=
+        To_Index (Text_Node);
       New_Ref    : SML.Memory_Model.String_Ref;
       N          : SML.Memory_Model.Node;
    begin
@@ -255,9 +256,7 @@ is
    end Set_Text_Content;
 
    procedure Set_Element_Name
-     (Doc          : in out Document;
-      Element_Node : Node_Id;
-      New_Name     : String)
+     (Doc : in out Document; Element_Node : Node_Id; New_Name : String)
    is
       Element_Index : constant SML.Memory_Model.Node_Index :=
         To_Index (Element_Node);
@@ -301,9 +300,8 @@ is
             while Child_Index /= SML.Memory_Model.No_Node_Index loop
                pragma Loop_Variant (Increases => Count);
                pragma Loop_Invariant (Count <= Max_Children);
-               pragma Loop_Invariant (
-                  Is_Deleted (Doc, To_Node_Id (Node_Index))
-               );
+               pragma
+                 Loop_Invariant (Is_Deleted (Doc, To_Node_Id (Node_Index)));
 
                --  Recursively mark child subtree
                Mark_Subtree_Deleted (Child_Index);

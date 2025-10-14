@@ -13,8 +13,7 @@ is
    --  Helper function for bitwise AND on Natural values
    function Bitwise_And (Left : Natural; Right : Unsigned_8) return Natural
    is (if Left <= 255 then Natural (Unsigned_8 (Left) and Right) else 0)
-   with Inline,
-        Pre => Left <= 255;
+   with Inline, Pre => Left <= 255;
 
    ---------------------------------------------------------------------------
    --  UTF-8 Character Classification

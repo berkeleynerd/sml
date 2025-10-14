@@ -108,8 +108,7 @@ is
    end Serialize;
 
    function Serialize_Formatted
-     (Doc           : SML.DOM.Document;
-      Indent_Spaces : Natural := 2) return String
+     (Doc : SML.DOM.Document; Indent_Spaces : Natural := 2) return String
    is
       Max_Size : constant Natural := Calculate_Max_Size (Doc) * 2;
       Result   : String (1 .. Max_Size) := [others => ' '];

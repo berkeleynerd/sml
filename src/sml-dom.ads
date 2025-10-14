@@ -242,13 +242,14 @@ private
       --  Ghost field for proof purposes
       Total_Nodes : Natural := 0;
    end record
-   with Type_Invariant =>
-     Pool.Next_Node_Index >= 1
-     and then Pool.Next_Node_Index <= SML.Memory_Model.Max_Document_Nodes + 1
-     and then Pool.Allocated_Nodes = Pool.Next_Node_Index - 1
-     and then Pool.Next_String_Pos >= 1
-     and then Pool.Next_String_Pos <= SML.Memory_Model.Max_String_Storage + 1
-     and then Pool.Allocated_Bytes <= SML.Memory_Model.Max_String_Storage;
+   with
+     Type_Invariant =>
+       Pool.Next_Node_Index >= 1
+       and then Pool.Next_Node_Index <= SML.Memory_Model.Max_Document_Nodes + 1
+       and then Pool.Allocated_Nodes = Pool.Next_Node_Index - 1
+       and then Pool.Next_String_Pos >= 1
+       and then Pool.Next_String_Pos <= SML.Memory_Model.Max_String_Storage + 1
+       and then Pool.Allocated_Bytes <= SML.Memory_Model.Max_String_Storage;
 
    --  Note: Node type is defined in SML.Memory_Model
    --  Node structure:

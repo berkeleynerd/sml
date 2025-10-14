@@ -11,7 +11,8 @@ is
    --  Allocation procedures (SPARK-compatible)
 
    procedure Allocate_Node
-     (Pool : in out Arena_Pool; Kind : Node_Kind; Index : out Node_Index) is
+     (Pool : in out Arena_Pool; Kind : Node_Kind; Index : out Node_Index)
+   is
       pragma Unreferenced (Kind);
    begin
       Index := Pool.Next_Node_Index;

@@ -100,7 +100,8 @@ is
       while Current /= Null_Node loop
          pragma Loop_Variant (Increases => Count);
 
-         if not SML.Memory_Model.Valid_Node_Index (Doc.Pool, To_Index (Current))
+         if not SML.Memory_Model.Valid_Node_Index
+                  (Doc.Pool, To_Index (Current))
          then
             return Null_Node;
          end if;
@@ -141,7 +142,8 @@ is
       while Current /= Null_Node loop
          pragma Loop_Variant (Increases => Count);
 
-         if not SML.Memory_Model.Valid_Node_Index (Doc.Pool, To_Index (Current))
+         if not SML.Memory_Model.Valid_Node_Index
+                  (Doc.Pool, To_Index (Current))
          then
             return Null_Node;
          end if;
@@ -189,7 +191,8 @@ is
       while Current /= Null_Node loop
          pragma Loop_Variant (Increases => Iter);
 
-         if SML.Memory_Model.Valid_Node_Index (Doc.Pool, To_Index (Current)) then
+         if SML.Memory_Model.Valid_Node_Index (Doc.Pool, To_Index (Current))
+         then
             N := Doc.Pool.Nodes (To_Index (Current));
 
             if not N.Is_Deleted then
@@ -364,12 +367,18 @@ is
       --  4. Relaxed_Initialization allows partial initialization, but accessed
       --     fields (Next_Node_Index, Nodes) are always initialized per defaults
 
-      pragma Assume (Doc.Pool'Initialized,
-                     "Pool is initialized per Document Type_Invariant");
-      pragma Assume (Doc.Pool.Next_Node_Index'Initialized,
-                     "Next_Node_Index has default value := 1 per Arena_Pool:140");
-      pragma Assume (Doc.Pool.Nodes'Initialized,
-                     "Nodes array is initialized per Arena_Pool:139");
+      pragma
+        Assume
+          (Doc.Pool'Initialized,
+           "Pool is initialized per Document Type_Invariant");
+      pragma
+        Assume
+          (Doc.Pool.Next_Node_Index'Initialized,
+           "Next_Node_Index has default value := 1 per Arena_Pool:140");
+      pragma
+        Assume
+          (Doc.Pool.Nodes'Initialized,
+           "Nodes array is initialized per Arena_Pool:139");
 
       --  Safety-critical validation: exhaustive checks for node validity
 
@@ -394,7 +403,8 @@ is
          --  Check 4: Node's parent must be valid or null (for root)
          if N.Parent_Index /= SML.Memory_Model.No_Node_Index then
             if not (N.Parent_Index > 0
-                    and then N.Parent_Index < Doc.Pool.Next_Node_Index) then
+                    and then N.Parent_Index < Doc.Pool.Next_Node_Index)
+            then
                return False;
             end if;
          end if;
@@ -402,7 +412,8 @@ is
          --  Check 5: If node has children, first child must be valid
          if N.First_Child_Index /= SML.Memory_Model.No_Node_Index then
             if not (N.First_Child_Index > 0
-                    and then N.First_Child_Index < Doc.Pool.Next_Node_Index) then
+                    and then N.First_Child_Index < Doc.Pool.Next_Node_Index)
+            then
                return False;
             end if;
          end if;
@@ -410,7 +421,8 @@ is
          --  Check 6: If node has sibling, next sibling must be valid
          if N.Next_Sibling_Index /= SML.Memory_Model.No_Node_Index then
             if not (N.Next_Sibling_Index > 0
-                    and then N.Next_Sibling_Index < Doc.Pool.Next_Node_Index) then
+                    and then N.Next_Sibling_Index < Doc.Pool.Next_Node_Index)
+            then
                return False;
             end if;
          end if;
@@ -419,8 +431,11 @@ is
          if N.Kind = SML.Memory_Model.Element then
             if N.Element_Name_Ref.Length = 0 then
                return False;  -- Elements must have non-empty names
+
             end if;
-            if not SML.Memory_Model.Valid_String_Ref (Doc.Pool, N.Element_Name_Ref) then
+            if not SML.Memory_Model.Valid_String_Ref
+                     (Doc.Pool, N.Element_Name_Ref)
+            then
                return False;
             end if;
          end if;
@@ -428,7 +443,9 @@ is
          --  Check 8: Text nodes must have valid text reference
          if N.Kind = SML.Memory_Model.Text then
             --  Text nodes can have empty content, but reference must be valid
-            if not SML.Memory_Model.Valid_String_Ref (Doc.Pool, N.Text_Content_Ref) then
+            if not SML.Memory_Model.Valid_String_Ref
+                     (Doc.Pool, N.Text_Content_Ref)
+            then
                return False;
             end if;
          end if;
@@ -451,12 +468,18 @@ is
       Idx : constant SML.Memory_Model.Node_Index := To_Index (Doc.Root_Node);
    begin
       --  Safety-critical assertions: Document Type_Invariant guarantees these
-      pragma Assume (Doc.Pool'Initialized,
-                     "Pool is initialized per Document Type_Invariant");
-      pragma Assume (Doc.Pool.Next_Node_Index'Initialized,
-                     "Next_Node_Index has default value := 1 per Arena_Pool:140");
-      pragma Assume (Doc.Pool.Nodes'Initialized,
-                     "Nodes array is initialized per Arena_Pool:139");
+      pragma
+        Assume
+          (Doc.Pool'Initialized,
+           "Pool is initialized per Document Type_Invariant");
+      pragma
+        Assume
+          (Doc.Pool.Next_Node_Index'Initialized,
+           "Next_Node_Index has default value := 1 per Arena_Pool:140");
+      pragma
+        Assume
+          (Doc.Pool.Nodes'Initialized,
+           "Nodes array is initialized per Arena_Pool:139");
 
       --  Safety Check 1: Root must exist
       if Doc.Root_Node = Null_Node then
@@ -474,12 +497,14 @@ is
       begin
          if Root_Node.Kind /= SML.Memory_Model.Element then
             return False;  -- Root must be an element
+
          end if;
 
          --  Safety Check 4: Root must have no parent (critical property!)
          --  This prevents floating subtrees - ensures true single root
          if Root_Node.Parent_Index /= SML.Memory_Model.No_Node_Index then
             return False;  -- Root cannot have a parent
+
          end if;
 
          --  Safety Check 5: Root must not be marked as deleted
@@ -512,12 +537,18 @@ is
    function Has_Valid_Depth (Doc : Document) return Boolean is
    begin
       --  Safety-critical assertions: Document Type_Invariant guarantees these
-      pragma Assume (Doc.Pool'Initialized,
-                     "Pool is initialized per Document Type_Invariant");
-      pragma Assume (Doc.Pool.Next_Node_Index'Initialized,
-                     "Next_Node_Index has default value := 1 per Arena_Pool:140");
-      pragma Assume (Doc.Pool.Nodes'Initialized,
-                     "Nodes array is initialized per Arena_Pool:139");
+      pragma
+        Assume
+          (Doc.Pool'Initialized,
+           "Pool is initialized per Document Type_Invariant");
+      pragma
+        Assume
+          (Doc.Pool.Next_Node_Index'Initialized,
+           "Next_Node_Index has default value := 1 per Arena_Pool:140");
+      pragma
+        Assume
+          (Doc.Pool.Nodes'Initialized,
+           "Nodes array is initialized per Arena_Pool:139");
 
       --  Safety Check 1: If no root, depth constraint is trivially satisfied
       if Doc.Root_Node = Null_Node then
@@ -528,6 +559,7 @@ is
       --  This satisfies Depth's precondition: Is_Valid_Node(Doc, Node)
       if not Is_Valid_Node (Doc, Doc.Root_Node) then
          return False;  -- Invalid root means invalid depth
+
       end if;
 
       --  Safety Check 3: Verify root's depth is within bounds
@@ -544,7 +576,7 @@ is
    function Has_Child
      (Doc : Document; Parent_Node, Child_Node : Node_Id) return Boolean
    is
-      Current   : Node_Id;
+      Current    : Node_Id;
       Iter_Count : Natural := 0;
    begin
       if Parent_Node = Null_Node or else Child_Node = Null_Node then
@@ -614,12 +646,18 @@ is
       Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
    begin
       --  Safety-critical assertions: Document Type_Invariant guarantees these
-      pragma Assume (Doc.Pool'Initialized,
-                     "Pool is initialized per Document Type_Invariant");
-      pragma Assume (Doc.Pool.Next_Node_Index'Initialized,
-                     "Next_Node_Index has default value := 1 per Arena_Pool:140");
-      pragma Assume (Doc.Pool.Nodes'Initialized,
-                     "Nodes array is initialized per Arena_Pool:139");
+      pragma
+        Assume
+          (Doc.Pool'Initialized,
+           "Pool is initialized per Document Type_Invariant");
+      pragma
+        Assume
+          (Doc.Pool.Next_Node_Index'Initialized,
+           "Next_Node_Index has default value := 1 per Arena_Pool:140");
+      pragma
+        Assume
+          (Doc.Pool.Nodes'Initialized,
+           "Nodes array is initialized per Arena_Pool:139");
 
       --  Safety Check 1: Null nodes are not owned
       if Node = Null_Node then

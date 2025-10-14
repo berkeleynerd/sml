@@ -131,7 +131,8 @@ is
 
    --  Peek at current character without advancing
    function Peek (Input_Str : String; Ctx : Parser_Context) return Character
-   is (if Ctx.Position >= Input_Str'First and then Ctx.Position <= Input_Str'Last
+   is (if Ctx.Position >= Input_Str'First
+         and then Ctx.Position <= Input_Str'Last
        then Input_Str (Ctx.Position)
        else ASCII.NUL)
    with Inline;
@@ -582,7 +583,7 @@ is
          Had_Error  : out Boolean;
          Error_Info : out Parse_Error)
       is
-         Ctx : Parser_Context (Input_Str'First, Input_Str'Last) :=
+         Ctx        : Parser_Context (Input_Str'First, Input_Str'Last) :=
            (Input_First => Input_Str'First,
             Input_Last  => Input_Str'Last,
             Position    => Input_Str'First,
@@ -590,11 +591,12 @@ is
             Column      => 1,
             Stack_Depth => 0,
             Stack       =>
-              [others => (Name         => [others => ' '],
-                          Name_Length  => 0,
-                          Node         => Null_Node,
-                          Last_Child   => Null_Node,
-                          Num_Children => 0)]);
+              [others =>
+                 (Name         => [others => ' '],
+                  Name_Length  => 0,
+                  Node         => Null_Node,
+                  Last_Child   => Null_Node,
+                  Num_Children => 0)]);
          Tag_Result : Parse_Tag_Result;
          Root_Index : SML.Memory_Model.Node_Index;
          Name_Ref   : SML.Memory_Model.String_Ref;
@@ -1421,7 +1423,8 @@ is
 
    function No_DTD (Input : String) return Boolean is
    begin
-      if Input'Length >= 9 then  --  "<!DOCTYPE" is 9 characters
+      if Input'Length >= 9 then
+         --  "<!DOCTYPE" is 9 characters
          for I in Input'First .. Input'Last - 8 loop
             if Input (I .. I + 8) = "<!DOCTYPE" then
                return False;
@@ -1434,7 +1437,8 @@ is
 
    function No_CDATA (Input : String) return Boolean is
    begin
-      if Input'Length >= 9 then  --  "<![CDATA[" is 9 characters
+      if Input'Length >= 9 then
+         --  "<![CDATA[" is 9 characters
          for I in Input'First .. Input'Last - 8 loop
             if Input (I .. I + 8) = "<![CDATA[" then
                return False;
@@ -1447,7 +1451,8 @@ is
 
    function No_Comments (Input : String) return Boolean is
    begin
-      if Input'Length >= 4 then  --  "<!--" is 4 characters
+      if Input'Length >= 4 then
+         --  "<!--" is 4 characters
          for I in Input'First .. Input'Last - 3 loop
             if Input (I .. I + 3) = "<!--" then
                return False;

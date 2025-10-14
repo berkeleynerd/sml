@@ -27,8 +27,8 @@ is
      Post =>
        Is_Well_Formed (Create_Document'Result)
        and then Root (Create_Document'Result) /= Null_Node
-       and then Name (Create_Document'Result,
-                      Root (Create_Document'Result)) = Root_Name,
+       and then Name (Create_Document'Result, Root (Create_Document'Result))
+                = Root_Name,
      Global => null;
 
    ---------------------------------------------------------------------------
@@ -88,9 +88,7 @@ is
 
    --  Modify text content of a text node in-place
    procedure Set_Text_Content
-     (Doc       : in out Document;
-      Text_Node : Node_Id;
-      New_Text  : String)
+     (Doc : in out Document; Text_Node : Node_Id; New_Text : String)
    with
      Pre =>
        Is_Well_Formed (Doc)
@@ -106,9 +104,7 @@ is
 
    --  Modify element name in-place
    procedure Set_Element_Name
-     (Doc          : in out Document;
-      Element_Node : Node_Id;
-      New_Name     : String)
+     (Doc : in out Document; Element_Node : Node_Id; New_Name : String)
    with
      Pre =>
        Is_Well_Formed (Doc)
@@ -147,9 +143,7 @@ is
 
    --  Check if a node is not deleted
    function Not_Deleted (Doc : Document; Node : Node_Id) return Boolean
-   with
-     Pre => Is_Valid_Node (Doc, Node),
-     Global => null;
+   with Pre => Is_Valid_Node (Doc, Node), Global => null;
 
    ---------------------------------------------------------------------------
    --  Ghost Functions for Verification
@@ -157,34 +151,24 @@ is
 
    --  Check if a specific node is marked as deleted
    function Is_Deleted (Doc : Document; Node : Node_Id) return Boolean
-   with
-     Ghost,
-     Pre => Is_Valid_Node (Doc, Node),
-     Global => null;
+   with Ghost, Pre => Is_Valid_Node (Doc, Node), Global => null;
 
    --  Check if Node is a descendant of Ancestor (transitive child relationship)
    function Is_Descendant_Of
      (Doc : Document; Node, Ancestor : Node_Id) return Boolean
    with
      Ghost,
-     Pre =>
-       Is_Valid_Node (Doc, Node)
-       and then Is_Valid_Node (Doc, Ancestor),
+     Pre => Is_Valid_Node (Doc, Node) and then Is_Valid_Node (Doc, Ancestor),
      Global => null;
 
    --  Verify all descendants of a node are marked deleted
    function All_Descendants_Deleted
      (Doc : Document; Root_Node : Node_Id) return Boolean
-   with
-     Ghost,
-     Pre => Is_Valid_Node (Doc, Root_Node),
-     Global => null;
+   with Ghost, Pre => Is_Valid_Node (Doc, Root_Node), Global => null;
 
    --  Count total deleted nodes in document
    function Count_Deleted_Nodes (Doc : Document) return Natural
-   with
-     Ghost,
-     Global => null;
+   with Ghost, Global => null;
 
    --  Check if document has any deleted nodes
    function Has_Deleted_Nodes (Doc : Document) return Boolean
