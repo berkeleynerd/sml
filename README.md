@@ -5,7 +5,8 @@ A formally verified parser and Document Object Model (DOM) for Simple Markup Lan
 ## Status
 
 ✅ **Implementation Complete** - All packages fully implemented
-✅ **SPARK Verified** - Flow analysis passes with zero warnings
+✅ **SPARK Verified** - Flow analysis passes with zero high-priority issues
+✅ **Schema Validation** - Type-safe configuration validation system
 ✅ **Build Successful** - Compiles without errors
 ✅ **Production Ready** - Formally verified and tested
 
@@ -23,9 +24,11 @@ alr exec -- gprbuild -P test_schema.gpr
 bin/test_parser
 bin/test_schema
 
-# Run comprehensive example
+# Build and run examples
 alr exec -- gprbuild -P examples.gpr
-alr run sml_example
+bin/sml_example                    # Basic DOM usage
+bin/schema_validation_example      # Schema validation demo
+bin/test_schema_loader             # Schema loader tests
 
 # Run SPARK verification
 alr exec -- gnatprove -P sml.gpr --mode=prove --level=4 --prover=cvc5 >> proof.log 2>&1
@@ -64,6 +67,7 @@ See `examples/sml_example.adb` for comprehensive demonstrations of all features.
 |------|---------|
 | **[CLAUDE.md](CLAUDE.md)** | Comprehensive development guide - architecture, implementation details, verification guidance |
 | **[MEMORY.md](MEMORY.md)** | Memory configuration guide - stack sizing, troubleshooting, performance tuning |
+| **[SCHEMA_SPEC.md](SCHEMA_SPEC.md)** | Schema language specification - types, constraints, validation rules |
 
 ## SML Language
 
@@ -81,6 +85,7 @@ SML is a strict subset of XML with these restrictions to enable formal verificat
 - **Formally Verified**: SPARK Ada proofs of correctness and safety
 - **Memory Safe**: No buffer overflows, leaks, or undefined behavior
 - **Performance Guaranteed**: O(n) parsing, O(1) DOM operations
+- **Schema Validation**: Formally verified type constraints and structure rules
 - **RFC 3629 Compliant**: Full UTF-8 validation with security hardening
 - **Bounded Resources**: Provably bounded memory usage (configurable)
 
@@ -90,6 +95,9 @@ The library uses index-based node references and arena allocation for SPARK comp
 
 - **SML.DOM** - Core DOM types and tree traversal operations
 - **SML.DOM.Parser** - Single-pass parser with formal correctness contracts
+- **SML.DOM.Builder** - DOM construction and modification API
+- **SML.DOM.Writer** - Serialization to SML format
+- **SML.Schema** - Schema validation engine with content types, structure rules, and cardinality
 - **SML.UTF8** - UTF-8 validation and processing
 - **SML.Entities** - XML entity encoding/decoding
 - **SML.Memory_Model** - Arena-based memory management
@@ -125,6 +133,92 @@ See [MEMORY.md](MEMORY.md) for detailed guidance on configuring memory limits an
 - 2,000 nodes maximum
 - 200KB string storage
 - Suitable for documents up to ~50KB
+
+## Schema Validation
+
+SML includes a formally verified schema validation system for type-safe configuration files and data validation.
+
+### Core Library (src/)
+
+**SML.Schema** - Validation engine with:
+- **Element vocabulary** - Define allowed element names
+- **Content types** - integer, boolean, decimal, string with ranges/lengths
+- **Enumerations** - Restrict values to specific lists (e.g., log levels)
+- **Cardinality** - Min/max occurrence constraints (minOccurs, maxOccurs)
+- **Structure rules** - Sequence (ordered) and choice (one-of) models
+- **Type safety** - Formal invariants with 0 high-priority SPARK issues
+
+### Example/Reference Code (examples/)
+
+**SML.Schema.Loader** - Load schemas from SML documents (reference implementation)
+- Complete working implementation
+- Users can copy/adapt for their needs
+- One function uses `Integer'Value` (documented, isolated)
+
+### Quick Start: Programmatic Schema
+
+```ada
+with SML.Schema;
+
+procedure Validate_Config is
+   Schema : Schema_Document;
+   Port_Type : Simple_Type_Definition;
+   Success : Boolean;
+begin
+   -- Build schema
+   Initialize (Schema);
+
+   Port_Type.Name := To_Bounded_String ("portType");
+   Port_Type.Base_Type := Integer_Type;
+   Port_Type.Min_Value := 1;
+   Port_Type.Max_Value := 65535;
+   Add_Simple_Type (Schema, Port_Type, Success);
+
+   -- Validate document
+   Result := Validate_Document (Schema, Doc);
+   if Result.Status = Valid then
+      -- Document is valid!
+   end if;
+end Validate_Config;
+```
+
+### Running Schema Examples
+
+```bash
+# End-to-end validation demo
+bin/schema_validation_example
+
+# Schema loader tests (8 tests)
+bin/test_schema_loader
+
+# Core validation tests (7 tests)
+bin/test_schema
+```
+
+### Schema Language
+
+Schemas are expressed in SML itself. See [SCHEMA_SPEC.md](SCHEMA_SPEC.md) for complete specification.
+
+**Example schema:**
+```xml
+<schema>
+  <simpleType>
+    <name>portType</name>
+    <restriction>
+      <base>integer</base>
+      <minValue>1</minValue>
+      <maxValue>65535</maxValue>
+    </restriction>
+  </simpleType>
+
+  <element>
+    <name>config</name>
+    <type>configType</type>
+  </element>
+</schema>
+```
+
+**Loading schemas:** See `examples/sml-schema-loader.adb` for reference implementation.
 
 ## Contributing
 

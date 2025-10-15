@@ -30,15 +30,19 @@ alr build
 ./build.sh
 
 # Build individual components
-alr exec -- gprbuild -P sml.gpr      # Library only
-alr exec -- gprbuild -P examples.gpr  # Examples
-alr exec -- gprbuild -P test.gpr      # Tests
+alr exec -- gprbuild -P sml.gpr          # Library only
+alr exec -- gprbuild -P examples.gpr     # Examples (includes schema loader)
+alr exec -- gprbuild -P test_parser.gpr  # Parser tests
+alr exec -- gprbuild -P test_schema.gpr  # Schema tests
 
 # Run examples
-bin/sml_example
+bin/sml_example                    # Basic DOM usage
+bin/schema_validation_example      # Schema validation demo
 
 # Run tests
-bin/test_parser
+bin/test_parser                    # Parser tests
+bin/test_schema                    # Schema validation tests
+bin/test_schema_loader             # Schema loader tests
 ```
 
 ## Verification Commands
@@ -109,6 +113,16 @@ The library uses a hierarchical package structure with index-based node referenc
    - Bijective encoding/decoding
    - Injection-safe output
 
+9. **SML.Schema** (`src/sml-schema.ads/.adb`) - Schema validation engine
+   - `Schema_Document` - Limited type with type invariants
+   - Element vocabulary validation
+   - Content type validation (integer, boolean, decimal, string)
+   - Enumeration support (up to 20 values per type)
+   - Structure validation (sequence, choice, simple content models)
+   - Cardinality checking (minOccurs, maxOccurs)
+   - Bounded types with formal invariants for SPARK safety
+   - 0 high-priority verification issues
+
 ### Key Design Decisions
 
 **Memory Management**: Stack-based arena allocation with compile-time bounds - no heap usage, predictable memory, enables SPARK proofs.
@@ -126,6 +140,7 @@ The library uses a hierarchical package structure with index-based node referenc
 3. **Tree Acyclicity**: No cycles in parent-child relationships
 4. **Depth Bounds**: Maximum tree depth (1000) prevents stack overflow
 5. **UTF-8 Validity**: All strings maintain valid UTF-8 encoding
+6. **Schema Bounds**: `Schema_Invariant` ensures counts stay within configured maximums
 
 ## Memory Configuration
 
@@ -142,13 +157,23 @@ For larger documents, either:
 
 ### Running Tests
 ```bash
-# Build and run test suite
-alr exec -- gprbuild -P test.gpr
+# Build and run parser tests
+alr exec -- gprbuild -P test_parser.gpr
 bin/test_parser
+
+# Build and run schema tests
+alr exec -- gprbuild -P test_schema.gpr
+bin/test_schema
+
+# Build and run examples (includes schema loader tests)
+alr exec -- gprbuild -P examples.gpr
+bin/test_schema_loader
 ```
 
 ### Adding New Test Cases
-Edit `test/test_parser.adb` and add test procedures following existing patterns.
+- Parser tests: Edit `test/test_parser.adb`
+- Schema tests: Edit `test/test_schema.adb`
+- Follow existing patterns for test procedures
 
 ### Debugging Proof Failures
 ```bash
@@ -174,22 +199,30 @@ gnatpp -P sml.gpr
 
 ```
 sml/
-├── src/                 # Library sources
-│   ├── sml.ads         # Root package
-│   ├── sml-*.ads       # Package specs
-│   └── sml-*.adb       # Package bodies
-├── test/               # Test programs
-│   └── test_parser.adb
-├── examples/           # Usage examples
-│   └── sml_example.adb
-├── proof/              # SPARK proof artifacts
-├── obj/                # Build artifacts
-├── lib/                # Library output
-├── bin/                # Executables
-├── sml.gpr            # Main project file
-├── test.gpr           # Test project
-├── examples.gpr       # Examples project
-└── alire.toml         # Alire package manifest
+├── src/                              # Library sources
+│   ├── sml.ads                       # Root package
+│   ├── sml-dom*.ads/.adb            # DOM packages
+│   ├── sml-schema.ads/.adb          # Schema validation engine
+│   ├── sml-utf8.ads/.adb            # UTF-8 processing
+│   ├── sml-entities.ads/.adb        # Entity handling
+│   └── sml-memory_model.ads/.adb    # Arena allocation
+├── test/                            # Library test programs
+│   ├── test_parser.adb              # Parser tests
+│   └── test_schema.adb              # Schema validation tests
+├── examples/                        # Examples and reference code
+│   ├── sml_example.adb              # Basic DOM usage
+│   ├── schema_validation_example.adb # Schema demo
+│   ├── sml-schema-loader.ads/.adb   # Schema loader (reference)
+│   └── test_schema_loader.adb       # Loader tests
+├── proof/                           # SPARK proof artifacts
+├── obj/                             # Build artifacts
+├── lib/                             # Library output
+├── bin/                             # Executables
+├── sml.gpr                          # Main library project
+├── test_parser.gpr                  # Parser tests project
+├── test_schema.gpr                  # Schema tests project
+├── examples.gpr                     # Examples project
+└── alire.toml                       # Alire package manifest
 ```
 
 ## Coding Standards
@@ -243,9 +276,106 @@ package Linker is
 end Linker;
 ```
 
+## Schema Validation
+
+### Core Library: SML.Schema
+
+The schema validation engine is part of the core library (src/sml-schema.*) with full SPARK verification.
+
+**Building Schemas Programmatically:**
+```ada
+with SML.Schema; use SML.Schema;
+
+Schema : Schema_Document;
+Port_Type : Simple_Type_Definition;
+Config_Element : Element_Definition;
+Success : Boolean;
+
+-- Initialize
+Initialize (Schema);
+
+-- Define port number type (1-65535)
+Port_Type.Name := To_Bounded_String ("portType");
+Port_Type.Base_Type := Integer_Type;
+Port_Type.Min_Value := 1;
+Port_Type.Max_Value := 65535;
+Add_Simple_Type (Schema, Port_Type, Success);
+
+-- Define root element
+Config_Element.Name := To_Bounded_String ("config");
+Config_Element.Type_Name := To_Bounded_String ("configType");
+Add_Element (Schema, Config_Element, Success);
+
+-- Validate document
+Result := Validate_Document (Schema, Doc);
+if Result.Status = Valid then
+   -- Success!
+else
+   Put_Line (To_String (Result.Error_Message));
+end if;
+```
+
+### Reference Implementation: SML.Schema.Loader
+
+The schema loader (examples/sml-schema-loader.*)  is reference code for loading schemas from SML documents.
+
+**Architecture:**
+- Uses exception-based pattern for limited type returns (proven in sml-dom-parser.adb)
+- Parse_Integer marked SPARK_Mode => Off (uses Integer'Value)
+- All other functions maintain SPARK_Mode => On
+- Complete working implementation users can copy/adapt
+
+**Usage Pattern:**
+```ada
+with SML.Schema.Loader;  -- From examples/
+
+-- Parse schema document
+Schema_Parse := SML.DOM.Parser.Parse (Schema_SML);
+
+-- Load into Schema_Document
+Schema_Load := SML.Schema.Loader.Load_Schema (Schema_Parse.Doc);
+
+if Schema_Load.Success then
+   -- Use Schema_Load.Schema for validation
+   Result := Validate_Document (Schema_Load.Schema, Instance_Doc);
+end if;
+```
+
+### Testing Schema Functionality
+
+```bash
+# Core validation tests (7 tests)
+bin/test_schema
+
+# Schema loader tests (8 tests)
+bin/test_schema_loader
+
+# End-to-end demo
+bin/schema_validation_example
+```
+
+### Schema Language Features
+
+See [SCHEMA_SPEC.md](SCHEMA_SPEC.md) for complete specification.
+
+**Supported:**
+- Simple types: integer, boolean, decimal, string
+- Integer ranges (minValue, maxValue)
+- String enumerations (up to 20 values)
+- Complex types with sequence or choice models
+- Cardinality constraints (minOccurs, maxOccurs)
+- "unbounded" maxOccurs support
+
+**Not Supported (by design for SPARK):**
+- Recursive type definitions
+- XPath expressions
+- Regular expression patterns
+- Attributes (SML has no attributes)
+
 ## Further Documentation
 
 - **MEMORY.md**: Detailed memory configuration and tuning guide
 - **README.md**: Project overview and quick start
-- **AGENTS.md**: Repository guidelines and contribution standards
+- **SCHEMA_SPEC.md**: Complete schema language specification
+- **SCHEMA_IMPLEMENTATION_PLAN.md**: Implementation roadmap (historical)
 - **proof/**: SPARK verification session data and logs
