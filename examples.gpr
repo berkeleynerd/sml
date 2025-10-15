@@ -7,7 +7,9 @@ project Examples is
    for Exec_Dir use "bin";
    for Create_Missing_Dirs use "True";
 
-   for Main use ("sml_example.adb");
+   for Main use ("sml_example.adb",
+                 "schema_validation_example.adb",
+                 "test_schema_loader.adb");
 
    package Compiler is
       for Default_Switches ("Ada") use ("-gnatwa", "-gnatwe", "-gnat2022");
@@ -15,6 +17,9 @@ project Examples is
 
    package Builder is
       for Executable ("sml_example.adb") use "sml_example";
+      for Executable ("schema_validation_example.adb")
+        use "schema_validation_example";
+      for Executable ("test_schema_loader.adb") use "test_schema_loader";
    end Builder;
 
    package Linker is

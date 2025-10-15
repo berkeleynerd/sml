@@ -10,6 +10,8 @@ package SML.Schema.Loader
   with SPARK_Mode => On
 is
 
+   use SML.DOM;  --  For Node_Id comparison operators
+
    --  SML.Schema.Loader: Parse schema definitions from SML DOM trees.
    --  Converts a schema document (expressed in SML) into a Schema_Document
    --  that can be used for validation.
