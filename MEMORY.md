@@ -243,23 +243,49 @@ end Linker;
 
 ## Platform-Specific Notes
 
-### macOS
+### macOS (including Apple Silicon M-series)
 
-- Default stack size: 8MB
-- Maximum stack size: Limited by physical memory
-- Use `-Wl,-stack_size,<bytes>` linker flag
+**Default stack size:** 8MB (8176 KB typically)
+
+**Maximum via ulimit:**
+```bash
+ulimit -Hs        # Shows hard limit: 65520 KB (~64 MB)
+ulimit -s 65520   # Set to maximum
+```
+
+**Maximum via linker (recommended for Ada):**
+```ada
+package Linker is
+   -- Practical maximums for Apple Silicon:
+   for Linker_Options use ("-Wl,-stack_size,0x4000000");   -- 64 MB
+   -- for Linker_Options use ("-Wl,-stack_size,0x8000000");   -- 128 MB
+   -- for Linker_Options use ("-Wl,-stack_size,0x10000000");  -- 256 MB
+end Linker;
+```
+
+**Notes:**
+- ulimit hard limit is ~64 MB on macOS 26.1
+- Linker flags can specify much larger stacks (up to GBs)
+- For SML with default settings, 32-64 MB is recommended
+- Apple Silicon handles large stacks efficiently via virtual memory
+- **Use linker flags, not ulimit, for Ada programs**
+
+**Verified on:** macOS Darwin 25.0.0 (macOS 26.1), Apple M-series hardware
 
 ### Linux
 
 - Default stack size: 8MB (typically)
+- Maximum via ulimit: varies by distribution (often 8-64 MB)
 - Can be increased with `ulimit -s` or linker flags
 - Use `-Wl,-z,stack-size=<bytes>` linker flag
+- Check with: `ulimit -Hs` for hard limit
 
 ### Windows
 
 - Default stack size: 1MB
 - **Important**: Windows has a smaller default stack - increase it!
 - Use `-Wl,--stack,<bytes>` linker flag
+- Recommended minimum: 16MB for SML library
 
 ## Further Reading
 
