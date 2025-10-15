@@ -199,7 +199,7 @@ is
 
    --  Checks if a string is valid UTF-8
    function Is_Valid_UTF8 (Text : String) return Boolean
-   with Ghost, Import, Global => null;
+   with Ghost, Global => null;
 
    ---------------------------------------------------------------------------
    --  Memory Management Ghost Functions

@@ -5,6 +5,7 @@
 ------------------------------------------------------------------------------
 
 with SML.Memory_Model;
+with SML.UTF8;
 use type SML.Memory_Model.Node_Kind;  -- Make operators visible
 
 package body SML.DOM
@@ -359,27 +360,6 @@ is
    function Is_Valid_Node (Doc : Document; Node : Node_Id) return Boolean is
       Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
    begin
-      --  Safety-critical assertions: Document Type_Invariant guarantees these
-      --  These pragma Assume statements are safe because:
-      --  1. Document has Type_Invariant at sml-dom.ads:245 proving Pool validity
-      --  2. Arena_Pool has default initial values for all scalar fields
-      --  3. This is a ghost function (proof-only, no runtime impact)
-      --  4. Relaxed_Initialization allows partial initialization, but accessed
-      --     fields (Next_Node_Index, Nodes) are always initialized per defaults
-
-      pragma
-        Assume
-          (Doc.Pool'Initialized,
-           "Pool is initialized per Document Type_Invariant");
-      pragma
-        Assume
-          (Doc.Pool.Next_Node_Index'Initialized,
-           "Next_Node_Index has default value := 1 per Arena_Pool:140");
-      pragma
-        Assume
-          (Doc.Pool.Nodes'Initialized,
-           "Nodes array is initialized per Arena_Pool:139");
-
       --  Safety-critical validation: exhaustive checks for node validity
 
       --  Check 1: Node must not be null
@@ -467,20 +447,6 @@ is
    function Has_Single_Root (Doc : Document) return Boolean is
       Idx : constant SML.Memory_Model.Node_Index := To_Index (Doc.Root_Node);
    begin
-      --  Safety-critical assertions: Document Type_Invariant guarantees these
-      pragma
-        Assume
-          (Doc.Pool'Initialized,
-           "Pool is initialized per Document Type_Invariant");
-      pragma
-        Assume
-          (Doc.Pool.Next_Node_Index'Initialized,
-           "Next_Node_Index has default value := 1 per Arena_Pool:140");
-      pragma
-        Assume
-          (Doc.Pool.Nodes'Initialized,
-           "Nodes array is initialized per Arena_Pool:139");
-
       --  Safety Check 1: Root must exist
       if Doc.Root_Node = Null_Node then
          return False;
@@ -518,38 +484,107 @@ is
    end Has_Single_Root;
 
    function Is_Acyclic (Doc : Document) return Boolean is
-      pragma Unreferenced (Doc);
+      --  Floyd's cycle detection on parent links from each node (ghost walk)
+      --  Bounded by Max_Tree_Depth and pool bounds to ensure termination
    begin
-      --  Check for cycles in the tree
-      --  Simplified implementation - assumes validity
+      --  If no root, trivially acyclic
+      if Doc.Root_Node = Null_Node then
+         return True;
+      end if;
+
+      declare
+         --  Ghost helpers for bounded ancestor steps
+         function Parent_Of (N : Node_Id) return Node_Id is
+         begin
+            if N = Null_Node then
+               return Null_Node;
+            end if;
+            if not SML.Memory_Model.Valid_Node_Index (Doc.Pool, To_Index (N)) then
+               return Null_Node;
+            end if;
+            return To_Node_Id (Doc.Pool.Nodes (To_Index (N)).Parent_Index);
+         end Parent_Of;
+      begin
+         --  Walk from every node up to the root with tortoise-hare bounded
+         for Start in 1 .. Doc.Total_Nodes loop
+            pragma Loop_Invariant (Start <= Doc.Total_Nodes);
+            declare
+               Slow : Node_Id := Node_Id (Start);
+               Fast : Node_Id := Node_Id (Start);
+               Steps : Natural := 0;
+            begin
+               while Slow /= Null_Node and then Fast /= Null_Node loop
+                  pragma Loop_Variant (Increases => Steps);
+
+                  Slow := Parent_Of (Slow);
+                  Fast := Parent_Of (Parent_Of (Fast));
+                  Steps := Steps + 1;
+
+                  if Slow = Fast and then Slow /= Null_Node then
+                     return False; -- cycle detected
+                  end if;
+
+                  exit when Steps > Max_Tree_Depth;
+               end loop;
+            end;
+         end loop;
+      end;
+
       return True;
    end Is_Acyclic;
 
-   function Has_Consistent_Parent_Child_Links (Doc : Document) return Boolean
-   is
-      pragma Unreferenced (Doc);
+   function Has_Consistent_Parent_Child_Links (Doc : Document) return Boolean is
    begin
-      --  Verify bidirectional parent-child relationships
-      --  Simplified implementation - assumes validity
+      --  For each non-deleted node, ensure children point back to parent
+      if Doc.Root_Node = Null_Node then
+         return True;
+      end if;
+
+      for I in 1 .. SML.Memory_Model.Node_Index (Doc.Total_Nodes) loop
+         declare
+            Idx : constant SML.Memory_Model.Node_Index := SML.Memory_Model.Node_Index (I);
+         begin
+            exit when not SML.Memory_Model.Valid_Node_Index (Doc.Pool, Idx);
+            declare
+               N : constant SML.Memory_Model.Node := Doc.Pool.Nodes (Idx);
+            begin
+               if not N.Is_Deleted then
+                  if N.First_Child_Index /= SML.Memory_Model.No_Node_Index then
+                     declare
+                        C_Idx : constant SML.Memory_Model.Node_Index := N.First_Child_Index;
+                     begin
+                        if not (C_Idx > 0 and then C_Idx < Doc.Pool.Next_Node_Index) then
+                           return False;
+                        end if;
+                        if Doc.Pool.Nodes (C_Idx).Parent_Index /= Idx then
+                           return False;
+                        end if;
+                     end;
+                  end if;
+
+                  if N.Next_Sibling_Index /= SML.Memory_Model.No_Node_Index then
+                     declare
+                        S_Idx : constant SML.Memory_Model.Node_Index := N.Next_Sibling_Index;
+                     begin
+                        if not (S_Idx > 0 and then S_Idx < Doc.Pool.Next_Node_Index) then
+                           return False;
+                        end if;
+                        --  Sibling must share the same parent
+                        if Doc.Pool.Nodes (S_Idx).Parent_Index /= N.Parent_Index then
+                           return False;
+                        end if;
+                     end;
+                  end if;
+               end if;
+            end;
+         end;
+      end loop;
+
       return True;
    end Has_Consistent_Parent_Child_Links;
 
    function Has_Valid_Depth (Doc : Document) return Boolean is
    begin
-      --  Safety-critical assertions: Document Type_Invariant guarantees these
-      pragma
-        Assume
-          (Doc.Pool'Initialized,
-           "Pool is initialized per Document Type_Invariant");
-      pragma
-        Assume
-          (Doc.Pool.Next_Node_Index'Initialized,
-           "Next_Node_Index has default value := 1 per Arena_Pool:140");
-      pragma
-        Assume
-          (Doc.Pool.Nodes'Initialized,
-           "Nodes array is initialized per Arena_Pool:139");
-
       --  Safety Check 1: If no root, depth constraint is trivially satisfied
       if Doc.Root_Node = Null_Node then
          return True;
@@ -638,6 +673,12 @@ is
         or else C = ':';
    end Is_Name_Char;
 
+   --  Ghost wrapper to avoid Import: delegate to SML.UTF8
+   function Is_Valid_UTF8 (Text : String) return Boolean is
+   begin
+      return SML.UTF8.Is_Valid_UTF8 (Text);
+   end Is_Valid_UTF8;
+
    ---------------------------------------------------------------------------
    --  Memory Management Ghost Functions
    ---------------------------------------------------------------------------
@@ -645,20 +686,6 @@ is
    function Owns_Node (Doc : Document; Node : Node_Id) return Boolean is
       Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
    begin
-      --  Safety-critical assertions: Document Type_Invariant guarantees these
-      pragma
-        Assume
-          (Doc.Pool'Initialized,
-           "Pool is initialized per Document Type_Invariant");
-      pragma
-        Assume
-          (Doc.Pool.Next_Node_Index'Initialized,
-           "Next_Node_Index has default value := 1 per Arena_Pool:140");
-      pragma
-        Assume
-          (Doc.Pool.Nodes'Initialized,
-           "Nodes array is initialized per Arena_Pool:139");
-
       --  Safety Check 1: Null nodes are not owned
       if Node = Null_Node then
          return False;
