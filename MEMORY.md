@@ -32,6 +32,16 @@ With default settings, you can parse documents with:
 - 1MB of text content (after entity reference expansion)
 - Input files up to ~50KB of SML markup
 
+## Quick Reference: Platform-Specific Stack Configuration
+
+| Platform | Linker Flag Syntax | Example (64MB) | Notes |
+|----------|-------------------|----------------|-------|
+| **macOS** | `-Wl,-stack_size,0xHEX` | `-Wl,-stack_size,0x4000000` | Hexadecimal, ulimit max ~64MB |
+| **Linux** | `-Wl,-z,stack-size=DECIMAL` | `-Wl,-z,stack-size=67108864` | Decimal bytes, varies by distro |
+| **Windows** | `-Wl,--stack,DECIMAL` | `-Wl,--stack,67108864` | Decimal bytes, default only 1MB! |
+
+**Stack sizes:** 32MB = 0x2000000 (hex) = 33554432 (decimal), 64MB = 0x4000000 (hex) = 67108864 (decimal)
+
 ## Handling Larger Documents
 
 If you encounter "Node limit reached" or "String limit reached" errors, or if you're parsing documents larger than 50KB, you have two options:
@@ -40,21 +50,38 @@ If you encounter "Node limit reached" or "String limit reached" errors, or if yo
 
 Increase your application's stack size at link time. This is the simplest approach and doesn't require rebuilding the library.
 
-#### macOS / Linux (GNAT)
+**Note:** Linker flag syntax is platform-specific. The examples below show platform-specific flags, or see "Cross-Platform Configuration" section below for automatic detection.
+
+#### macOS (GNAT)
 
 Add to your `.gpr` project file:
 
 ```ada
 package Linker is
-   for Linker_Options use ("-Wl,-stack_size,0x4000000");  -- 64MB stack
+   for Linker_Options use ("-Wl,-stack_size,0x4000000");  -- 64MB stack (hex)
 end Linker;
 ```
 
-#### Windows (GNAT)
+#### Linux (GNAT with GNU ld)
 
 ```ada
 package Linker is
-   for Linker_Options use ("-Wl,--stack,67108864");  -- 64MB stack
+   for Linker_Options use ("-Wl,-z,stack-size=67108864");  -- 64MB stack (decimal)
+end Linker;
+```
+
+**Alternative for some Linux systems:**
+```ada
+package Linker is
+   for Linker_Options use ("-Wl,--stack-size=67108864");  -- 64MB stack
+end Linker;
+```
+
+#### Windows (GNAT with MinGW)
+
+```ada
+package Linker is
+   for Linker_Options use ("-Wl,--stack,67108864");  -- 64MB stack (decimal)
 end Linker;
 ```
 
@@ -76,6 +103,61 @@ ulimit -s 65536
 - **Medium documents** (50KB-500KB): 32MB stack
 - **Large documents** (500KB-5MB): 64MB stack
 - **Very large documents** (>5MB): 128MB+ stack
+
+#### Cross-Platform Configuration (Advanced)
+
+For portable projects that build on multiple platforms, use case statements to auto-detect the OS:
+
+```ada
+package Linker is
+   type OS_Type is ("macos", "linux", "windows", "unknown");
+
+   -- Detect OS via Alire or environment
+   OS : OS_Type := OS_Type'Value
+     (external ("ALIRE_OS", external ("OS_DETECT", "unknown")));
+
+   case OS is
+      when macos =>
+         for Linker_Options use (
+            "-L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib",
+            "-Wl,-stack_size,0x4000000");  -- 64MB (macOS hexadecimal)
+
+      when linux =>
+         for Linker_Options use (
+            "-Wl,-z,stack-size=67108864");  -- 64MB (Linux decimal)
+
+      when windows =>
+         for Linker_Options use (
+            "-Wl,--stack,67108864");  -- 64MB (Windows decimal)
+
+      when unknown =>
+         -- Conservative default (works on most Unix-like systems)
+         for Linker_Options use ("-Wl,-stack_size,0x4000000");
+   end case;
+end Linker;
+```
+
+**Simpler alternative using external variable:**
+```ada
+package Linker is
+   Stack_Flag : constant String := external ("STACK_FLAG", "-Wl,-stack_size,0x4000000");
+   for Linker_Options use (Stack_Flag);
+end Linker;
+```
+
+Then build with:
+```bash
+# macOS
+gprbuild -P myproject.gpr
+
+# Linux
+gprbuild -P myproject.gpr -XSTACK_FLAG="-Wl,-z,stack-size=67108864"
+
+# Windows
+gprbuild -P myproject.gpr -XSTACK_FLAG="-Wl,--stack,67108864"
+```
+
+**Note:** The SML library's `.gpr` files currently use macOS-specific syntax. Linux and Windows users should modify the Linker package in their project files as shown above.
 
 ### Option 2: Modify Library Constants
 
@@ -274,18 +356,52 @@ end Linker;
 
 ### Linux
 
-- Default stack size: 8MB (typically)
-- Maximum via ulimit: varies by distribution (often 8-64 MB)
-- Can be increased with `ulimit -s` or linker flags
-- Use `-Wl,-z,stack-size=<bytes>` linker flag
-- Check with: `ulimit -Hs` for hard limit
+**Default stack size:** 8MB (typically, varies by distribution)
 
-### Windows
+**Maximum via ulimit:**
+```bash
+ulimit -Hs        # Check hard limit (distribution-specific)
+ulimit -s 65536   # Set to 64MB (if allowed)
+```
+- Common limits: 8MB-64MB (some allow "unlimited")
+- Debian/Ubuntu: Often 8MB hard limit
+- RHEL/Fedora: Often allows much larger
 
-- Default stack size: 1MB
-- **Important**: Windows has a smaller default stack - increase it!
-- Use `-Wl,--stack,<bytes>` linker flag
-- Recommended minimum: 16MB for SML library
+**Maximum via linker (recommended):**
+```ada
+package Linker is
+   for Linker_Options use ("-Wl,-z,stack-size=67108864");  -- 64MB
+   -- Alternative syntax on some systems:
+   -- for Linker_Options use ("-Wl,--stack-size=67108864");
+end Linker;
+```
+
+**Notes:**
+- Test which syntax works: `-z,stack-size=` vs `--stack-size=`
+- Uses decimal bytes (not hexadecimal like macOS)
+- Can specify very large stacks (GBs) if needed
+- Virtual memory systems handle this efficiently
+
+### Windows (MinGW/GNAT)
+
+**Default stack size:** 1MB
+
+**⚠️ Critical:** Windows default is **too small** for SML library - you **must** increase it!
+
+**Stack configuration:**
+```ada
+package Linker is
+   for Linker_Options use ("-Wl,--stack,67108864");  -- 64MB
+end Linker;
+```
+
+**Minimum recommended:** 16MB for SML with default settings
+
+**Notes:**
+- Uses decimal bytes
+- No ulimit equivalent on Windows
+- Must use linker flags
+- Stack size is fixed at link time (no runtime adjustment)
 
 ## Further Reading
 
