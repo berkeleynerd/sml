@@ -245,32 +245,31 @@ is
       Element_Name : String) return Validation_Result;
 
    --  Validate text content against a simple type
-   function Validate_Content (
-      Schema    : Schema_Document;
-      Type_Name : Bounded_String;
-      Content   : String) return Validation_Result;
+   function Validate_Content
+     (Schema : Schema_Document; Type_Name : Bounded_String; Content : String)
+      return Validation_Result;
 
    --  Helper to validate integer content
-   function Validate_Integer_Content (
-      Content   : String;
-      Min_Value : Integer;
-      Max_Value : Integer) return Validation_Result;
+   function Validate_Integer_Content
+     (Content : String; Min_Value : Integer; Max_Value : Integer)
+      return Validation_Result;
 
    --  Helper to validate boolean content
-   function Validate_Boolean_Content (
-      Content : String) return Validation_Result;
+   function Validate_Boolean_Content
+     (Content : String) return Validation_Result;
 
    --  Helper to validate decimal content
-   function Validate_Decimal_Content (
-      Content : String) return Validation_Result;
+   function Validate_Decimal_Content
+     (Content : String) return Validation_Result;
 
    --  Helper to validate against enumeration
-   function Validate_Enum_Content (
-      Content     : String;
-      Enum_Values : Enum_Value_Array;
-      Enum_Count  : Natural) return Validation_Result
-     with Pre => Enum_Count <= Max_Enum_Values
-                 and then Content'Length <= Max_Name_Length;
+   function Validate_Enum_Content
+     (Content : String; Enum_Values : Enum_Value_Array; Enum_Count : Natural)
+      return Validation_Result
+   with
+     Pre =>
+       Enum_Count <= Max_Enum_Values
+       and then Content'Length <= Max_Name_Length;
 
    ---------------------------------------------------------------------------
    --  Utility Functions
@@ -331,10 +330,11 @@ private
       --  Root element name (if specified)
       Root_Element : Bounded_String := Empty_String;
    end record
-   with Type_Invariant =>
-     Schema_Document.Element_Count <= Max_Elements
-     and then Schema_Document.Simple_Type_Count <= Max_Types
-     and then Schema_Document.Complex_Type_Count <= Max_Types;
+   with
+     Type_Invariant =>
+       Schema_Document.Element_Count <= Max_Elements
+       and then Schema_Document.Simple_Type_Count <= Max_Types
+       and then Schema_Document.Complex_Type_Count <= Max_Types;
 
    --  Ghost function implementations
    function Schema_Invariant (Schema : Schema_Document) return Boolean

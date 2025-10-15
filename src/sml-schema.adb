@@ -284,37 +284,37 @@ is
                         --  Count which options have elements
                         for J in 1 .. Complex_Type.Child_Count loop
                            declare
-                              Expected : Element_Ref renames
-                                 Complex_Type.Children (J);
+                              Expected     : Element_Ref
+                                renames Complex_Type.Children (J);
                               Option_Count : Natural := 0;
-                              Check_Child : Node_Id :=
-                                 First_Child (Doc, Parent_Node);
+                              Check_Child  : Node_Id :=
+                                First_Child (Doc, Parent_Node);
                            begin
                               --  Count elements matching this option
                               while Check_Child /= Null_Node loop
                                  if Kind (Doc, Check_Child) = Element
-                                    and then
-                                    To_Bounded_String (Name (Doc, Check_Child))
-                                       = Expected.Element_Name
+                                   and then To_Bounded_String
+                                              (Name (Doc, Check_Child))
+                                            = Expected.Element_Name
                                  then
                                     Option_Count := Option_Count + 1;
                                  end if;
                                  Check_Child :=
-                                    Next_Sibling (Doc, Check_Child);
+                                   Next_Sibling (Doc, Check_Child);
                               end loop;
 
                               if Option_Count > 0 then
                                  Options_With_Elements :=
-                                    Options_With_Elements + 1;
+                                   Options_With_Elements + 1;
 
                                  --  Check cardinality for this option
                                  declare
                                     Result : constant Validation_Result :=
-                                       Check_Cardinality (
-                                          Expected.Min_Occurs,
-                                          Expected.Max_Occurs,
-                                          Option_Count,
-                                          To_String (Expected.Element_Name));
+                                      Check_Cardinality
+                                        (Expected.Min_Occurs,
+                                         Expected.Max_Occurs,
+                                         Option_Count,
+                                         To_String (Expected.Element_Name));
                                  begin
                                     if Result.Status = Invalid then
                                        return Result;
@@ -326,36 +326,40 @@ is
 
                         --  Validate that exactly one option was chosen
                         if Options_With_Elements = 0 then
-                           return (Status => Invalid,
-                                  Error_Message => To_Bounded_String
-                                     ("Choice group requires one option"),
-                                  Error_Path => Empty_String,
-                                  Line => 0,
-                                  Column => 0);
+                           return
+                             (Status        => Invalid,
+                              Error_Message =>
+                                To_Bounded_String
+                                  ("Choice group requires one option"),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
                         elsif Options_With_Elements > 1 then
-                           return (Status => Invalid,
-                                  Error_Message => To_Bounded_String
-                                     ("Choice group allows only one option"),
-                                  Error_Path => Empty_String,
-                                  Line => 0,
-                                  Column => 0);
+                           return
+                             (Status        => Invalid,
+                              Error_Message =>
+                                To_Bounded_String
+                                  ("Choice group allows only one option"),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
                         end if;
                      end;
 
                   when Simple_Model =>
                      --  Text content only - no element children allowed
                      declare
-                        Text_Child : Node_Id :=
-                           First_Child (Doc, Parent_Node);
+                        Text_Child        : Node_Id :=
+                          First_Child (Doc, Parent_Node);
                         Has_Element_Child : Boolean := False;
-                        First_Text_Node : Node_Id := Null_Node;
+                        First_Text_Node   : Node_Id := Null_Node;
                      begin
                         --  Check for element children and find first text node
                         while Text_Child /= Null_Node loop
                            if Kind (Doc, Text_Child) = Element then
                               Has_Element_Child := True;
                            elsif Kind (Doc, Text_Child) = Text
-                              and then First_Text_Node = Null_Node
+                             and then First_Text_Node = Null_Node
                            then
                               First_Text_Node := Text_Child;
                            end if;
@@ -365,12 +369,13 @@ is
                         --  Simple content cannot have element children
                         if Has_Element_Child then
                            return
-                             (Status => Invalid,
-                              Error_Message => To_Bounded_String
-                                ("Simple content cannot have child elements"),
-                              Error_Path => Empty_String,
-                              Line => 0,
-                              Column => 0);
+                             (Status        => Invalid,
+                              Error_Message =>
+                                To_Bounded_String
+                                  ("Simple content cannot have child elements"),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
                         end if;
 
                         --  If there's text content, validate it
@@ -380,7 +385,7 @@ is
                            --  For now, just check it's not empty
                            declare
                               Text : constant String :=
-                                 Text_Value (Doc, First_Text_Node);
+                                Text_Value (Doc, First_Text_Node);
                               pragma Unreferenced (Text);
                            begin
                               --  Empty text is OK for simple content
@@ -444,40 +449,42 @@ is
    --  Content Validation Implementation
    ---------------------------------------------------------------------------
 
-   function Validate_Content (
-      Schema    : Schema_Document;
-      Type_Name : Bounded_String;
-      Content   : String) return Validation_Result
-   is
+   function Validate_Content
+     (Schema : Schema_Document; Type_Name : Bounded_String; Content : String)
+      return Validation_Result is
    begin
       --  Look for the simple type definition
       for I in 1 .. Schema.Simple_Type_Count loop
          if Schema.Simple_Types (I).Name = Type_Name then
             declare
-               Type_Def : Simple_Type_Definition renames
-                  Schema.Simple_Types (I);
+               Type_Def : Simple_Type_Definition
+                 renames Schema.Simple_Types (I);
             begin
                case Type_Def.Base_Type is
                   when String_Type =>
                      --  Check string length
                      if Content'Length < Type_Def.Min_Length then
-                        return (Status => Invalid,
-                               Error_Message => To_Bounded_String
-                                  ("String too short: minimum " &
-                                   Natural'Image (Type_Def.Min_Length) &
-                                   " characters"),
-                               Error_Path => Empty_String,
-                               Line => 0,
-                               Column => 0);
+                        return
+                          (Status        => Invalid,
+                           Error_Message =>
+                             To_Bounded_String
+                               ("String too short: minimum "
+                                & Natural'Image (Type_Def.Min_Length)
+                                & " characters"),
+                           Error_Path    => Empty_String,
+                           Line          => 0,
+                           Column        => 0);
                      elsif Content'Length > Type_Def.Max_Length then
-                        return (Status => Invalid,
-                               Error_Message => To_Bounded_String
-                                  ("String too long: maximum " &
-                                   Natural'Image (Type_Def.Max_Length) &
-                                   " characters"),
-                               Error_Path => Empty_String,
-                               Line => 0,
-                               Column => 0);
+                        return
+                          (Status        => Invalid,
+                           Error_Message =>
+                             To_Bounded_String
+                               ("String too long: maximum "
+                                & Natural'Image (Type_Def.Max_Length)
+                                & " characters"),
+                           Error_Path    => Empty_String,
+                           Line          => 0,
+                           Column        => 0);
                      end if;
 
                      --  Check enumeration if defined
@@ -485,23 +492,27 @@ is
                         --  Check content length before validation
                         if Content'Length > Max_Name_Length then
                            return
-                             (Status => Invalid,
-                              Error_Message => To_Bounded_String
-                                ("Content too long for validation"),
-                              Error_Path => Empty_String,
-                              Line => 0,
-                              Column => 0);
+                             (Status        => Invalid,
+                              Error_Message =>
+                                To_Bounded_String
+                                  ("Content too long for validation"),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
                         end if;
-                        return Validate_Enum_Content
-                          (Content, Type_Def.Enum_Values,
-                           Type_Def.Enum_Count);
+                        return
+                          Validate_Enum_Content
+                            (Content,
+                             Type_Def.Enum_Values,
+                             Type_Def.Enum_Count);
                      end if;
 
                      return Valid_Result;
 
                   when Integer_Type =>
-                     return Validate_Integer_Content
-                        (Content, Type_Def.Min_Value, Type_Def.Max_Value);
+                     return
+                       Validate_Integer_Content
+                         (Content, Type_Def.Min_Value, Type_Def.Max_Value);
 
                   when Boolean_Type =>
                      return Validate_Boolean_Content (Content);
@@ -517,10 +528,9 @@ is
       return Valid_Result;
    end Validate_Content;
 
-   function Validate_Integer_Content (
-      Content   : String;
-      Min_Value : Integer;
-      Max_Value : Integer) return Validation_Result
+   function Validate_Integer_Content
+     (Content : String; Min_Value : Integer; Max_Value : Integer)
+      return Validation_Result
    is
       Value : Integer;
    begin
@@ -529,54 +539,58 @@ is
          Value := Integer'Value (Content);
       exception
          when Constraint_Error =>
-            return (Status => Invalid,
-                   Error_Message => To_Bounded_String
-                      ("Invalid integer value: " & Content),
-                   Error_Path => Empty_String,
-                   Line => 0,
-                   Column => 0);
+            return
+              (Status        => Invalid,
+               Error_Message =>
+                 To_Bounded_String ("Invalid integer value: " & Content),
+               Error_Path    => Empty_String,
+               Line          => 0,
+               Column        => 0);
       end;
 
       --  Check range
       if Value < Min_Value then
-         return (Status => Invalid,
-                Error_Message => To_Bounded_String
-                   ("Integer too small: minimum " &
-                    Integer'Image (Min_Value)),
-                Error_Path => Empty_String,
-                Line => 0,
-                Column => 0);
+         return
+           (Status        => Invalid,
+            Error_Message =>
+              To_Bounded_String
+                ("Integer too small: minimum " & Integer'Image (Min_Value)),
+            Error_Path    => Empty_String,
+            Line          => 0,
+            Column        => 0);
       elsif Value > Max_Value then
-         return (Status => Invalid,
-                Error_Message => To_Bounded_String
-                   ("Integer too large: maximum " &
-                    Integer'Image (Max_Value)),
-                Error_Path => Empty_String,
-                Line => 0,
-                Column => 0);
+         return
+           (Status        => Invalid,
+            Error_Message =>
+              To_Bounded_String
+                ("Integer too large: maximum " & Integer'Image (Max_Value)),
+            Error_Path    => Empty_String,
+            Line          => 0,
+            Column        => 0);
       end if;
 
       return Valid_Result;
    end Validate_Integer_Content;
 
-   function Validate_Boolean_Content (
-      Content : String) return Validation_Result
-   is
+   function Validate_Boolean_Content
+     (Content : String) return Validation_Result is
    begin
       if Content = "true" or else Content = "false" then
          return Valid_Result;
       else
-         return (Status => Invalid,
-                Error_Message => To_Bounded_String
-                   ("Invalid boolean value: must be 'true' or 'false'"),
-                Error_Path => Empty_String,
-                Line => 0,
-                Column => 0);
+         return
+           (Status        => Invalid,
+            Error_Message =>
+              To_Bounded_String
+                ("Invalid boolean value: must be 'true' or 'false'"),
+            Error_Path    => Empty_String,
+            Line          => 0,
+            Column        => 0);
       end if;
    end Validate_Boolean_Content;
 
-   function Validate_Decimal_Content (
-      Content : String) return Validation_Result
+   function Validate_Decimal_Content
+     (Content : String) return Validation_Result
    is
       Value : Float;
       pragma Unreferenced (Value);
@@ -586,21 +600,21 @@ is
          Value := Float'Value (Content);
       exception
          when Constraint_Error =>
-            return (Status => Invalid,
-                   Error_Message => To_Bounded_String
-                      ("Invalid decimal value: " & Content),
-                   Error_Path => Empty_String,
-                   Line => 0,
-                   Column => 0);
+            return
+              (Status        => Invalid,
+               Error_Message =>
+                 To_Bounded_String ("Invalid decimal value: " & Content),
+               Error_Path    => Empty_String,
+               Line          => 0,
+               Column        => 0);
       end;
 
       return Valid_Result;
    end Validate_Decimal_Content;
 
-   function Validate_Enum_Content (
-      Content     : String;
-      Enum_Values : Enum_Value_Array;
-      Enum_Count  : Natural) return Validation_Result
+   function Validate_Enum_Content
+     (Content : String; Enum_Values : Enum_Value_Array; Enum_Count : Natural)
+      return Validation_Result
    is
       Content_Bounded : constant Bounded_String := To_Bounded_String (Content);
    begin
@@ -612,12 +626,13 @@ is
       end loop;
 
       --  Not found in enumeration
-      return (Status => Invalid,
-             Error_Message => To_Bounded_String
-                ("Value not in enumeration: " & Content),
-             Error_Path => Empty_String,
-             Line => 0,
-             Column => 0);
+      return
+        (Status        => Invalid,
+         Error_Message =>
+           To_Bounded_String ("Value not in enumeration: " & Content),
+         Error_Path    => Empty_String,
+         Line          => 0,
+         Column        => 0);
    end Validate_Enum_Content;
 
    ---------------------------------------------------------------------------
