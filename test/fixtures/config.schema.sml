@@ -1,0 +1,10 @@
+<schema>
+  <element>
+    <name>config</name>
+    <type>string</type>
+  </element>
+  <element>
+    <name>database</name>
+    <type>string</type>
+  </element>
+</schema>

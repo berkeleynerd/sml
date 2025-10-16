@@ -12,12 +12,96 @@
 - ✅ Phase 5: Implemented content type validation and enumerations
 - ✅ Phase 6: Created schema loader (as example/reference code)
 - ✅ Phase 7: Comprehensive documentation (README, CLAUDE.md, tutorial, memory guide)
+- ✅ Phase 8: File I/O utilities (SML.IO in util/, maximum SPARK compliance)
 
 **Current State:**
 - Library: Production ready, fully functional
 - Verification: 0 high-priority SPARK issues
-- Testing: 15 test procedures, all passing
+- Testing: 26 test procedures across 4 test suites, all passing
 - Documentation: Complete with tutorials and examples
+- File I/O: Available as optional utility package
+
+---
+
+## Known Limitations (Discovered During Implementation)
+
+### Schema Validation - Content Type Integration
+
+**Current Behavior:**
+- ✅ Element vocabulary validation (checks root element name)
+- ✅ Structure validation (sequence, choice models with cardinality)
+- ✅ Content type validation functions exist (integer, boolean, decimal, string, enums)
+- ❌ **Gap:** Element content is NOT automatically validated against its type definition
+
+**What Works:**
+```ada
+-- Element vocabulary check
+Schema defines: <element name="config"/>
+Instance: <config> → Valid
+Instance: <unknown> → Invalid (rejected)
+
+-- Structure validation
+Complex type defines sequence of children
+Instance with correct structure → Valid
+Instance missing required children → Invalid (rejected)
+
+-- Content validation (when called explicitly)
+Validate_Integer_Content ("8080", 1, 65535) → Valid
+Validate_Integer_Content ("99999", 1, 65535) → Invalid
+```
+
+**What Doesn't Work Yet:**
+```xml
+<!-- Schema defines port as integer 1-65535 -->
+<element name="port" type="portType"/>
+<simpleType name="portType">
+  <base>integer</base>
+  <minValue>1</minValue>
+  <maxValue>65535</maxValue>
+</simpleType>
+
+<!-- Instance with out-of-range value -->
+<config>
+  <port>99999</port>  <!-- Should be rejected, currently accepted -->
+</config>
+```
+
+**Why:** The Validate_Element/Validate_Structure functions don't connect element nodes to their type definitions to validate content. They validate structure (presence, order, cardinality) but not the text content against simple types.
+
+**To Fix:** Would need to enhance Validate_Element to:
+1. Look up element's type name from schema
+2. If simple type, extract text content from element
+3. Call Validate_Content with the type definition
+4. Propagate validation errors
+
+**Effort:** 10-15 hours (requires careful integration without breaking existing validation)
+
+**Impact:** Medium - Limits schema validation to structural constraints for now
+
+**Workaround:** Applications can manually call Validate_Content for specific elements they care about.
+
+### File I/O - Limited Type Return Constraints
+
+**Discovery:** Ada's limited type rules prevent returning Document in custom result types.
+
+**Attempted:**
+```ada
+-- Can't do this:
+type Parse_File_Result is limited record
+   Doc : SML.DOM.Document;  -- Limited component
+end record;
+
+function Parse_File return Parse_File_Result;  -- Can't return!
+```
+
+**Solution Used:** Return SML.DOM.Parser.Parse_Result directly (already proven pattern)
+```ada
+function Parse_File (Path : String) return SML.DOM.Parser.Parse_Result;
+```
+
+**Implication:** I/O errors appear as parse failures (can check separately with Parse_File_IO_Error)
+
+**Impact:** Minor - Works well enough, just different API than initially planned
 
 ---
 
@@ -46,7 +130,38 @@ The following items are **optional enhancements** - the library is production-re
 4. Add ghost variables for complex state tracking
 5. Verify incrementally (don't break working code)
 
-### Optional Enhancement 2: Advanced Schema Features
+### Optional Enhancement 2: Complete Element Content Type Validation
+
+**Status:** Content type functions exist but aren't integrated with element validation
+
+**What needs to be done:**
+- Connect Validate_Element to type definitions
+- Look up simple type for each element
+- Extract and validate text content against type
+- Integrate with existing validation flow
+
+**Current capability:**
+- Structure validation: ✅ Working
+- Cardinality validation: ✅ Working
+- Content type validation: ⚠️ Functions exist but not auto-applied
+
+**Benefits if implemented:**
+- Full type safety for SML documents
+- Integer range checking automatic
+- Enumeration validation automatic
+- Complete XML Schema-like validation
+
+**Priority:** Medium-High - Closes the validation gap
+
+**Effort estimate:** 10-15 hours
+
+**Challenges:**
+- Must preserve existing structural validation
+- Need to maintain 0 high-priority SPARK issues
+- Complex types with simple content need special handling
+- Error reporting must be clear (which element, which type)
+
+### Optional Enhancement 3: Advanced Schema Features
 
 **Potential additions:**
 - Recursive type definitions (complex, may challenge SPARK)
@@ -56,11 +171,11 @@ The following items are **optional enhancements** - the library is production-re
 - Key/keyref constraints (referential integrity)
 - Import/include for schema composition
 
-**Priority:** Low - Current feature set handles target use cases
+**Priority:** Low - Current feature set handles most use cases
 
 **Effort estimate:** 20-40 hours depending on complexity
 
-### Optional Enhancement 3: Performance Optimization
+### Optional Enhancement 4: Performance Optimization
 
 **Potential improvements:**
 - Profile validation on large documents
@@ -77,11 +192,9 @@ The following items are **optional enhancements** - the library is production-re
 
 **Effort estimate:** 10-20 hours with profiling
 
-### Optional Enhancement 4: Integration Features
+### Optional Enhancement 5: Parse_With_Schema Integration
 
-**Potential additions:**
-
-**Parse_With_Schema function:**
+**Potential addition:**
 ```ada
 -- In SML.DOM.Parser
 function Parse_With_Schema
@@ -92,17 +205,13 @@ with Pre => Input'Length > 0;
 - Single-step parse + validate
 - More convenient API
 
-**File I/O helpers:**
-```ada
-function Load_Schema_File (Path : String) return Schema_Load_Result;
-function Parse_File (Path : String) return Parse_Result;
-```
-
-**Priority:** Medium - Quality of life improvements
+**Priority:** Low-Medium - Quality of life improvement
 
 **Effort estimate:** 5-10 hours
 
-### Optional Enhancement 5: Additional Testing
+**Note:** File I/O helpers already implemented in SML.IO (util/)
+
+### Optional Enhancement 6: Additional Testing
 
 **Test coverage gaps:**
 - Edge cases at maximum bounds (Max_Elements, Max_Types reached)
@@ -111,12 +220,13 @@ function Parse_File (Path : String) return Parse_Result;
 - Extremely large schemas (100 elements, 100 types)
 - Performance tests with varying document sizes
 - Stress tests (parse thousands of documents)
+- File I/O with very large files (approaching Max_File_Size)
 
 **Priority:** Medium - Increases confidence
 
 **Effort estimate:** 10-15 hours
 
-### Optional Enhancement 6: Advanced Documentation
+### Optional Enhancement 7: Advanced Documentation
 
 **Potential additions:**
 - API reference documentation (comments in .ads files)
@@ -173,6 +283,47 @@ function Parse_File (Path : String) return Parse_Result;
 - Address optional enhancements based on user feedback
 - Prioritize features that solve actual user problems
 - Don't optimize prematurely
+
+---
+
+## What's Actually Usable Today
+
+### Schema Validation - Current Capabilities
+
+**✅ Fully Working:**
+1. **Element vocabulary validation** - Reject unknown element names
+2. **Structure validation** - Enforce sequence and choice models
+3. **Cardinality validation** - Enforce min/max occurs constraints
+4. **Standalone content validation** - Functions exist and work when called directly:
+   - `Validate_Integer_Content (value, min, max)`
+   - `Validate_Boolean_Content (value)`
+   - `Validate_Enum_Content (value, enum_list, count)`
+
+**⚠️ Partial:**
+5. **Automatic content type validation** - Type definitions exist but aren't automatically checked against element content
+
+**Use Cases That Work Well:**
+- Configuration file structure validation (correct elements, correct order)
+- Required/optional element enforcement
+- Element count limits (max occurrences)
+- Vocabulary control (only allowed elements)
+
+**Use Cases Requiring Manual Validation:**
+- Content type checking (call Validate_*_Content functions explicitly)
+- Range validation for integers
+- Enumeration validation for strings
+
+**Example of Current Usage:**
+```ada
+-- Schema validates structure
+Result := Validate_Document (Schema, Doc);
+if Result.Status = Valid then
+   -- Structure is correct
+   -- Now manually validate specific element content if needed:
+   Port_Content := Get_Element_Content (Doc, "port");
+   Content_Result := Validate_Integer_Content (Port_Content, 1, 65535);
+end if;
+```
 
 ---
 

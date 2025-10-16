@@ -8,6 +8,7 @@ with SML.DOM;
 with SML.DOM.Parser;
 with SML.Schema;
 with SML.Schema.Loader;
+with SML.IO;
 
 procedure Test_Schema_Loader is
    use Ada.Text_IO;
@@ -23,6 +24,7 @@ procedure Test_Schema_Loader is
    procedure Test_Full_Schema;
    procedure Test_Missing_Name_Error;
    procedure Test_Unknown_Base_Type_Error;
+   procedure Test_File_Based_Validation;
 
    procedure Test_Integer_Simple_Type is
       Schema_SML : constant String :=
@@ -360,6 +362,80 @@ procedure Test_Schema_Loader is
       Put_Line ("✓ PASSED (correctly rejected)");
    end Test_Unknown_Base_Type_Error;
 
+   procedure Test_File_Based_Validation is
+   begin
+      Put ("Test: File-Based Schema Validation... ");
+
+      --  Step 1: Load schema from file
+      declare
+         Schema_Parse : constant SML.DOM.Parser.Parse_Result :=
+           SML.IO.Parse_File ("test/fixtures/config.schema.sml");
+      begin
+         if not Schema_Parse.Success then
+            Put_Line ("FAILED: Could not parse schema file");
+            return;
+         end if;
+
+         --  Step 2: Load schema into Schema_Document
+         declare
+            Schema_Load : constant Schema_Load_Result :=
+              Load_Schema (Schema_Parse.Doc);
+         begin
+            if not Schema_Load.Success then
+               Put_Line ("FAILED: Could not load schema: " &
+                        To_String (Schema_Load.Error_Message));
+               return;
+            end if;
+
+            --  Step 3: Validate valid instance from file
+            declare
+               Valid_Parse : constant SML.DOM.Parser.Parse_Result :=
+                 SML.IO.Parse_File ("test/fixtures/config_valid.sml");
+            begin
+               if not Valid_Parse.Success then
+                  Put_Line ("FAILED: Could not parse valid instance");
+                  return;
+               end if;
+
+               declare
+                  Valid_Result : constant Validation_Result :=
+                    Validate_Document (Schema_Load.Schema, Valid_Parse.Doc);
+               begin
+                  if Valid_Result.Status /= Valid then
+                     Put_Line ("FAILED: Valid instance rejected - " &
+                              To_String (Valid_Result.Error_Message));
+                     return;
+                  end if;
+               end;
+            end;
+
+            --  Step 4: Validate invalid instance from file
+            declare
+               Invalid_Parse : constant SML.DOM.Parser.Parse_Result :=
+                 SML.IO.Parse_File ("test/fixtures/config_invalid.sml");
+            begin
+               if not Invalid_Parse.Success then
+                  Put_Line ("FAILED: Could not parse invalid instance");
+                  return;
+               end if;
+
+               declare
+                  Invalid_Result : constant Validation_Result :=
+                    Validate_Document (Schema_Load.Schema, Invalid_Parse.Doc);
+               begin
+                  if Invalid_Result.Status /= Invalid then
+                     Put_Line ("FAILED: Invalid instance incorrectly accepted");
+                     return;
+                  end if;
+                  --  Successfully rejected invalid instance!
+               end;
+            end;
+         end;
+      end;
+
+      Put_Line ("✓ PASSED (file-based validation works)");
+   end Test_File_Based_Validation;
+
 begin
    Put_Line ("=== SML Schema Loader Tests ===");
    Put_Line ("");
@@ -372,6 +448,7 @@ begin
    Test_Full_Schema;
    Test_Missing_Name_Error;
    Test_Unknown_Base_Type_Error;
+   Test_File_Based_Validation;
 
    Put_Line ("");
    Put_Line ("=== All Tests Completed ===");

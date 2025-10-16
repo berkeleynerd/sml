@@ -1,4 +1,5 @@
 with "sml.gpr";
+with "sml_io.gpr";
 
 project Examples is
 
