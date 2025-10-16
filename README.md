@@ -121,23 +121,32 @@ Ghost code for formal verification is organized into separate `.Proof` child pac
 
 ## Building
 
+### Quick Start
 ```bash
-# Using Alire (recommended)
-alr build
-
-# Or using GPRbuild directly
-gprbuild -P sml.gpr
+# Build everything (library, tests, and examples)
+./build_all.sh
 ```
 
-## Building Tests
+### Individual Components
 
-Due to a gprbuild 25.0.0 issue on macOS ARM64 with single-main executables, use the provided script:
+**Library only:**
+```bash
+alr build
+# Or: alr exec -- gprbuild -P sml.gpr
+```
 
+**Tests only:**
 ```bash
 ./build_tests.sh
 ```
+Uses `gnatmake` to work around gprbuild 25.0.0 issue on macOS ARM64.
 
-This uses `gnatmake` as a workaround. The test executables will be created in `bin/`.
+**Examples only:**
+```bash
+./build_examples.sh
+```
+
+All executables are created in `bin/`.
 
 ## Verification
 
