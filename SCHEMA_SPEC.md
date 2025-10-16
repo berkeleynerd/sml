@@ -13,7 +13,7 @@
 
 **Quick Start:**
 ```bash
-bin/schema_validation_example      # End-to-end demo
+bin/example_schema_validation      # End-to-end demo
 bin/test_schema                    # Core validation tests
 bin/test_schema_loader             # Loader tests
 ```

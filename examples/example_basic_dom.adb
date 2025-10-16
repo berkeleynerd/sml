@@ -9,7 +9,7 @@ with SML.DOM.Parser;
 with SML.DOM.Builder;
 with SML.DOM.Writer;
 
-procedure SML_Example is
+procedure Example_Basic_DOM is
    use Ada.Text_IO;
    use type SML.DOM.Node_Id;
    use type SML.DOM.Node_Kind;
@@ -215,4 +215,4 @@ begin
    Put_Line ("====================================================");
    Put_Line ("All examples completed successfully!");
    Put_Line ("====================================================");
-end SML_Example;
+end Example_Basic_DOM;

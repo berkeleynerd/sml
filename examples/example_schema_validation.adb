@@ -8,7 +8,7 @@ with SML.DOM.Parser;
 with SML.Schema;
 with SML.Schema.Loader;
 
-procedure Schema_Validation_Example is
+procedure Example_Schema_Validation is
    use Ada.Text_IO;
    use type SML.Schema.Validation_Status;
 
@@ -199,4 +199,4 @@ begin
    Put_Line ("===========================================");
    Put_Line ("  Example completed successfully!");
    Put_Line ("===========================================");
-end Schema_Validation_Example;
+end Example_Schema_Validation;

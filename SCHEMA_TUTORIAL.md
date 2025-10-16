@@ -245,7 +245,7 @@ end case;
 
 ## Complete Example
 
-See `examples/schema_validation_example.adb` for a complete working example demonstrating:
+See `examples/example_schema_validation.adb` for a complete working example demonstrating:
 1. Schema definition in SML
 2. Loading schema into Schema_Document
 3. Validating correct documents
@@ -253,7 +253,7 @@ See `examples/schema_validation_example.adb` for a complete working example demo
 
 Run with:
 ```bash
-bin/schema_validation_example
+bin/example_schema_validation
 ```
 
 ## Testing

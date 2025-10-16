@@ -36,8 +36,8 @@ alr exec -- gprbuild -P test_parser.gpr  # Parser tests
 alr exec -- gprbuild -P test_schema.gpr  # Schema tests
 
 # Run examples
-bin/sml_example                    # Basic DOM usage
-bin/schema_validation_example      # Schema validation demo
+bin/example_basic_dom                    # Basic DOM usage
+bin/example_schema_validation      # Schema validation demo
 
 # Run tests
 bin/test_parser                    # Parser tests
@@ -49,7 +49,7 @@ bin/test_schema_loader             # Schema loader tests
 
 The repository includes three focused example programs demonstrating different aspects of the library:
 
-### 1. sml_example - Basic DOM Operations (218 lines)
+### 1. example_basic_dom - Basic DOM Operations (218 lines)
 **Purpose:** Tutorial for core DOM functionality
 **Features demonstrated:**
 - Parsing SML from strings
@@ -60,10 +60,10 @@ The repository includes three focused example programs demonstrating different a
 - Round-trip operations (parse → modify → serialize → parse)
 
 **When to use:** Start here to learn basic SML library usage
-**Run:** `bin/sml_example`
-**Location:** `examples/sml_example.adb`
+**Run:** `bin/example_basic_dom`
+**Location:** `examples/example_basic_dom.adb`
 
-### 2. schema_validation_example - Schema Validation (202 lines)
+### 2. example_schema_validation - Schema Validation (202 lines)
 **Purpose:** Demonstration of schema validation capabilities
 **Features demonstrated:**
 - Loading schemas from SML strings
@@ -74,8 +74,8 @@ The repository includes three focused example programs demonstrating different a
 - Multiple validation scenarios
 
 **When to use:** Learn how to use schema validation for type-safe configs
-**Run:** `bin/schema_validation_example`
-**Location:** `examples/schema_validation_example.adb`
+**Run:** `bin/example_schema_validation`
+**Location:** `examples/example_schema_validation.adb`
 
 ### 3. test_schema_loader - File I/O & Integration (455 lines)
 **Purpose:** Comprehensive testing and file-based workflows
@@ -95,8 +95,8 @@ The repository includes three focused example programs demonstrating different a
 ### Example Progression
 
 **Suggested learning order:**
-1. Start with `sml_example` to understand DOM basics
-2. Move to `schema_validation_example` for validation features
+1. Start with `example_basic_dom` to understand DOM basics
+2. Move to `example_schema_validation` for validation features
 3. Review `test_schema_loader` for file I/O and integration patterns
 
 All examples use inline SML strings except test_schema_loader's final test which demonstrates file-based workflows using SML.IO utilities.
@@ -282,8 +282,8 @@ sml/
 │   ├── test_parser.adb              # Parser tests
 │   └── test_schema.adb              # Schema validation tests
 ├── examples/                        # Examples and reference code
-│   ├── sml_example.adb              # Basic DOM usage
-│   ├── schema_validation_example.adb # Schema demo
+│   ├── example_basic_dom.adb        # Basic DOM usage
+│   ├── example_schema_validation.adb # Schema demo
 │   ├── sml-schema-loader.ads/.adb   # Schema loader (reference)
 │   └── test_schema_loader.adb       # Loader tests
 ├── proof/                           # SPARK proof artifacts
@@ -423,7 +423,7 @@ bin/test_schema
 bin/test_schema_loader
 
 # End-to-end demo
-bin/schema_validation_example
+bin/example_schema_validation
 ```
 
 ### Schema Language Features

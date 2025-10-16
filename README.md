@@ -29,8 +29,8 @@ bin/test_schema
 alr exec -- gprbuild -P examples.gpr
 
 # Run examples (in suggested order)
-bin/sml_example                    # 1. DOM basics (parse, build, modify)
-bin/schema_validation_example      # 2. Schema validation
+bin/example_basic_dom                    # 1. DOM basics (parse, build, modify)
+bin/example_schema_validation      # 2. Schema validation
 bin/test_schema_loader             # 3. File I/O + integration testing
 
 # Run SPARK verification
@@ -39,7 +39,7 @@ alr exec -- gnatprove -P sml.gpr --mode=prove --level=4 --prover=cvc5 >> proof.l
 
 ## Examples Guide
 
-### 1. sml_example - DOM Operations
+### 1. example_basic_dom - DOM Operations
 **Purpose:** Learn basic DOM parsing, building, and manipulation
 **What it demonstrates:**
 - Parse SML from string
@@ -48,9 +48,9 @@ alr exec -- gnatprove -P sml.gpr --mode=prove --level=4 --prover=cvc5 >> proof.l
 - Serialize back to SML
 - Round-trip operations
 
-**Run:** `bin/sml_example`
+**Run:** `bin/example_basic_dom`
 
-### 2. schema_validation_example - Schema Validation
+### 2. example_schema_validation - Schema Validation
 **Purpose:** Learn schema-based document validation
 **What it demonstrates:**
 - Define schemas (types, elements, constraints)
@@ -58,7 +58,7 @@ alr exec -- gnatprove -P sml.gpr --mode=prove --level=4 --prover=cvc5 >> proof.l
 - Validate documents against schema
 - Error reporting and handling
 
-**Run:** `bin/schema_validation_example`
+**Run:** `bin/example_schema_validation`
 
 ### 3. test_schema_loader - File I/O & Integration
 **Purpose:** See file-based workflows and comprehensive testing
@@ -213,7 +213,7 @@ end Validate_Config;
 
 ```bash
 # End-to-end validation demo
-bin/schema_validation_example
+bin/example_schema_validation
 
 # Schema loader tests (8 tests)
 bin/test_schema_loader
