@@ -133,7 +133,7 @@ The library uses child ghost packages to separate verification code from runtime
 - **Ghost packages** (*.Proof): Contain ghost functions and lemmas for SPARK verification
 - **Import pragma pattern**: Parent packages declare ghost functions with `Ghost, Import` 
 
-Ghost packages:
+Ghost packages (in src/proofs/):
 - SML.Memory_Model.Proof - Memory safety proofs and invariants
 - SML.DOM.Proof - DOM tree well-formedness and structural properties
 - SML.UTF8.Proof - UTF-8 validation properties
@@ -277,7 +277,14 @@ sml/
 │   ├── sml-schema.ads/.adb          # Schema validation engine
 │   ├── sml-utf8.ads/.adb            # UTF-8 processing
 │   ├── sml-entities.ads/.adb        # Entity handling
-│   └── sml-memory_model.ads/.adb    # Arena allocation
+│   ├── sml-memory_model.ads/.adb    # Arena allocation
+│   └── proofs/                      # Ghost code for verification
+│       ├── sml-dom-proof.ads/.adb
+│       ├── sml-dom-parser-proof.ads/.adb
+│       ├── sml-dom-builder-proof.ads/.adb
+│       ├── sml-memory_model-proof.ads/.adb
+│       ├── sml-utf8-proof.ads/.adb
+│       └── sml-entities-proof.ads/.adb
 ├── test/                            # Library test programs
 │   ├── test_parser.adb              # Parser tests
 │   └── test_schema.adb              # Schema validation tests
