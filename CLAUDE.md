@@ -45,6 +45,62 @@ bin/test_schema                    # Schema validation tests
 bin/test_schema_loader             # Schema loader tests
 ```
 
+## Example Programs
+
+The repository includes three focused example programs demonstrating different aspects of the library:
+
+### 1. sml_example - Basic DOM Operations (218 lines)
+**Purpose:** Tutorial for core DOM functionality
+**Features demonstrated:**
+- Parsing SML from strings
+- Building DOM trees programmatically
+- Traversing and navigating trees
+- Modifying nodes (add, update, delete)
+- Serializing to SML format
+- Round-trip operations (parse → modify → serialize → parse)
+
+**When to use:** Start here to learn basic SML library usage
+**Run:** `bin/sml_example`
+**Location:** `examples/sml_example.adb`
+
+### 2. schema_validation_example - Schema Validation (202 lines)
+**Purpose:** Demonstration of schema validation capabilities
+**Features demonstrated:**
+- Loading schemas from SML strings
+- Converting schema SML to Schema_Document
+- Validating instance documents
+- Accepting valid documents
+- Rejecting invalid documents with error messages
+- Multiple validation scenarios
+
+**When to use:** Learn how to use schema validation for type-safe configs
+**Run:** `bin/schema_validation_example`
+**Location:** `examples/schema_validation_example.adb`
+
+### 3. test_schema_loader - File I/O & Integration (455 lines)
+**Purpose:** Comprehensive testing and file-based workflows
+**Features demonstrated:**
+- Schema loader unit tests (8 tests)
+- File-based schema loading (using SML.IO)
+- File-based instance loading
+- End-to-end validation from files
+- Error handling at each level
+
+**When to use:** See real-world file-based usage patterns
+**Run:** `bin/test_schema_loader`
+**Location:** `examples/test_schema_loader.adb`
+
+**Note:** This is a hybrid test/demo program - first 8 procedures are unit tests (inline strings), final procedure demonstrates file I/O integration.
+
+### Example Progression
+
+**Suggested learning order:**
+1. Start with `sml_example` to understand DOM basics
+2. Move to `schema_validation_example` for validation features
+3. Review `test_schema_loader` for file I/O and integration patterns
+
+All examples use inline SML strings except test_schema_loader's final test which demonstrates file-based workflows using SML.IO utilities.
+
 ## Verification Commands
 
 ```bash

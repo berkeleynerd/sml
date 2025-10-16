@@ -26,40 +26,50 @@ bin/test_schema
 
 # Build and run examples
 alr exec -- gprbuild -P examples.gpr
-bin/sml_example                    # Basic DOM usage
-bin/schema_validation_example      # Schema validation demo
-bin/test_schema_loader             # Schema loader tests
+
+# Run examples (in suggested order)
+bin/sml_example                    # 1. DOM basics (parse, build, modify)
+bin/schema_validation_example      # 2. Schema validation
+bin/test_schema_loader             # 3. File I/O + integration testing
 
 # Run SPARK verification
 alr exec -- gnatprove -P sml.gpr --mode=prove --level=4 --prover=cvc5 >> proof.log 2>&1
 ```
 
-### Example Usage
+## Examples Guide
 
-```ada
-with SML.DOM.Parser;
-with SML.DOM.Builder;
-with SML.DOM.Writer;
+### 1. sml_example - DOM Operations
+**Purpose:** Learn basic DOM parsing, building, and manipulation
+**What it demonstrates:**
+- Parse SML from string
+- Build DOM programmatically
+- Traverse and modify trees
+- Serialize back to SML
+- Round-trip operations
 
-procedure Your_App is
-   -- Parse SML
-   Result : constant SML.DOM.Parser.Parse_Result :=
-     SML.DOM.Parser.Parse ("<root><item>Hello</item></root>");
+**Run:** `bin/sml_example`
 
-   -- Build DOM from scratch
-   Doc : SML.DOM.Document := SML.DOM.Builder.Create_Document ("root");
+### 2. schema_validation_example - Schema Validation
+**Purpose:** Learn schema-based document validation
+**What it demonstrates:**
+- Define schemas (types, elements, constraints)
+- Load schema from SML
+- Validate documents against schema
+- Error reporting and handling
 
-   -- Modify
-   SML.DOM.Builder.Set_Text_Content (Doc, Text_Node, "New value");
+**Run:** `bin/schema_validation_example`
 
-   -- Serialize
-   Output : String := SML.DOM.Writer.Serialize (Doc);
-begin
-   -- Full CRUD operations available
-end Your_App;
-```
+### 3. test_schema_loader - File I/O & Integration
+**Purpose:** See file-based workflows and comprehensive testing
+**What it demonstrates:**
+- Schema loader functionality (8 unit tests)
+- File-based validation (SML.IO integration)
+- Loading schemas and instances from files
+- End-to-end validation workflow
 
-See `examples/sml_example.adb` for comprehensive demonstrations of all features.
+**Run:** `bin/test_schema_loader`
+
+See the example source files in `examples/` for complete working code.
 
 ## Documentation
 
