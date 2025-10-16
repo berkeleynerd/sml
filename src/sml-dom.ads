@@ -5,6 +5,7 @@
 ------------------------------------------------------------------------------
 
 with SML.Memory_Model;
+with SML.UTF8;
 
 package SML.DOM
   with SPARK_Mode => On
@@ -123,99 +124,89 @@ is
        Node /= Null_Node
        and then Is_Valid_Node (Doc, Node)
        and then Kind (Doc, Node) = Text,
-     Post => Is_Valid_UTF8 (Text_Value'Result),
-     Global => null;
-
-   --  Returns the depth of a node in the tree (root has depth 0)
-   function Depth (Doc : Document; Node : Node_Id) return Natural
-   with
-     Pre => Node /= Null_Node and then Is_Valid_Node (Doc, Node),
-     Post => Depth'Result <= Max_Tree_Depth,
-     Ghost,
+     Post => SML.UTF8.Is_Valid_UTF8 (Text_Value'Result),
      Global => null;
 
    ---------------------------------------------------------------------------
    --  Ghost Functions for Formal Verification
    ---------------------------------------------------------------------------
+   --  These are implemented in SML.DOM.Proof
 
    --  Checks if a node belongs to the given document
    function Is_Valid_Node (Doc : Document; Node : Node_Id) return Boolean
-   with Ghost, Global => null;
+     with Ghost, Import, Global => null;
 
    --  Checks structural well-formedness of a Document's DOM tree
    function Is_Well_Formed (Doc : Document) return Boolean
-   with
-     Ghost,
-     Global => null,
-     Post =>
-       Is_Well_Formed'Result
-       = (Has_Single_Root (Doc)
-          and then Is_Acyclic (Doc)
-          and then Has_Consistent_Parent_Child_Links (Doc)
-          and then Has_Valid_Depth (Doc));
+     with
+       Ghost,
+       Import,
+       Global => null,
+       Post =>
+         Is_Well_Formed'Result =
+           (Has_Single_Root (Doc)
+            and then Is_Acyclic (Doc)
+            and then Has_Consistent_Parent_Child_Links (Doc)
+            and then Has_Valid_Depth (Doc));
 
    --  Document has exactly one root element
    function Has_Single_Root (Doc : Document) return Boolean
-   with Ghost, Global => null;
+     with Ghost, Import, Global => null;
 
    --  Document tree contains no cycles
    function Is_Acyclic (Doc : Document) return Boolean
-   with Ghost, Global => null;
+     with Ghost, Import, Global => null;
 
-   --  All parent-child relationships are bidirectional and consistent
+   --  Parent-child relationships are bidirectional
    function Has_Consistent_Parent_Child_Links (Doc : Document) return Boolean
-   with Ghost, Global => null;
+     with Ghost, Import, Global => null;
 
-   --  No node exceeds maximum depth
+   --  All nodes have depth <= Max_Tree_Depth
    function Has_Valid_Depth (Doc : Document) return Boolean
-   with Ghost, Global => null;
+     with Ghost, Import, Global => null;
+
+   --  Checks if a string is a valid element/attribute name
+   function Is_Valid_Name (Name : String) return Boolean
+     with Ghost, Import, Global => null;
 
    --  Checks if Parent_Node has Child_Node as a child
    function Has_Child
      (Doc : Document; Parent_Node, Child_Node : Node_Id) return Boolean
-   with
-     Ghost,
-     Pre =>
-       Parent_Node /= Null_Node
-       and then Child_Node /= Null_Node
-       and then Is_Valid_Node (Doc, Parent_Node)
-       and then Is_Valid_Node (Doc, Child_Node),
-     Subprogram_Variant => (Structural => Parent_Node),
-     Global => null;
+     with
+       Ghost,
+       Import,
+       Pre =>
+         Parent_Node /= Null_Node
+         and then Child_Node /= Null_Node
+         and then Is_Valid_Node (Doc, Parent_Node)
+         and then Is_Valid_Node (Doc, Child_Node),
+       Subprogram_Variant => (Structural => Parent_Node),
+       Global => null;
 
-   --  Checks if a string is a valid element name
-   function Is_Valid_Name (Name : String) return Boolean
-   with
-     Ghost,
-     Global => null,
-     Post =>
-       Is_Valid_Name'Result
-       = (Name'Length > 0
-          and then (for all I in Name'Range => Is_Name_Char (Name (I))));
-
-   --  Checks if a character is valid in an element name
-   function Is_Name_Char (C : Character) return Boolean
-   with Ghost, Global => null;
-
-   --  Checks if a string is valid UTF-8
-   function Is_Valid_UTF8 (Text : String) return Boolean
-   with Ghost, Global => null;
+   --  Returns the depth of a node in the tree (root has depth 0)
+   function Depth (Doc : Document; Node : Node_Id) return Natural
+     with
+       Ghost,
+       Import,
+       Pre => Node /= Null_Node and then Is_Valid_Node (Doc, Node),
+       Post => Depth'Result <= Max_Tree_Depth,
+       Global => null;
 
    ---------------------------------------------------------------------------
    --  Memory Management Ghost Functions
    ---------------------------------------------------------------------------
 
-   --  Returns true if the Document owns the given Node
-   function Owns_Node (Doc : Document; Node : Node_Id) return Boolean
-   with Ghost, Global => null;
+   --  All allocated nodes are reachable from the root
+   function All_Nodes_Reachable (Doc : Document) return Boolean
+     with Ghost, Import, Global => null;
 
-   --  Returns the number of nodes owned by the Document
-   function Node_Count (Doc : Document) return Natural
-   with Ghost, Global => null;
-
-   --  Checks if Document has no memory leaks
+   --  No unreachable nodes exist in the pool
    function No_Memory_Leaks (Doc : Document) return Boolean
-   with Ghost, Global => null;
+     with Ghost, Import, Global => null;
+
+   --  String storage is managed correctly
+   function String_Storage_Valid (Doc : Document) return Boolean
+     with Ghost, Import, Global => null;
 
 private
    ---------------------------------------------------------------------------

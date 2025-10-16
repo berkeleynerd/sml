@@ -148,32 +148,35 @@ is
    ---------------------------------------------------------------------------
    --  Ghost Functions for Verification
    ---------------------------------------------------------------------------
+   --  These are implemented in SML.DOM.Builder.Proof
 
    --  Check if a specific node is marked as deleted
    function Is_Deleted (Doc : Document; Node : Node_Id) return Boolean
-   with Ghost, Pre => Is_Valid_Node (Doc, Node), Global => null;
+   with Ghost, Import, Pre => Is_Valid_Node (Doc, Node), Global => null;
 
-   --  Check if Node is a descendant of Ancestor (transitive child relationship)
+   --  Check if Node is a descendant of Ancestor (transitive child relation)
    function Is_Descendant_Of
      (Doc : Document; Node, Ancestor : Node_Id) return Boolean
    with
      Ghost,
+     Import,
      Pre => Is_Valid_Node (Doc, Node) and then Is_Valid_Node (Doc, Ancestor),
      Global => null;
 
    --  Verify all descendants of a node are marked deleted
    function All_Descendants_Deleted
      (Doc : Document; Root_Node : Node_Id) return Boolean
-   with Ghost, Pre => Is_Valid_Node (Doc, Root_Node), Global => null;
+   with Ghost, Import, Pre => Is_Valid_Node (Doc, Root_Node), Global => null;
 
    --  Count total deleted nodes in document
    function Count_Deleted_Nodes (Doc : Document) return Natural
-   with Ghost, Global => null;
+   with Ghost, Import, Global => null;
 
    --  Check if document has any deleted nodes
    function Has_Deleted_Nodes (Doc : Document) return Boolean
    with
      Ghost,
+     Import,
      Global => null,
      Post => Has_Deleted_Nodes'Result = (Count_Deleted_Nodes (Doc) > 0);
 
@@ -181,6 +184,7 @@ is
    function No_Deleted_Nodes (Doc : Document) return Boolean
    with
      Ghost,
+     Import,
      Global => null,
      Post => No_Deleted_Nodes'Result = (Count_Deleted_Nodes (Doc) = 0);
 

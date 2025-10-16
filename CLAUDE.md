@@ -125,6 +125,22 @@ alr exec -- gnatprove -P sml.gpr --level=4 --output=proof_report.out --report=al
 
 ## Architecture
 
+### Ghost Code Organization
+
+The library uses child ghost packages to separate verification code from runtime:
+
+- **Runtime packages**: Contain the actual implementation
+- **Ghost packages** (*.Proof): Contain ghost functions and lemmas for SPARK verification
+- **Import pragma pattern**: Parent packages declare ghost functions with `Ghost, Import` 
+
+Ghost packages:
+- SML.Memory_Model.Proof - Memory safety proofs and invariants
+- SML.DOM.Proof - DOM tree well-formedness and structural properties
+- SML.UTF8.Proof - UTF-8 validation properties
+- SML.Entities.Proof - Entity encoding/decoding properties  
+- SML.DOM.Parser.Proof - Parser correctness properties
+- SML.DOM.Builder.Proof - Builder operation properties
+
 ### Package Hierarchy
 
 The library uses a hierarchical package structure with index-based node references and arena allocation for SPARK compatibility:

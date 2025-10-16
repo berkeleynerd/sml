@@ -107,6 +107,12 @@ The library uses index-based node references and arena allocation for SPARK comp
 - **SML.DOM.Parser** - Single-pass parser with formal correctness contracts
 - **SML.DOM.Builder** - DOM construction and modification API
 - **SML.DOM.Writer** - Serialization to SML format
+
+Ghost code for formal verification is organized into separate `.Proof` child packages:
+- **SML.DOM.Proof** - DOM tree well-formedness and structural properties
+- **SML.Memory_Model.Proof** - Memory safety proofs and invariants
+- **SML.UTF8.Proof** - UTF-8 validation properties
+- **SML.Entities.Proof** - Entity encoding/decoding properties
 - **SML.Schema** - Schema validation engine with content types, structure rules, and cardinality
 - **SML.UTF8** - UTF-8 validation and processing
 - **SML.Entities** - XML entity encoding/decoding

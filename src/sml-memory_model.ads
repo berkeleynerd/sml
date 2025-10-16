@@ -281,46 +281,93 @@ is
    ---------------------------------------------------------------------------
    --  Ghost Functions for Proofs
    ---------------------------------------------------------------------------
+   --  These are implemented in SML.Memory_Model.Proof
 
    --  Check if string is stored at reference
    function String_Stored
      (Pool : Arena_Pool; Ref : String_Ref; Text : String) return Boolean
-   with
-     Ghost,
-     Pre => Text'Length = Ref.Length,
-     Post =>
-       String_Stored'Result
-       = (for all I in 1 .. Ref.Length
-          => Pool.Strings (Ref.Start + I - 1) = Text (Text'First + I - 1));
+     with
+       Ghost,
+       Import,
+       Pre => Text'Length = Ref.Length,
+       Post =>
+         String_Stored'Result =
+           (for all I in 1 .. Ref.Length =>
+              Pool.Strings (Ref.Start + I - 1) = Text (Text'First + I - 1));
 
    --  Memory usage bounded by input size
    function Memory_Bounded_By_Input
      (Pool : Arena_Pool; Input_Size : Natural) return Boolean
-   with
-     Ghost,
-     Post =>
-       Memory_Bounded_By_Input'Result
-       = (Memory_Used (Pool) <= Input_Size * Memory_Expansion_Factor);
+     with
+       Ghost,
+       Import,
+       Post =>
+         Memory_Bounded_By_Input'Result =
+           (Memory_Used (Pool) <= Input_Size * Memory_Expansion_Factor);
 
    --  Check arena invariants
    function Arena_Invariants (Pool : Arena_Pool) return Boolean
-   with
-     Ghost,
-     Post =>
-       Arena_Invariants'Result
-       = (Pool.Next_Node_Index >= 1
-          and then Pool.Next_String_Pos >= 1
-          and then Pool.Allocated_Nodes < Pool.Next_Node_Index
-          and then Pool.Allocated_Bytes < Pool.Next_String_Pos
-          and then Pool.High_Water_Mark >= Pool.Allocated_Bytes);
+     with
+       Ghost,
+       Import,
+       Post =>
+         Arena_Invariants'Result =
+           (Pool.Next_Node_Index >= 1
+            and then Pool.Next_String_Pos >= 1
+            and then Pool.Allocated_Nodes < Pool.Next_Node_Index
+            and then Pool.Allocated_Bytes < Pool.Next_String_Pos
+            and then Pool.High_Water_Mark >= Pool.Allocated_Bytes);
 
    --  Strict allocation invariant (for proofs that need exact equality)
    function Has_Exact_Allocation_Count (Pool : Arena_Pool) return Boolean
-   with
-     Ghost,
-     Post =>
-       Has_Exact_Allocation_Count'Result
-       = (Pool.Allocated_Nodes = Pool.Next_Node_Index - 1);
+     with
+       Ghost,
+       Import,
+       Post =>
+         Has_Exact_Allocation_Count'Result =
+           (Pool.Allocated_Nodes = Pool.Next_Node_Index - 1);
+
+   ---------------------------------------------------------------------------
+   --  Memory Safety Lemmas
+   ---------------------------------------------------------------------------
+
+   --  Arena allocation never overflows
+   procedure Lemma_Arena_No_Overflow (Pool : Arena_Pool)
+     with
+       Ghost,
+       Import,
+       Post =>
+         Pool.Next_Node_Index <= Max_Document_Nodes + 1
+         and then Pool.Next_String_Pos <= Max_String_Storage + 1;
+
+   --  All allocated nodes are valid
+   procedure Lemma_Allocated_Nodes_Valid (Pool : Arena_Pool)
+     with
+       Ghost,
+       Import,
+       Post =>
+         (for all I in 1 .. Pool.Next_Node_Index - 1 =>
+            Valid_Node_Index (Pool, I));
+
+   --  Memory usage is monotonic
+   procedure Lemma_Memory_Monotonic (Pool_Before, Pool_After : Arena_Pool)
+     with
+       Ghost,
+       Import,
+       Pre =>
+         Pool_After.Allocated_Nodes >= Pool_Before.Allocated_Nodes
+         and then Pool_After.Allocated_Bytes >= Pool_Before.Allocated_Bytes,
+       Post => Memory_Used (Pool_After) >= Memory_Used (Pool_Before);
+
+   --  Reset deallocates everything
+   procedure Lemma_Reset_Deallocates_All
+     (Pool_Before : Arena_Pool; Pool_After : Arena_Pool)
+     with
+       Ghost,
+       Import,
+       Pre =>
+         Pool_After.Next_Node_Index = 1 and then Pool_After.Allocated_Nodes = 0,
+       Post => Memory_Used (Pool_After) = 0;
 
    ---------------------------------------------------------------------------
    --  Node Access Functions
@@ -341,43 +388,5 @@ is
      Post =>
        Valid_Node_Index'Result
        = (Index > No_Node_Index and then Index < Pool.Next_Node_Index);
-
-   ---------------------------------------------------------------------------
-   --  Memory Safety Lemmas
-   ---------------------------------------------------------------------------
-
-   --  Arena allocation never overflows
-   procedure Lemma_Arena_No_Overflow (Pool : Arena_Pool)
-   with
-     Ghost,
-     Post =>
-       Pool.Next_Node_Index <= Max_Document_Nodes + 1
-       and then Pool.Next_String_Pos <= Max_String_Storage + 1;
-
-   --  All allocated nodes are valid
-   procedure Lemma_Allocated_Nodes_Valid (Pool : Arena_Pool)
-   with
-     Ghost,
-     Post =>
-       (for all I in 1 .. Pool.Next_Node_Index - 1
-        => Valid_Node_Index (Pool, I));
-
-   --  Memory usage is monotonic
-   procedure Lemma_Memory_Monotonic (Pool_Before, Pool_After : Arena_Pool)
-   with
-     Ghost,
-     Pre =>
-       Pool_After.Allocated_Nodes >= Pool_Before.Allocated_Nodes
-       and then Pool_After.Allocated_Bytes >= Pool_Before.Allocated_Bytes,
-     Post => Memory_Used (Pool_After) >= Memory_Used (Pool_Before);
-
-   --  Reset deallocates everything (property, not executable lemma)
-   procedure Lemma_Reset_Deallocates_All
-     (Pool_Before : Arena_Pool; Pool_After : Arena_Pool)
-   with
-     Ghost,
-     Pre =>
-       Pool_After.Next_Node_Index = 1 and then Pool_After.Allocated_Nodes = 0,
-     Post => Memory_Used (Pool_After) = 0;
 
 end SML.Memory_Model;

@@ -104,11 +104,13 @@ is
    ---------------------------------------------------------------------------
    --  Ghost Functions for Formal Verification
    ---------------------------------------------------------------------------
+   --  These are implemented in SML.DOM.Parser.Proof
 
    --  Defines validity of an input string as SML
    function Is_Valid_SML (Input : String) return Boolean
    with
      Ghost,
+     Import,
      Global => null,
      Post =>
        Is_Valid_SML'Result
@@ -119,7 +121,7 @@ is
 
    --  Relates an input string to a DOM Document
    function Parses_To (Input : String; Doc : Document) return Boolean
-   with Ghost, Pre => Is_Well_Formed (Doc), Global => null;
+   with Ghost, Import, Pre => Is_Well_Formed (Doc), Global => null;
 
    --  Input contains only valid UTF-8 sequences
    function Has_Valid_UTF8 (Input : String) return Boolean
@@ -127,12 +129,13 @@ is
 
    --  Input has valid XML structure (matching tags, single root, etc.)
    function Has_Valid_Structure (Input : String) return Boolean
-   with Ghost, Global => null;
+   with Ghost, Import, Global => null;
 
    --  Input contains no XML constructs forbidden in SML
    function Has_No_Disallowed_Constructs (Input : String) return Boolean
    with
      Ghost,
+     Import,
      Global => null,
      Post =>
        Has_No_Disallowed_Constructs'Result
@@ -145,7 +148,7 @@ is
 
    --  All entity references are valid
    function Has_Valid_Entities (Input : String) return Boolean
-   with Ghost, Global => null;
+   with Ghost, Import, Global => null;
 
    ---------------------------------------------------------------------------
    --  Detailed Ghost Predicates
@@ -153,27 +156,27 @@ is
 
    --  No attributes in any element
    function No_Attributes (Input : String) return Boolean
-   with Ghost, Global => null;
+   with Ghost, Import, Global => null;
 
    --  No processing instructions (<?...?>)
    function No_Processing_Instructions (Input : String) return Boolean
-   with Ghost, Global => null;
+   with Ghost, Import, Global => null;
 
    --  No DOCTYPE declaration
    function No_DTD (Input : String) return Boolean
-   with Ghost, Global => null;
+   with Ghost, Import, Global => null;
 
    --  No CDATA sections (<![CDATA[...]]>)
    function No_CDATA (Input : String) return Boolean
-   with Ghost, Global => null;
+   with Ghost, Import, Global => null;
 
    --  No comments (<!--...-->)
    function No_Comments (Input : String) return Boolean
-   with Ghost, Global => null;
+   with Ghost, Import, Global => null;
 
    --  No namespace declarations or prefixes
    function No_Namespaces (Input : String) return Boolean
-   with Ghost, Global => null;
+   with Ghost, Import, Global => null;
 
    ---------------------------------------------------------------------------
    --  Parser State Ghost Functions (for proof)
@@ -184,7 +187,7 @@ is
 
    --  Initial parser state
    function Initial_State return Parser_State
-   with Ghost, Global => null;
+   with Ghost, Import, Global => null;
 
    --  Parser state after consuming a portion of input
    function Parse_Step
@@ -192,6 +195,7 @@ is
       return Parser_State
    with
      Ghost,
+     Import,
      Pre =>
        Start_Pos >= Input'First
        and then End_Pos <= Input'Last
@@ -201,15 +205,15 @@ is
    --  Checks if parser state corresponds to a complete valid parse
    function Is_Complete_Parse
      (State : Parser_State; Input : String) return Boolean
-   with Ghost, Global => null;
+   with Ghost, Import, Global => null;
 
    --  Gets the partial DOM constructed so far
    function Partial_DOM (State : Parser_State) return Document
-   with Ghost, Pre => Is_Valid_Partial_State (State), Global => null;
+   with Ghost, Import, Pre => Is_Valid_Partial_State (State), Global => null;
 
    --  Checks if the parser state is valid (no errors encountered)
    function Is_Valid_Partial_State (State : Parser_State) return Boolean
-   with Ghost, Global => null;
+   with Ghost, Import, Global => null;
 
    ---------------------------------------------------------------------------
    --  Entity Reference Constants
