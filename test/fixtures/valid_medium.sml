@@ -1,0 +1,21 @@
+<config>
+  <database>
+    <host>localhost</host>
+    <port>5432</port>
+    <username>admin</username>
+    <password>secret</password>
+    <pool_size>10</pool_size>
+    <timeout>30</timeout>
+  </database>
+  <logging>
+    <level>INFO</level>
+    <output>stdout</output>
+    <output>file</output>
+    <format>json</format>
+  </logging>
+  <server>
+    <bind_address>0.0.0.0</bind_address>
+    <port>8080</port>
+    <workers>4</workers>
+  </server>
+</config>

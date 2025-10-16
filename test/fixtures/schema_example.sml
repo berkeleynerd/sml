@@ -1,0 +1,14 @@
+<schema>
+  <simpleType>
+    <name>portType</name>
+    <restriction>
+      <base>integer</base>
+      <minValue>1</minValue>
+      <maxValue>65535</maxValue>
+    </restriction>
+  </simpleType>
+  <element>
+    <name>config</name>
+    <type>configType</type>
+  </element>
+</schema>
