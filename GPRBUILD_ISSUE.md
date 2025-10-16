@@ -34,7 +34,7 @@ The error occurs during the bind phase, after successful compilation.
 Use `gnatmake` instead of `gprbuild` for single-main executable projects:
 
 ```bash
-./build_tests.sh
+./test/build_tests.sh
 # Or: alr exec -- gnatmake -P test/tests.gpr
 ```
 

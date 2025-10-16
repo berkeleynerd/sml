@@ -137,13 +137,13 @@ alr build
 
 **Tests only:**
 ```bash
-./build_tests.sh
+./test/build_tests.sh
 ```
 Uses `gnatmake` to work around gprbuild 25.0.0 issue on macOS ARM64.
 
 **Examples only:**
 ```bash
-./build_examples.sh
+./examples/build_examples.sh
 ```
 
 All executables are created in `bin/`.

@@ -32,7 +32,7 @@ alr build
 # Build individual components
 alr exec -- gprbuild -P sml.gpr          # Library only
 alr exec -- gprbuild -P examples.gpr     # Examples (includes schema loader)
-./build_tests.sh                         # Build all tests
+./test/build_tests.sh                    # Build all tests
 
 # Run examples
 bin/example-basic-dom                    # Basic DOM usage
@@ -229,13 +229,13 @@ For larger documents, either:
 ### Running Tests
 ```bash
 # Build and run tests
-./build_tests.sh
+./test/build_tests.sh
 bin/test-parser
 bin/test-schema
 bin/test-io
 
 # Build and run examples
-./build_examples.sh
+./examples/build_examples.sh
 bin/example-basic-dom
 bin/example-schema-validation
 bin/test-schema-loader
@@ -298,10 +298,12 @@ sml/
 ├── lib/                             # Library output
 ├── bin/                             # Executables
 ├── sml.gpr                          # Main library project
-├── test/tests.gpr                   # Tests project
-├── examples/examples.gpr            # Examples project
-├── build_tests.sh                   # Test build script
-├── build_examples.sh                # Example build script
+├── test/
+│   ├── tests.gpr                    # Tests project
+│   └── build_tests.sh               # Test build script
+├── examples/
+│   ├── examples.gpr                 # Examples project
+│   └── build_examples.sh            # Example build script
 ├── build_all.sh                     # Build everything
 └── alire.toml                       # Alire package manifest
 ```

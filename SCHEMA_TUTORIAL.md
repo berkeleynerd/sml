@@ -262,11 +262,11 @@ The library includes comprehensive test suites:
 
 ```bash
 # Core validation engine tests (7 tests)
-./build_tests.sh
+./test/build_tests.sh
 bin/test-schema
 
 # Schema loader tests (8 tests)
-./build_examples.sh
+./examples/build_examples.sh
 bin/test-schema-loader
 ```
 

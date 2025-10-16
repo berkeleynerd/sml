@@ -16,7 +16,7 @@ echo
 
 # Build tests
 echo "Step 2: Building tests..."
-./build_tests.sh
+./test/build_tests.sh
 if [ $? -ne 0 ]; then
     echo "Error building tests"
     exit 1
@@ -25,7 +25,7 @@ echo
 
 # Build examples  
 echo "Step 3: Building examples..."
-./build_examples.sh
+./examples/build_examples.sh
 if [ $? -ne 0 ]; then
     echo "Error building examples"
     exit 1
