@@ -17,10 +17,10 @@ project Examples is
    end Compiler;
 
    package Builder is
-      for Executable ("example_basic_dom.adb") use "example_basic_dom";
+      for Executable ("example_basic_dom.adb") use "example-basic-dom";
       for Executable ("example_schema_validation.adb") 
-        use "example_schema_validation";
-      for Executable ("test_schema_loader.adb") use "test_schema_loader";
+        use "example-schema-validation";
+      for Executable ("test_schema_loader.adb") use "test-schema-loader";
    end Builder;
 
    package Linker is

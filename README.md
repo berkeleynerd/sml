@@ -29,9 +29,9 @@ bin/test_schema
 alr exec -- gprbuild -P examples.gpr
 
 # Run examples (in suggested order)
-bin/example_basic_dom                    # 1. DOM basics (parse, build, modify)
-bin/example_schema_validation      # 2. Schema validation
-bin/test_schema_loader             # 3. File I/O + integration testing
+bin/example-basic-dom                    # 1. DOM basics (parse, build, modify)
+bin/example-schema-validation      # 2. Schema validation
+bin/test-schema-loader             # 3. File I/O + integration testing
 
 # Run SPARK verification
 alr exec -- gnatprove -P sml.gpr --mode=prove --level=4 --prover=cvc5 >> proof.log 2>&1
@@ -39,7 +39,7 @@ alr exec -- gnatprove -P sml.gpr --mode=prove --level=4 --prover=cvc5 >> proof.l
 
 ## Examples Guide
 
-### 1. example_basic_dom - DOM Operations
+### 1. example-basic-dom - DOM Operations
 **Purpose:** Learn basic DOM parsing, building, and manipulation
 **What it demonstrates:**
 - Parse SML from string
@@ -48,9 +48,9 @@ alr exec -- gnatprove -P sml.gpr --mode=prove --level=4 --prover=cvc5 >> proof.l
 - Serialize back to SML
 - Round-trip operations
 
-**Run:** `bin/example_basic_dom`
+**Run:** `bin/example-basic-dom`
 
-### 2. example_schema_validation - Schema Validation
+### 2. example-schema-validation - Schema Validation
 **Purpose:** Learn schema-based document validation
 **What it demonstrates:**
 - Define schemas (types, elements, constraints)
@@ -58,9 +58,9 @@ alr exec -- gnatprove -P sml.gpr --mode=prove --level=4 --prover=cvc5 >> proof.l
 - Validate documents against schema
 - Error reporting and handling
 
-**Run:** `bin/example_schema_validation`
+**Run:** `bin/example-schema-validation`
 
-### 3. test_schema_loader - File I/O & Integration
+### 3. test-schema-loader - File I/O & Integration
 **Purpose:** See file-based workflows and comprehensive testing
 **What it demonstrates:**
 - Schema loader functionality (8 unit tests)
@@ -68,7 +68,7 @@ alr exec -- gnatprove -P sml.gpr --mode=prove --level=4 --prover=cvc5 >> proof.l
 - Loading schemas and instances from files
 - End-to-end validation workflow
 
-**Run:** `bin/test_schema_loader`
+**Run:** `bin/test-schema-loader`
 
 See the example source files in `examples/` for complete working code.
 

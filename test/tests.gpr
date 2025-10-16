@@ -24,6 +24,12 @@ project Tests is
           "-gnatyt");       --  Token spacing
    end Compiler;
 
+   package Builder is
+      for Executable ("test_parser.adb") use "test-parser";
+      for Executable ("test_io.adb") use "test-io";
+      for Executable ("test_schema.adb") use "test-schema";
+   end Builder;
+
    package Binder is
       for Switches ("Ada") use ("-Es");  --  Symbolic traceback
    end Binder;

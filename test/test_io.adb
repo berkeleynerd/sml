@@ -13,11 +13,11 @@ procedure Test_IO is
    use SML.IO;
 
    --  Test file paths
-   Valid_Small_Path  : constant String := "test/fixtures/valid_small.sml";
-   Valid_Medium_Path : constant String := "test/fixtures/valid_medium.sml";
+   Valid_Small_Path  : constant String := "test/fixtures/valid-small.sml";
+   Valid_Medium_Path : constant String := "test/fixtures/valid-medium.sml";
    Invalid_Path      : constant String := "test/fixtures/invalid.sml";
    Nonexistent_Path  : constant String := "test/fixtures/does_not_exist.sml";
-   Output_Path       : constant String := "test/fixtures/output_test.sml";
+   Output_Path       : constant String := "test/fixtures/output-test.sml";
 
    --  Forward declarations
    procedure Test_Read_Small_File;

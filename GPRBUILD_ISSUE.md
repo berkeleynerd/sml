@@ -23,7 +23,7 @@ The error occurs during the bind phase, after successful compilation.
 ## Affected Project Types
 
 **Failing:**
-- Single-main executable projects (e.g., test_parser.gpr, test_io.gpr, test_schema.gpr)
+- Single-main executable projects (e.g., test/tests.gpr with individual mains)
 
 **Working:**
 - Library projects (e.g., sml.gpr, sml_io.gpr)
@@ -34,7 +34,8 @@ The error occurs during the bind phase, after successful compilation.
 Use `gnatmake` instead of `gprbuild` for single-main executable projects:
 
 ```bash
-alr exec -- gnatmake -P test_parser.gpr
+./build_tests.sh
+# Or: alr exec -- gnatmake -P test/tests.gpr
 ```
 
 ## Reproduction Steps
@@ -68,7 +69,7 @@ Call stack traceback locations:
 - The issue appears to be specific to gprbuild's bind phase
 - gnatmake successfully builds the same projects
 - This may be related to how gprbuild handles project files on macOS ARM64
-- The warning about project name mismatch (e.g., "test_parser.gpr" vs "project Test") may contribute but is not the root cause
+- The issue affects how gprbuild processes single-main executables, not project structure
 
 ## Potential Bug Report
 

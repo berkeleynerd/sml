@@ -17,8 +17,8 @@ echo "Example build complete!"
 echo "Executables are in bin/"
 echo
 echo "To run examples:"
-echo "  ./bin/example_basic_dom          # Basic DOM operations tutorial"
-echo "  ./bin/example_schema_validation  # Schema validation demonstration"
-echo "  ./bin/test_schema_loader         # Schema loader tests"
+echo "  ./bin/example-basic-dom          # Basic DOM operations tutorial"
+echo "  ./bin/example-schema-validation  # Schema validation demonstration"
+echo "  ./bin/test-schema-loader         # Schema loader tests"
 echo
 echo "Run examples in order for best learning experience."

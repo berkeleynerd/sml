@@ -32,24 +32,23 @@ alr build
 # Build individual components
 alr exec -- gprbuild -P sml.gpr          # Library only
 alr exec -- gprbuild -P examples.gpr     # Examples (includes schema loader)
-alr exec -- gprbuild -P test_parser.gpr  # Parser tests
-alr exec -- gprbuild -P test_schema.gpr  # Schema tests
+./build_tests.sh                         # Build all tests
 
 # Run examples
-bin/example_basic_dom                    # Basic DOM usage
-bin/example_schema_validation      # Schema validation demo
+bin/example-basic-dom                    # Basic DOM usage
+bin/example-schema-validation      # Schema validation demo
 
 # Run tests
-bin/test_parser                    # Parser tests
-bin/test_schema                    # Schema validation tests
-bin/test_schema_loader             # Schema loader tests
+bin/test-parser                    # Parser tests
+bin/test-schema                    # Schema validation tests
+bin/test-schema-loader             # Schema loader tests
 ```
 
 ## Example Programs
 
 The repository includes three focused example programs demonstrating different aspects of the library:
 
-### 1. example_basic_dom - Basic DOM Operations (218 lines)
+### 1. example-basic-dom - Basic DOM Operations (218 lines)
 **Purpose:** Tutorial for core DOM functionality
 **Features demonstrated:**
 - Parsing SML from strings
@@ -60,10 +59,10 @@ The repository includes three focused example programs demonstrating different a
 - Round-trip operations (parse → modify → serialize → parse)
 
 **When to use:** Start here to learn basic SML library usage
-**Run:** `bin/example_basic_dom`
-**Location:** `examples/example_basic_dom.adb`
+**Run:** `bin/example-basic-dom`
+**Location:** `examples/example-basic-dom.adb`
 
-### 2. example_schema_validation - Schema Validation (202 lines)
+### 2. example-schema-validation - Schema Validation (202 lines)
 **Purpose:** Demonstration of schema validation capabilities
 **Features demonstrated:**
 - Loading schemas from SML strings
@@ -74,10 +73,10 @@ The repository includes three focused example programs demonstrating different a
 - Multiple validation scenarios
 
 **When to use:** Learn how to use schema validation for type-safe configs
-**Run:** `bin/example_schema_validation`
-**Location:** `examples/example_schema_validation.adb`
+**Run:** `bin/example-schema-validation`
+**Location:** `examples/example-schema-validation.adb`
 
-### 3. test_schema_loader - File I/O & Integration (455 lines)
+### 3. test-schema-loader - File I/O & Integration (455 lines)
 **Purpose:** Comprehensive testing and file-based workflows
 **Features demonstrated:**
 - Schema loader unit tests (8 tests)
@@ -87,19 +86,19 @@ The repository includes three focused example programs demonstrating different a
 - Error handling at each level
 
 **When to use:** See real-world file-based usage patterns
-**Run:** `bin/test_schema_loader`
-**Location:** `examples/test_schema_loader.adb`
+**Run:** `bin/test-schema-loader`
+**Location:** `examples/test-schema-loader.adb`
 
 **Note:** This is a hybrid test/demo program - first 8 procedures are unit tests (inline strings), final procedure demonstrates file I/O integration.
 
 ### Example Progression
 
 **Suggested learning order:**
-1. Start with `example_basic_dom` to understand DOM basics
-2. Move to `example_schema_validation` for validation features
-3. Review `test_schema_loader` for file I/O and integration patterns
+1. Start with `example-basic-dom` to understand DOM basics
+2. Move to `example-schema-validation` for validation features
+3. Review `test-schema-loader` for file I/O and integration patterns
 
-All examples use inline SML strings except test_schema_loader's final test which demonstrates file-based workflows using SML.IO utilities.
+All examples use inline SML strings except test-schema-loader's final test which demonstrates file-based workflows using SML.IO utilities.
 
 ## Verification Commands
 
@@ -229,22 +228,22 @@ For larger documents, either:
 
 ### Running Tests
 ```bash
-# Build and run parser tests
-alr exec -- gprbuild -P test_parser.gpr
-bin/test_parser
+# Build and run tests
+./build_tests.sh
+bin/test-parser
+bin/test-schema
+bin/test-io
 
-# Build and run schema tests
-alr exec -- gprbuild -P test_schema.gpr
-bin/test_schema
-
-# Build and run examples (includes schema loader tests)
-alr exec -- gprbuild -P examples.gpr
-bin/test_schema_loader
+# Build and run examples
+./build_examples.sh
+bin/example-basic-dom
+bin/example-schema-validation
+bin/test-schema-loader
 ```
 
 ### Adding New Test Cases
-- Parser tests: Edit `test/test_parser.adb`
-- Schema tests: Edit `test/test_schema.adb`
+- Parser tests: Edit `test/test-parser.adb`
+- Schema tests: Edit `test/test-schema.adb`
 - Follow existing patterns for test procedures
 
 ### Debugging Proof Failures
@@ -286,21 +285,24 @@ sml/
 │       ├── sml-utf8-proof.ads/.adb
 │       └── sml-entities-proof.ads/.adb
 ├── test/                            # Library test programs
-│   ├── test_parser.adb              # Parser tests
-│   └── test_schema.adb              # Schema validation tests
+│   ├── test-parser.adb              # Parser tests
+│   ├── test-schema.adb              # Schema validation tests
+│   └── test-io.adb                  # I/O tests
 ├── examples/                        # Examples and reference code
-│   ├── example_basic_dom.adb        # Basic DOM usage
-│   ├── example_schema_validation.adb # Schema demo
+│   ├── example-basic-dom.adb        # Basic DOM usage
+│   ├── example-schema-validation.adb # Schema demo
 │   ├── sml-schema-loader.ads/.adb   # Schema loader (reference)
-│   └── test_schema_loader.adb       # Loader tests
+│   └── test-schema-loader.adb       # Loader tests
 ├── proof/                           # SPARK proof artifacts
 ├── obj/                             # Build artifacts
 ├── lib/                             # Library output
 ├── bin/                             # Executables
 ├── sml.gpr                          # Main library project
-├── test_parser.gpr                  # Parser tests project
-├── test_schema.gpr                  # Schema tests project
-├── examples.gpr                     # Examples project
+├── test/tests.gpr                   # Tests project
+├── examples/examples.gpr            # Examples project
+├── build_tests.sh                   # Test build script
+├── build_examples.sh                # Example build script
+├── build_all.sh                     # Build everything
 └── alire.toml                       # Alire package manifest
 ```
 
@@ -424,13 +426,13 @@ end if;
 
 ```bash
 # Core validation tests (7 tests)
-bin/test_schema
+bin/test-schema
 
 # Schema loader tests (8 tests)
-bin/test_schema_loader
+bin/test-schema-loader
 
 # End-to-end demo
-bin/example_schema_validation
+bin/example-schema-validation
 ```
 
 ### Schema Language Features

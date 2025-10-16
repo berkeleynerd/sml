@@ -245,7 +245,7 @@ end case;
 
 ## Complete Example
 
-See `examples/example_schema_validation.adb` for a complete working example demonstrating:
+See `examples/example-schema-validation.adb` for a complete working example demonstrating:
 1. Schema definition in SML
 2. Loading schema into Schema_Document
 3. Validating correct documents
@@ -253,7 +253,7 @@ See `examples/example_schema_validation.adb` for a complete working example demo
 
 Run with:
 ```bash
-bin/example_schema_validation
+bin/example-schema-validation
 ```
 
 ## Testing
@@ -262,12 +262,12 @@ The library includes comprehensive test suites:
 
 ```bash
 # Core validation engine tests (7 tests)
-alr exec -- gprbuild -P test_schema.gpr
-bin/test_schema
+./build_tests.sh
+bin/test-schema
 
 # Schema loader tests (8 tests)
-alr exec -- gprbuild -P examples.gpr
-bin/test_schema_loader
+./build_examples.sh
+bin/test-schema-loader
 ```
 
 ## Schema Language Reference
