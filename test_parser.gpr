@@ -1,6 +1,6 @@
 with "sml.gpr";
 
-project Test is
+project Test_Parser is
 
    for Source_Dirs use ("test/");
    for Object_Dir use "obj/test";
@@ -23,4 +23,4 @@ project Test is
          "-Wl,-stack_size,0x2000000");  -- 32MB stack for tests
    end Linker;
 
-end Test;
+end Test_Parser;

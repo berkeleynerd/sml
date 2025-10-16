@@ -19,6 +19,7 @@ alr build -- -cargs:ada -gnat2022 -gnatX0
 # Build the test suite
 alr exec -- gprbuild -P test_parser.gpr
 alr exec -- gprbuild -P test_schema.gpr
+alr exec -- gprbuild -P test_io.gpr
 
 # Run the tests
 bin/test_parser
@@ -127,6 +128,16 @@ alr build
 # Or using GPRbuild directly
 gprbuild -P sml.gpr
 ```
+
+## Building Tests
+
+Due to a gprbuild 25.0.0 issue on macOS ARM64 with single-main executables, use the provided script:
+
+```bash
+./build_tests.sh
+```
+
+This uses `gnatmake` as a workaround. The test executables will be created in `bin/`.
 
 ## Verification
 
