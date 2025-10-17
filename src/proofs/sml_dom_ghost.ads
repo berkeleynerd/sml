@@ -1,14 +1,32 @@
 ------------------------------------------------------------------------------
 --                   Simple Markup Language (SML) Library                   --
 --                                                                          --
---                     SPARK Proof Support - DOM Package                    --
+--                         DOM Ghost Functions                              --
 ------------------------------------------------------------------------------
 
-package SML.DOM.Proof
-with
-   Ghost,
-   SPARK_Mode
+with SML_Types;
+with SML_Types.Memory; use SML_Types.Memory;
+
+package SML_DOM_Ghost
+  with Ghost, SPARK_Mode
 is
+   --  Forward declarations - types defined in SML.DOM
+   type Document is limited private;
+   type Node_Id is private;
+
+   --  Constants
+   Null_Node : constant Node_Id;
+   Max_Tree_Depth : constant Natural := SML_Types.Max_Tree_Depth;
+
+private
+   --  Implementation matches SML.DOM private types
+   type Node_Id is new Node_Index;
+   Null_Node : constant Node_Id := Node_Id (No_Node_Index);
+
+   type Document is limited record
+      Pool : Arena_Pool;
+      Root_Node : Node_Id;
+   end record;
 
    ---------------------------------------------------------------------------
    --  Ghost Functions for DOM Verification
@@ -136,4 +154,4 @@ is
          and then Is_Valid_Node (Doc_After, New_Node),
        Global => null;
 
-end SML.DOM.Proof;
+end SML_DOM_Ghost;

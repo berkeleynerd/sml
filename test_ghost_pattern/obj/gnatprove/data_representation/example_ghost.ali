@@ -1,0 +1,40 @@
+V "GNAT Lib v15"
+A -gnatA
+A -gnat2022
+A -gnatwa
+A -gnatwe
+A -gnaty3
+A -gnatR2js
+A -gnatws
+A -gnatis
+A -mmacosx-version-min=14.0
+A -mcpu=apple-m1
+A -mlittle-endian
+A -mabi=lp64
+A -fPIC
+P ZX
+
+RN
+RV NO_DIRECT_BOOLEAN_OPERATORS
+RV NO_IMPLEMENTATION_ASPECT_SPECIFICATIONS
+RV NO_IMPLEMENTATION_PRAGMAS
+RV NO_ELABORATION_CODE
+
+U example_ghost%b	example_ghost.adb	1c48a818 OO
+
+U example_ghost%s	example_ghost.ads	729e0824 EE OO
+W example_types%s	example_types.ads	example_types.ali
+
+D example_ghost.ads	20251017151109 899c4801 example_ghost%s
+D example_ghost.adb	20251017150943 95d4e019 example_ghost%b
+D example_types.ads	20251017151055 fb024025 example_types%s
+D system.ads		20251009152241 70765b54 system%s
+G a e
+G c Z s b [is_valid example_ghost 6 13 none]
+G c Z s b [value_increased example_ghost 9 13 none]
+X 3 example_types.ads
+1K9*Example_Types 1|1w6 1r25 3|9e18
+4R9*Counter 1|6r27 9r45 2|4r27 9r45 3|8e6
+5i7*Value{natural} 1|7r40 11r15 11r29 2|6r16 11r20 11r34
+6i7*Max{natural} 1|7r51 11r49 11r61 2|6r27 11r54 11r66
+

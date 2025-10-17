@@ -1,0 +1,15 @@
+
+example_ghost.adb:11:40: medium: overflow check might fail, cannot prove upper bound for Old_C.Value + 1
+   11 |      return New_C.Value = Old_C.Value + 1 and New_C.Max = Old_C.Max;
+      |                           ~~~~~~~~~~~~^~~
+  e.g. when New_C = (Value => 0, Max => 0)
+        and Old_C = (Value => Natural'Last, Max => Natural'Last)
+  reason for check: result of addition must fit in a 32-bits machine integer
+  possible fix: add precondition (Old_C.Value <= Integer'Last - 1) to subprogram at example_ghost.ads:9
+    9 |   function Value_Increased (Old_C, New_C : Counter) return Boolean
+      |            ^ here
+example_ghost.ads:6:13: info: implicit aspect Always_Terminates on "Is_Valid" has been proved, subprogram will terminate
+example_ghost.ads:7:19: info: postcondition proved
+example_ghost.ads:9:13: info: implicit aspect Always_Terminates on "Value_Increased" has been proved, subprogram will terminate
+example_ghost.ads:10:19: info: postcondition proved
+example_ghost.ads:11:35: info: overflow check proved

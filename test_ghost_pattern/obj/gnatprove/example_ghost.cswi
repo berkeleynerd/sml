@@ -1,0 +1,11 @@
+20251017151137
+-c
+-x
+ada
+-gnatA
+-gnat2022
+-gnatwa
+-gnatwe
+-gnaty3
+-gnatc
+-gnates=/Users/rebecca/src/github.com/berkeleynerd/sml/test_ghost_pattern/obj/gnatprove/c757dde2.tmp

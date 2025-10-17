@@ -1,34 +1,32 @@
 ------------------------------------------------------------------------------
 --                   Simple Markup Language (SML) Library                   --
 --                                                                          --
---                     SPARK Proof Support - DOM Package                    --
+--                     DOM Ghost Functions Implementation                   --
 ------------------------------------------------------------------------------
 
-with SML.Memory_Model;
-with SML.UTF8;
+with SML_Memory_Model_Ghost;
+with SML_UTF8_Ghost;
 
-package body SML.DOM.Proof
-with
-   SPARK_Mode
+package body SML_DOM_Ghost
+  with SPARK_Mode
 is
-   use type SML.Memory_Model.Node_Kind;
 
    ---------------------------------------------------------------------------
    --  Local Helper Functions
    ---------------------------------------------------------------------------
 
-   function To_Index (Node : Node_Id) return SML.Memory_Model.Node_Index
+   function To_Index (Node : Node_Id) return Node_Index
      with Inline
    is
    begin
-      return SML.Memory_Model.Node_Index (Node);
+      return Node_Index (Node);
    end To_Index;
 
-   function To_Node_Id (Idx : SML.Memory_Model.Node_Index) return Node_Id
+   function To_Node_Id (Idx : Node_Index) return Node_Id
      with Inline
    is
    begin
-      if Idx = SML.Memory_Model.No_Node_Index then
+      if Idx = No_Node_Index then
          return Null_Node;
       else
          return Node_Id (Idx);
@@ -40,7 +38,7 @@ is
    ---------------------------------------------------------------------------
 
    function Is_Valid_Node (Doc : Document; Node : Node_Id) return Boolean is
-      Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
+      Idx : constant Node_Index := To_Index (Node);
    begin
       --  Safety-critical validation: exhaustive checks for node validity
 
@@ -50,20 +48,20 @@ is
       end if;
 
       --  Check 2: Node index must be in valid allocated range
-      if not SML.Memory_Model.Valid_Node_Index (Doc.Pool, Idx) then
+      if not SML_Memory_Model_Ghost.Valid_Node_Index (Doc.Pool, Idx) then
          return False;
       end if;
 
       --  Check 3: Node must not be marked as deleted
       declare
-         N : constant SML.Memory_Model.Node := Doc.Pool.Nodes (Idx);
+         N : constant Node := Doc.Pool.Nodes (Idx);
       begin
          if N.Is_Deleted then
             return False;
          end if;
 
          --  Check 4: Node's parent must be valid or null (for root)
-         if N.Parent_Index /= SML.Memory_Model.No_Node_Index then
+         if N.Parent_Index /= No_Node_Index then
             if not (N.Parent_Index > 0
                     and then N.Parent_Index < Doc.Pool.Next_Node_Index)
             then
@@ -72,7 +70,7 @@ is
          end if;
 
          --  Check 5: If node has children, first child must be valid
-         if N.First_Child_Index /= SML.Memory_Model.No_Node_Index then
+         if N.First_Child_Index /= No_Node_Index then
             if not (N.First_Child_Index > 0
                     and then N.First_Child_Index < Doc.Pool.Next_Node_Index)
             then
@@ -81,7 +79,7 @@ is
          end if;
 
          --  Check 6: If node has sibling, next sibling must be valid
-         if N.Next_Sibling_Index /= SML.Memory_Model.No_Node_Index then
+         if N.Next_Sibling_Index /= No_Node_Index then
             if not (N.Next_Sibling_Index > 0
                     and then N.Next_Sibling_Index < Doc.Pool.Next_Node_Index)
             then
@@ -90,11 +88,11 @@ is
          end if;
 
          --  Check 7: Element nodes must have valid name reference
-         if N.Kind = SML.Memory_Model.Element then
+         if N.Kind = Element then
             if N.Element_Name_Ref.Length = 0 then
                return False;  -- Elements must have non-empty names
             end if;
-            if not SML.Memory_Model.Valid_String_Ref
+            if not SML_Memory_Model_Ghost.Valid_String_Ref
                      (Doc.Pool, N.Element_Name_Ref)
             then
                return False;
@@ -102,9 +100,9 @@ is
          end if;
 
          --  Check 8: Text nodes must have valid text reference
-         if N.Kind = SML.Memory_Model.Text then
+         if N.Kind = Text then
             --  Text nodes can have empty content, but reference must be valid
-            if not SML.Memory_Model.Valid_String_Ref
+            if not SML_Memory_Model_Ghost.Valid_String_Ref
                      (Doc.Pool, N.Text_Content_Ref)
             then
                return False;
@@ -126,7 +124,7 @@ is
    end Is_Well_Formed;
 
    function Has_Single_Root (Doc : Document) return Boolean is
-      Idx : constant SML.Memory_Model.Node_Index := To_Index (Doc.Root_Node);
+      Idx : constant Node_Index := To_Index (Doc.Root_Node);
    begin
       --  Safety Check 1: Root must exist
       if Doc.Root_Node = Null_Node then
@@ -134,20 +132,20 @@ is
       end if;
 
       --  Safety Check 2: Root index must be valid
-      if not SML.Memory_Model.Valid_Node_Index (Doc.Pool, Idx) then
+      if not SML_Memory_Model_Ghost.Valid_Node_Index (Doc.Pool, Idx) then
          return False;
       end if;
 
       --  Safety Check 3: Root must be an Element (not Text)
       declare
-         Root_Node : constant SML.Memory_Model.Node := Doc.Pool.Nodes (Idx);
+         Root_Node : constant Node := Doc.Pool.Nodes (Idx);
       begin
-         if Root_Node.Kind /= SML.Memory_Model.Element then
+         if Root_Node.Kind /= Element then
             return False;  -- Root must be an element
          end if;
 
          --  Safety Check 4: Root must have no parent
-         if Root_Node.Parent_Index /= SML.Memory_Model.No_Node_Index then
+         if Root_Node.Parent_Index /= No_Node_Index then
             return False;  -- Root cannot have a parent
          end if;
 
@@ -176,7 +174,7 @@ is
             if N = Null_Node then
                return Null_Node;
             end if;
-            if not SML.Memory_Model.Valid_Node_Index (Doc.Pool, To_Index (N))
+            if not Valid_Node_Index (Doc.Pool, To_Index (N))
             then
                return Null_Node;
             end if;
@@ -219,23 +217,23 @@ is
          return True;
       end if;
 
-      for I in 1 .. SML.Memory_Model.Node_Index (Doc.Total_Nodes) loop
+      for I in 1 .. Node_Index (Doc.Total_Nodes) loop
          declare
-            Idx : constant SML.Memory_Model.Node_Index :=
-              SML.Memory_Model.Node_Index (I);
+            Idx : constant Node_Index :=
+              Node_Index (I);
          begin
-            exit when not SML.Memory_Model.Valid_Node_Index (Doc.Pool, Idx);
+            exit when not SML_Memory_Model_Ghost.Valid_Node_Index (Doc.Pool, Idx);
             declare
-               N : constant SML.Memory_Model.Node := Doc.Pool.Nodes (Idx);
+               N : constant Node := Doc.Pool.Nodes (Idx);
             begin
                if not N.Is_Deleted then
                   --  Check first child's parent pointer
-                  if N.First_Child_Index /= SML.Memory_Model.No_Node_Index then
+                  if N.First_Child_Index /= No_Node_Index then
                      declare
-                        C_Idx : constant SML.Memory_Model.Node_Index :=
+                        C_Idx : constant Node_Index :=
                           N.First_Child_Index;
                      begin
-                        if SML.Memory_Model.Valid_Node_Index
+                        if Valid_Node_Index
                           (Doc.Pool, C_Idx)
                         then
                            if Doc.Pool.Nodes (C_Idx).Parent_Index /= Idx then
@@ -248,12 +246,12 @@ is
                   end if;
 
                   --  Check siblings form a proper chain
-                  if N.Next_Sibling_Index /= SML.Memory_Model.No_Node_Index then
+                  if N.Next_Sibling_Index /= No_Node_Index then
                      declare
-                        S_Idx : constant SML.Memory_Model.Node_Index :=
+                        S_Idx : constant Node_Index :=
                           N.Next_Sibling_Index;
                      begin
-                        if SML.Memory_Model.Valid_Node_Index (Doc.Pool, S_Idx)
+                        if Valid_Node_Index (Doc.Pool, S_Idx)
                         then
                            --  Sibling must have same parent
                            if Doc.Pool.Nodes (S_Idx).Parent_Index
@@ -289,7 +287,7 @@ is
    function Is_Valid_Name (Name : String) return Boolean is
    begin
       --  Delegate to UTF8 validation
-      return SML.UTF8.Is_Valid_UTF8 (Name) and then Name'Length > 0;
+      return SML_UTF8_Ghost.Is_Valid_UTF8 (Name) and then Name'Length > 0;
    end Is_Valid_Name;
 
    ---------------------------------------------------------------------------
@@ -417,4 +415,4 @@ is
       null;  -- Lemma body can be null; proved by contracts
    end Lemma_Add_Node_Preserves_Well_Formed;
 
-end SML.DOM.Proof;
+end SML_DOM_Ghost;

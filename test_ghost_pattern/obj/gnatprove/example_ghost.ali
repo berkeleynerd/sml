@@ -1,0 +1,57 @@
+V "GNAT Lib v15"
+A -x
+A ada
+A -gnatA
+A -gnat2022
+A -gnatwa
+A -gnatwe
+A -gnaty3
+A -gnatc
+A -gnatis
+P GP
+
+RN
+RV NO_DIRECT_BOOLEAN_OPERATORS
+RV NO_IMPLEMENTATION_ASPECT_SPECIFICATIONS
+RV NO_IMPLEMENTATION_PRAGMAS
+RV NO_ELABORATION_CODE
+
+U example_ghost%b	example_ghost.adb	1c48a818 OO PK
+
+U example_ghost%s	example_ghost.ads	729e0824 OO PK
+W example_types%s	example_types.ads	example_types.ali
+
+D example_ghost.ads	20251017151109 899c4801 example_ghost%s
+D example_ghost.adb	20251017150943 95d4e019 example_ghost%b
+D example_types.ads	20251017151055 fb024025 example_types%s
+D system.ads		20251009152241 70765b54 system%s
+G a Z
+X 1 example_ghost.ads
+3K9*Example_Ghost 12l5 12e18 2|1b14 13l5 13t18
+6V13*Is_Valid{boolean} 6>23 7r19 2|4b13 7l8 7t16
+6r23 C{3|4R9} 7r38 7r49 2|4b23 6r14 6r25
+9V13*Value_Increased{boolean} 9>30 9>37 10r19 2|9b13 12l8 12t23
+9r30 Old_C{3|4R9} 11r23 11r55 2|9b30 11r28 11r60
+9r37 New_C{3|4R9} 11r9 11r43 2|9b37 11r14 11r48
+X 3 example_types.ads
+1K9*Example_Types 1|1w6 1r25 3|9e18
+4R9*Counter 1|6r27 9r45 2|4r27 9r45 3|8e6
+5i7*Value{natural} 1|7r40 11r15 11r29 2|6r16 11r20 11r34
+6i7*Max{natural} 1|7r51 11r49 11r61 2|6r27 11r54 11r66
+
+QQ SPARKVERSION FSF 15.0
+GG EK_DIRECT_CALLS example_ghost__is_valid 0
+GG EK_PROOF_DEPENDENCIES example_ghost__is_valid 0
+GG EK_GLOBALS example_ghost__is_valid local FALSE E_FUNCTION FALSE ORIGIN_FLOW 1 example_ghost proper_proof_in 0 proper_input 0 proper_output 0 refined_proof_in 0 refined_input 0 refined_output 0 calls_proof 0 calls 0 calls_conditional 0 TRUE FALSE FALSE FALSE TRUE ENTRY_CALLS 0 SUSPENDS_ON 0 UNSYNCH_ACCESSES 0 LOCKS 0
+GG EK_DIRECT_CALLS example_ghost__value_increased 0
+GG EK_PROOF_DEPENDENCIES example_ghost__value_increased 0
+GG EK_GLOBALS example_ghost__value_increased local FALSE E_FUNCTION FALSE ORIGIN_FLOW 1 example_ghost proper_proof_in 0 proper_input 0 proper_output 0 refined_proof_in 0 refined_input 0 refined_output 0 calls_proof 0 calls 0 calls_conditional 0 TRUE FALSE FALSE FALSE TRUE ENTRY_CALLS 0 SUSPENDS_ON 0 UNSYNCH_ACCESSES 0 LOCKS 0
+GG EK_DIRECT_CALLS example_ghost 0
+GG EK_PROOF_DEPENDENCIES example_ghost 0
+GG EK_GLOBALS example_ghost local FALSE E_PACKAGE TRUE ORIGIN_FLOW 0 proper_proof_in 0 proper_input 0 proper_output 0 refined_proof_in 0 refined_input 0 refined_output 0 initializes 0 refined_initializes 0 calls_proof 0 calls 0 calls_conditional 0 local_packages 0 local_var 0 TRUE FALSE FALSE FALSE FALSE ENTRY_CALLS 0 SUSPENDS_ON 0 UNSYNCH_ACCESSES 0 LOCKS 0
+GG EK_FLOW_SCOPE example_types__counterPredicate FALSE FALSE FALSE FALSE TRUE example_types VISIBLE_PART
+GG EK_FLOW_SCOPE example_ghost__is_valid FALSE FALSE FALSE FALSE TRUE example_ghost VISIBLE_PART
+GG EK_FLOW_SCOPE example_types TRUE FALSE FALSE FALSE FALSE __standard
+GG EK_FLOW_SCOPE example_ghost__value_increased FALSE FALSE FALSE FALSE TRUE example_ghost VISIBLE_PART
+GG EK_FLOW_SCOPE example_ghost TRUE FALSE FALSE FALSE FALSE __standard
+GG EK_END_MARKER

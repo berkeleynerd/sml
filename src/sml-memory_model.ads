@@ -4,6 +4,9 @@
 --  SPARK Ada Implementation with Formal Memory Safety
 ------------------------------------------------------------------------------
 
+with SML_Types.Memory; use SML_Types.Memory;
+with SML_Memory_Model_Ghost;
+
 package SML.Memory_Model
   with SPARK_Mode => On
 is
@@ -40,121 +43,63 @@ is
    --    1. Increase stack size (recommended), OR
    --    2. Modify these constants and rebuild the library
 
-   --  Maximum nodes based on stack-safe document limits
-   Max_Document_Nodes : constant Natural := 2_000;
-
-   --  Maximum string storage (200KB for text content)
-   Max_String_Storage : constant Natural := 200_000;
-
-   --  Maximum size for element names
-   Max_Name_Length : constant Natural := 100;
-
-   --  Maximum size for text content per node
-   Max_Text_Length : constant Natural := 10_000;
-
-   --  Memory expansion factor (worst case)
-   Memory_Expansion_Factor : constant Positive := 10;
-
-   --  Size of a node in bytes (approximate)
-   Node_Size_Bytes : constant Natural := 64;
+   --  Re-export constants for backward compatibility
+   --  Note: Max_Document_Nodes and Max_String_Storage are from SML_Types,
+   --  we'll need to handle the mismatch in values
+   Max_Document_Nodes : constant Natural := SML_Types.Max_Document_Nodes;
+   Max_String_Storage : constant Natural := SML_Types.Max_String_Storage;
+   Max_Name_Length : Natural renames SML_Types.Memory.Max_Name_Length;
+   Max_Text_Length : Natural renames SML_Types.Memory.Max_Text_Length;
+   Memory_Expansion_Factor : Positive renames SML_Types.Memory.Memory_Expansion_Factor;
+   Node_Size_Bytes : Natural renames SML_Types.Memory.Node_Size_Bytes;
 
    ---------------------------------------------------------------------------
-   --  Node Storage Types
+   --  Re-export Types for Backward Compatibility
    ---------------------------------------------------------------------------
 
    --  Node index type for array-based allocation
-   subtype Node_Index is Natural range 0 .. Max_Document_Nodes;
+   subtype Node_Index is SML_Types.Memory.Node_Index;
 
    --  Invalid node index constant
-   No_Node_Index : constant Node_Index := 0;
+   No_Node_Index : Node_Index renames SML_Types.Memory.No_Node_Index;
 
    --  Node kind enumeration (matching DOM)
-   type Node_Kind is (Element, Text);
+   subtype Node_Kind is SML_Types.Memory.Node_Kind;
+   Element : constant Node_Kind := SML_Types.Memory.Element;
+   Text    : constant Node_Kind := SML_Types.Memory.Text;
 
    ---------------------------------------------------------------------------
-   --  String Storage Types
+   --  String Storage Types (Re-exports)
    ---------------------------------------------------------------------------
 
    --  String storage index
-   subtype String_Index is Natural range 0 .. Max_String_Storage;
+   subtype String_Index is SML_Types.Memory.String_Index;
 
    --  Character array for string storage
-   type String_Storage is array (String_Index range <>) of Character;
+   subtype String_Storage is SML_Types.Memory.String_Storage;
 
    --  String reference within pool
-   type String_Ref is record
-      Start  : String_Index;    -- Starting position in pool
-      Length : Natural;          -- Length of string
-   end record
-   with
-     Predicate =>
-       Length <= Max_String_Storage
-       and then (if Length > 0
-                 then Start > 0 and then Start <= Max_String_Storage);
+   subtype String_Ref is SML_Types.Memory.String_Ref;
 
    --  Null string reference
-   Null_String_Ref : constant String_Ref := (Start => 0, Length => 0);
+   Null_String_Ref : String_Ref renames SML_Types.Memory.Null_String_Ref;
 
    ---------------------------------------------------------------------------
-   --  Node Type Definition
+   --  Node Type Definition (Re-exports)
    ---------------------------------------------------------------------------
 
-   --  Maximum children per element
-   --  (local constant to avoid circular dependency)
-   Max_Children_Local : constant Natural := 10000;
+   --  Node structure
+   subtype Node is SML_Types.Memory.Node;
 
-   --  Node structure with bounded storage (discriminated record with default)
-   type Node (Kind : Node_Kind := Element) is record
-      Parent_Index       : Node_Index;
-      First_Child_Index  : Node_Index;
-      Next_Sibling_Index : Node_Index;
-      Is_Deleted         : Boolean := False;  -- Logical deletion flag
-
-      --  Content based on kind discriminant
-      case Kind is
-         when Element =>
-            Element_Name_Ref : String_Ref;
-            Num_Children     : Natural;
-
-         when Text =>
-            Text_Content_Ref : String_Ref;
-      end case;
-   end record
-   with
-     Predicate =>
-       (case Kind is
-          when Element => Num_Children <= Max_Children_Local,
-          when Text => First_Child_Index = No_Node_Index);
-
-   --  Array of nodes for arena allocation (defined after Node type)
-   type Node_Array is array (Node_Index range <>) of aliased Node;
+   --  Array of nodes
+   subtype Node_Array is SML_Types.Memory.Node_Array;
 
    ---------------------------------------------------------------------------
-   --  Arena Allocator Type
+   --  Arena Allocator Type (Re-export)
    ---------------------------------------------------------------------------
 
    --  Arena-based memory pool for nodes and strings
-   type Arena_Pool is limited record
-      --  Node storage
-      Nodes           : Node_Array (1 .. Max_Document_Nodes);
-      Next_Node_Index : Node_Index := 1;
-
-      --  String storage
-      Strings         : String_Storage (1 .. Max_String_Storage);
-      Next_String_Pos : String_Index := 1;
-
-      --  Ghost fields for memory accounting (Ghost documented in comments)
-      Allocated_Nodes : Natural := 0;
-      Allocated_Bytes : Natural := 0;
-      High_Water_Mark : Natural := 0;  -- Maximum allocation reached
-   end record
-   with
-     Relaxed_Initialization,
-     Predicate =>
-       Next_Node_Index <= Max_Document_Nodes + 1
-       and then Next_String_Pos <= Max_String_Storage + 1
-       and then Allocated_Nodes <= Next_Node_Index
-       and then Allocated_Bytes <= Max_String_Storage;
+   subtype Arena_Pool is SML_Types.Memory.Arena_Pool;
 
    ---------------------------------------------------------------------------
    --  Allocation Functions
@@ -288,7 +233,6 @@ is
      (Pool : Arena_Pool; Ref : String_Ref; Text : String) return Boolean
      with
        Ghost,
-       Import,
        Pre => Text'Length = Ref.Length,
        Post =>
          String_Stored'Result =
@@ -300,7 +244,6 @@ is
      (Pool : Arena_Pool; Input_Size : Natural) return Boolean
      with
        Ghost,
-       Import,
        Post =>
          Memory_Bounded_By_Input'Result =
            (Memory_Used (Pool) <= Input_Size * Memory_Expansion_Factor);
@@ -309,7 +252,6 @@ is
    function Arena_Invariants (Pool : Arena_Pool) return Boolean
      with
        Ghost,
-       Import,
        Post =>
          Arena_Invariants'Result =
            (Pool.Next_Node_Index >= 1
@@ -322,7 +264,6 @@ is
    function Has_Exact_Allocation_Count (Pool : Arena_Pool) return Boolean
      with
        Ghost,
-       Import,
        Post =>
          Has_Exact_Allocation_Count'Result =
            (Pool.Allocated_Nodes = Pool.Next_Node_Index - 1);
@@ -335,7 +276,6 @@ is
    procedure Lemma_Arena_No_Overflow (Pool : Arena_Pool)
      with
        Ghost,
-       Import,
        Post =>
          Pool.Next_Node_Index <= Max_Document_Nodes + 1
          and then Pool.Next_String_Pos <= Max_String_Storage + 1;
@@ -344,7 +284,6 @@ is
    procedure Lemma_Allocated_Nodes_Valid (Pool : Arena_Pool)
      with
        Ghost,
-       Import,
        Post =>
          (for all I in 1 .. Pool.Next_Node_Index - 1 =>
             Valid_Node_Index (Pool, I));
@@ -353,7 +292,6 @@ is
    procedure Lemma_Memory_Monotonic (Pool_Before, Pool_After : Arena_Pool)
      with
        Ghost,
-       Import,
        Pre =>
          Pool_After.Allocated_Nodes >= Pool_Before.Allocated_Nodes
          and then Pool_After.Allocated_Bytes >= Pool_Before.Allocated_Bytes,
@@ -364,7 +302,6 @@ is
      (Pool_Before : Arena_Pool; Pool_After : Arena_Pool)
      with
        Ghost,
-       Import,
        Pre =>
          Pool_After.Next_Node_Index = 1 and then Pool_After.Allocated_Nodes = 0,
        Post => Memory_Used (Pool_After) = 0;

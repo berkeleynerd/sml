@@ -146,4 +146,53 @@ is
       return Index > No_Node_Index and then Index < Pool.Next_Node_Index;
    end Valid_Node_Index;
 
+   ---------------------------------------------------------------------------
+   --  Ghost Function Implementations
+   ---------------------------------------------------------------------------
+   function String_Stored
+     (Pool : Arena_Pool; Ref : String_Ref; Text : String) return Boolean
+   is
+   begin
+      return SML_Memory_Model_Ghost.String_Stored (Pool, Ref, Text);
+   end String_Stored;
+
+   function Memory_Bounded_By_Input
+     (Pool : Arena_Pool; Input_Size : Natural) return Boolean
+   is
+   begin
+      return SML_Memory_Model_Ghost.Memory_Bounded_By_Input (Pool, Input_Size);
+   end Memory_Bounded_By_Input;
+
+   function Arena_Invariants (Pool : Arena_Pool) return Boolean is
+   begin
+      return SML_Memory_Model_Ghost.Arena_Invariants (Pool);
+   end Arena_Invariants;
+
+   function Has_Exact_Allocation_Count (Pool : Arena_Pool) return Boolean is
+   begin
+      return SML_Memory_Model_Ghost.Has_Exact_Allocation_Count (Pool);
+   end Has_Exact_Allocation_Count;
+
+   procedure Lemma_Arena_No_Overflow (Pool : Arena_Pool) is
+   begin
+      SML_Memory_Model_Ghost.Lemma_Arena_No_Overflow (Pool);
+   end Lemma_Arena_No_Overflow;
+
+   procedure Lemma_Allocated_Nodes_Valid (Pool : Arena_Pool) is
+   begin
+      SML_Memory_Model_Ghost.Lemma_Allocated_Nodes_Valid (Pool);
+   end Lemma_Allocated_Nodes_Valid;
+
+   procedure Lemma_Memory_Monotonic (Pool_Before, Pool_After : Arena_Pool) is
+   begin
+      SML_Memory_Model_Ghost.Lemma_Memory_Monotonic (Pool_Before, Pool_After);
+   end Lemma_Memory_Monotonic;
+
+   procedure Lemma_Reset_Deallocates_All
+     (Pool_Before : Arena_Pool; Pool_After : Arena_Pool)
+   is
+   begin
+      SML_Memory_Model_Ghost.Lemma_Reset_Deallocates_All (Pool_Before, Pool_After);
+   end Lemma_Reset_Deallocates_All;
+
 end SML.Memory_Model;

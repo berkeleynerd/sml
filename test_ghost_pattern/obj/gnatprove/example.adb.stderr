@@ -1,0 +1,6 @@
+example.adb:6:14: info: predicate check proved
+example.adb:11:08: info: predicate check proved
+example.adb:11:26: info: overflow check proved
+example.ads:7:13: info: implicit aspect Always_Terminates on "Create" has been proved, subprogram will terminate
+example.ads:8:19: info: postcondition proved
+example.ads:13:16: info: postcondition proved
