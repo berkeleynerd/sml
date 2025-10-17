@@ -4,6 +4,8 @@
 --  SPARK Ada Implementation with Formal Verification Support
 ------------------------------------------------------------------------------
 
+with SML_Entities_Ghost;
+
 package SML.Entities
   with SPARK_Mode => On
 is
@@ -218,89 +220,37 @@ is
    ---------------------------------------------------------------------------
    --  Ghost Functions for Proof
    ---------------------------------------------------------------------------
-   --  These are implemented in SML.Entities.Proof
+   --  These are now implemented in SML_Entities_Ghost (no Import needed)
 
-   --  Count entity references in a string
    function Count_Entity_References (Text : String) return Natural
-     with
-       Ghost,
-       Import,
-       Post =>
-         Count_Entity_References'Result <= Text'Length / 3,  -- Min entity is 3 chars
-       Global => null;
+     renames SML_Entities_Ghost.Count_Entity_References;
 
-   --  Check if expansion preserves content semantics
    function Expansion_Preserves_Content
      (Original, Expanded : String) return Boolean
-     with
-       Ghost,
-       Import,
-       Pre =>
-         All_Entities_Valid (Original) and then No_Entity_References (Expanded),
-       Global => null;
+     renames SML_Entities_Ghost.Expansion_Preserves_Content;
 
-   --  Check if encoding is reversible
    function Encoding_Is_Reversible
      (Original : String; In_Attribute : Boolean) return Boolean
-     with
-       Ghost,
-       Import,
-       Global => null,
-       Post =>
-         Encoding_Is_Reversible'Result =
-           (Expand_Entities (Encode_Entities (Original, In_Attribute)) = Original);
+     renames SML_Entities_Ghost.Encoding_Is_Reversible;
 
    ---------------------------------------------------------------------------
    --  Lemmas for Entity Properties
    ---------------------------------------------------------------------------
 
-   --  Expansion never increases length
    procedure Lemma_Expansion_Reduces_Length (Text : String)
-     with
-       Ghost,
-       Import,
-       Pre => All_Entities_Valid (Text),
-       Post => Expand_Entities (Text)'Length <= Text'Length,
-       Global => null;
+     renames SML_Entities_Ghost.Lemma_Expansion_Reduces_Length;
 
-   --  Encoding is safe
    procedure Lemma_Encoding_Is_Safe (Text : String; In_Attribute : Boolean)
-     with
-       Ghost,
-       Import,
-       Post =>
-         Is_Entity_Safe (Encode_Entities (Text, In_Attribute), In_Attribute),
-       Global => null;
+     renames SML_Entities_Ghost.Lemma_Encoding_Is_Safe;
 
-   --  Double encoding is idempotent
    procedure Lemma_Double_Encoding_Idempotent
      (Text : String; In_Attribute : Boolean)
-     with
-       Ghost,
-       Import,
-       Pre => Is_Entity_Safe (Text, In_Attribute),
-       Post => Encode_Entities (Text, In_Attribute) = Text,
-       Global => null;
+     renames SML_Entities_Ghost.Lemma_Double_Encoding_Idempotent;
 
-   --  Valid entities can be expanded
    procedure Lemma_Valid_Entities_Expandable (Text : String)
-     with
-       Ghost,
-       Import,
-       Pre => All_Entities_Valid (Text),
-       Post => No_Entity_References (Expand_Entities (Text)),
-       Global => null;
+     renames SML_Entities_Ghost.Lemma_Valid_Entities_Expandable;
 
-   --  Entity at position has valid bounds
    procedure Lemma_Entity_Bounds (Text : String; Position : Natural)
-     with
-       Ghost,
-       Import,
-       Pre =>
-         Position >= Text'First
-         and then Position <= Text'Last
-         and then Has_Valid_Entity_At (Text, Position),
-       Post => Position + Entity_Length_At (Text, Position) - 1 <= Text'Last,
-       Global => null;
+     renames SML_Entities_Ghost.Lemma_Entity_Bounds;
 
 end SML.Entities;
