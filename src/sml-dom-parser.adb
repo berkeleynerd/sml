@@ -8,7 +8,7 @@
 with SML.UTF8;
 with SML.Entities;
 with SML.Memory_Model;
-use type SML.Memory_Model.Node_Kind;
+with SML_Memory_Model_Types; use SML_Memory_Model_Types;
 
 package body SML.DOM.Parser
   with SPARK_Mode => On
@@ -423,17 +423,17 @@ is
    --  Link a child node to its parent
    procedure Link_Child_To_Parent
      (Doc          : in out Document;
-      Parent_Index : SML.Memory_Model.Node_Index;
-      Child_Index  : SML.Memory_Model.Node_Index;
+      Parent_Index : Node_Index;
+      Child_Index  : Node_Index;
       Is_First     : Boolean)
    with
      Pre =>
        SML.Memory_Model.Valid_Node_Index (Doc.Pool, Parent_Index)
        and then SML.Memory_Model.Valid_Node_Index (Doc.Pool, Child_Index)
    is
-      Parent_Node : SML.Memory_Model.Node :=
+      Parent_Node : SML_Memory_Model_Types.Node :=
         SML.Memory_Model.Get_Node (Doc.Pool, Parent_Index);
-      Child_Node  : SML.Memory_Model.Node :=
+      Child_Node  : SML_Memory_Model_Types.Node :=
         SML.Memory_Model.Get_Node (Doc.Pool, Child_Index);
    begin
       --  Set child's parent
@@ -442,14 +442,14 @@ is
       if Is_First then
          --  This is the first child
          Parent_Node.First_Child_Index := Child_Index;
-         Child_Node.Next_Sibling_Index := SML.Memory_Model.No_Node_Index;
+         Child_Node.Next_Sibling_Index := No_Node_Index;
       else
          --  Link as next sibling (caller must have updated prev sibling)
-         Child_Node.Next_Sibling_Index := SML.Memory_Model.No_Node_Index;
+         Child_Node.Next_Sibling_Index := No_Node_Index;
       end if;
 
       --  Increment parent's child count
-      if Parent_Node.Kind = SML.Memory_Model.Element then
+      if Parent_Node.Kind = SML_Memory_Model_Types.Element then
          Parent_Node.Num_Children := Parent_Node.Num_Children + 1;
       end if;
 
@@ -461,15 +461,15 @@ is
    --  Update previous sibling's Next_Sibling_Index
    procedure Link_Siblings
      (Doc                : in out Document;
-      Prev_Sibling_Index : SML.Memory_Model.Node_Index;
-      Next_Sibling_Index : SML.Memory_Model.Node_Index)
+      Prev_Sibling_Index : Node_Index;
+      Next_Sibling_Index : Node_Index)
    with
      Pre =>
        SML.Memory_Model.Valid_Node_Index (Doc.Pool, Prev_Sibling_Index)
        and then SML.Memory_Model.Valid_Node_Index
                   (Doc.Pool, Next_Sibling_Index)
    is
-      Prev_Node : SML.Memory_Model.Node :=
+      Prev_Node : SML_Memory_Model_Types.Node :=
         SML.Memory_Model.Get_Node (Doc.Pool, Prev_Sibling_Index);
    begin
       Prev_Node.Next_Sibling_Index := Next_Sibling_Index;
@@ -598,8 +598,8 @@ is
                   Last_Child   => Null_Node,
                   Num_Children => 0)]);
          Tag_Result : Parse_Tag_Result;
-         Root_Index : SML.Memory_Model.Node_Index;
-         Name_Ref   : SML.Memory_Model.String_Ref;
+         Root_Index : Node_Index;
+         Name_Ref   : String_Ref;
       begin
          Had_Error := False;
 
@@ -662,7 +662,7 @@ is
          end if;
 
          SML.Memory_Model.Allocate_Node
-           (Doc.Pool, SML.Memory_Model.Element, Root_Index);
+           (Doc.Pool, SML_Memory_Model_Types.Element, Root_Index);
 
          --  Allocate and store element name
          declare
@@ -690,11 +690,11 @@ is
 
          --  Initialize root node
          declare
-            Root_Node : SML.Memory_Model.Node (SML.Memory_Model.Element);
+            Root_Node : SML_Memory_Model_Types.Node (SML_Memory_Model_Types.Element);
          begin
-            Root_Node.Parent_Index := SML.Memory_Model.No_Node_Index;
-            Root_Node.First_Child_Index := SML.Memory_Model.No_Node_Index;
-            Root_Node.Next_Sibling_Index := SML.Memory_Model.No_Node_Index;
+            Root_Node.Parent_Index := No_Node_Index;
+            Root_Node.First_Child_Index := No_Node_Index;
+            Root_Node.Next_Sibling_Index := No_Node_Index;
             Root_Node.Element_Name_Ref := Name_Ref;
             Root_Node.Num_Children := 0;
 
@@ -845,13 +845,13 @@ is
                      end if;
 
                      declare
-                        Child_Index    : SML.Memory_Model.Node_Index;
-                        Child_Name_Ref : SML.Memory_Model.String_Ref;
+                        Child_Index    : Node_Index;
+                        Child_Name_Ref : String_Ref;
                         Child_Tag_Name : constant String :=
                           Tag_Result.Name (1 .. Tag_Result.Name_Length);
                      begin
                         SML.Memory_Model.Allocate_Node
-                          (Doc.Pool, SML.Memory_Model.Element, Child_Index);
+                          (Doc.Pool, SML_Memory_Model_Types.Element, Child_Index);
 
                         --  Allocate and store child name
                         if not SML.Memory_Model.Can_Allocate_String
@@ -877,19 +877,19 @@ is
                         --  Initialize child node
                         declare
                            Child_Node     :
-                             SML.Memory_Model.Node (SML.Memory_Model.Element);
+                             SML_Memory_Model_Types.Node (SML_Memory_Model_Types.Element);
                            Parent_Index   :
-                             constant SML.Memory_Model.Node_Index :=
-                               SML.Memory_Model.Node_Index
+                             constant Node_Index :=
+                               Node_Index
                                  (Ctx.Stack (Ctx.Stack_Depth).Node);
                            Is_First_Child : constant Boolean :=
                              (Ctx.Stack (Ctx.Stack_Depth).Num_Children = 0);
                         begin
                            Child_Node.Parent_Index := Parent_Index;
                            Child_Node.First_Child_Index :=
-                             SML.Memory_Model.No_Node_Index;
+                             No_Node_Index;
                            Child_Node.Next_Sibling_Index :=
-                             SML.Memory_Model.No_Node_Index;
+                             No_Node_Index;
                            Child_Node.Element_Name_Ref := Child_Name_Ref;
                            Child_Node.Num_Children := 0;
 
@@ -904,7 +904,7 @@ is
                            if not Is_First_Child then
                               Link_Siblings
                                 (Doc,
-                                 SML.Memory_Model.Node_Index
+                                 Node_Index
                                    (Ctx.Stack (Ctx.Stack_Depth).Last_Child),
                                  Child_Index);
                            end if;
@@ -968,17 +968,17 @@ is
                            end if;
 
                            declare
-                              Text_Index     : SML.Memory_Model.Node_Index;
-                              Text_Ref       : SML.Memory_Model.String_Ref;
+                              Text_Index     : Node_Index;
+                              Text_Ref       : String_Ref;
                               Parent_Index   :
-                                constant SML.Memory_Model.Node_Index :=
-                                  SML.Memory_Model.Node_Index
+                                constant Node_Index :=
+                                  Node_Index
                                     (Ctx.Stack (Ctx.Stack_Depth).Node);
                               Is_First_Child : constant Boolean :=
                                 (Ctx.Stack (Ctx.Stack_Depth).Num_Children = 0);
                            begin
                               SML.Memory_Model.Allocate_Node
-                                (Doc.Pool, SML.Memory_Model.Text, Text_Index);
+                                (Doc.Pool, SML_Memory_Model_Types.Text, Text_Index);
 
                               --  Allocate and store text content
                               if not SML.Memory_Model.Can_Allocate_String
@@ -1004,14 +1004,14 @@ is
                               --  Initialize text node
                               declare
                                  Text_Node :
-                                   SML.Memory_Model.Node
-                                     (SML.Memory_Model.Text);
+                                   SML_Memory_Model_Types.Node
+                                     (SML_Memory_Model_Types.Text);
                               begin
                                  Text_Node.Parent_Index := Parent_Index;
                                  Text_Node.First_Child_Index :=
-                                   SML.Memory_Model.No_Node_Index;
+                                   No_Node_Index;
                                  Text_Node.Next_Sibling_Index :=
-                                   SML.Memory_Model.No_Node_Index;
+                                   No_Node_Index;
                                  Text_Node.Text_Content_Ref := Text_Ref;
 
                                  SML.Memory_Model.Set_Node
@@ -1028,7 +1028,7 @@ is
                                  if not Is_First_Child then
                                     Link_Siblings
                                       (Doc,
-                                       SML.Memory_Model.Node_Index
+                                       Node_Index
                                          (Ctx.Stack (Ctx.Stack_Depth)
                                             .Last_Child),
                                        Text_Index);
@@ -1109,7 +1109,7 @@ is
       --  Check if input is too large for current memory limits
       --  Heuristic: input should be at most 1/3 of string storage
       --  (allows for entity expansion and internal overhead)
-      if Input'Length > SML.Memory_Model.Max_String_Storage / 3 then
+      if Input'Length > Max_String_Storage / 3 then
          return
            (Success => False,
             Error   =>

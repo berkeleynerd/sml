@@ -4,157 +4,16 @@
 --  SPARK Ada Implementation with Formal Memory Safety
 ------------------------------------------------------------------------------
 
+with SML_Memory_Model_Types; use SML_Memory_Model_Types;
+with SML_Memory_Model_Ghost;
+
 package SML.Memory_Model
   with SPARK_Mode => On
 is
 
-   --  This package defines the concrete memory management model for the SML
-   --  library using arena allocation. All nodes and strings are allocated
-   --  from fixed-size pools to enable bounded memory proofs.
-
-   ---------------------------------------------------------------------------
-   --  Memory Bounds and Constants
-   ---------------------------------------------------------------------------
-
-   --  NOTE: Arena pools are allocated on the stack for SPARK compatibility.
-   --  These defaults are sized to fit typical process stacks (8-16MB).
-   --
-   --  For larger documents, increase stack size at link time:
-   --    macOS/Linux: Add to Linker package: "-Wl,-stack_size,0x4000000" (64MB)
-   --    Windows: Add to Linker package: "-Wl,--stack,67108864"
-   --    Or use: ulimit -s 65536  (Unix systems)
-   --
-   --  Memory requirements per Document:
-   --    - Node array: Max_Document_Nodes ÃÂ 64 bytes Ã¢ÂÂ 640KB
-   --    - String storage: Max_String_Storage bytes = 1MB
-   --    - Parser context: ~100KB additional during parsing
-   --    - Total stack usage: ~1.7MB per parse operation
-   --
-   --  Document capacity with defaults:
-   --    - Maximum 10,000 nodes (elements + text nodes combined)
-   --    - Approximately 3,000-5,000 elements (depending on nesting)
-   --    - 1MB of text content total (after entity expansion)
-   --    - Suitable for SML documents up to ~50KB input size
-   --
-   --  To handle larger documents:
-   --    1. Increase stack size (recommended), OR
-   --    2. Modify these constants and rebuild the library
-
-   --  Maximum nodes based on stack-safe document limits
-   Max_Document_Nodes : constant Natural := 2_000;
-
-   --  Maximum string storage (200KB for text content)
-   Max_String_Storage : constant Natural := 200_000;
-
-   --  Maximum size for element names
-   Max_Name_Length : constant Natural := 100;
-
-   --  Maximum size for text content per node
-   Max_Text_Length : constant Natural := 10_000;
-
-   --  Memory expansion factor (worst case)
-   Memory_Expansion_Factor : constant Positive := 10;
-
-   --  Size of a node in bytes (approximate)
-   Node_Size_Bytes : constant Natural := 64;
-
-   ---------------------------------------------------------------------------
-   --  Node Storage Types
-   ---------------------------------------------------------------------------
-
-   --  Node index type for array-based allocation
-   subtype Node_Index is Natural range 0 .. Max_Document_Nodes;
-
-   --  Invalid node index constant
-   No_Node_Index : constant Node_Index := 0;
-
-   --  Node kind enumeration (matching DOM)
-   type Node_Kind is (Element, Text);
-
-   ---------------------------------------------------------------------------
-   --  String Storage Types
-   ---------------------------------------------------------------------------
-
-   --  String storage index
-   subtype String_Index is Natural range 0 .. Max_String_Storage;
-
-   --  Character array for string storage
-   type String_Storage is array (String_Index range <>) of Character;
-
-   --  String reference within pool
-   type String_Ref is record
-      Start  : String_Index;    -- Starting position in pool
-      Length : Natural;          -- Length of string
-   end record
-   with
-     Predicate =>
-       Length <= Max_String_Storage
-       and then (if Length > 0
-                 then Start > 0 and then Start <= Max_String_Storage);
-
-   --  Null string reference
-   Null_String_Ref : constant String_Ref := (Start => 0, Length => 0);
-
-   ---------------------------------------------------------------------------
-   --  Node Type Definition
-   ---------------------------------------------------------------------------
-
-   --  Maximum children per element
-   --  (local constant to avoid circular dependency)
-   Max_Children_Local : constant Natural := 10000;
-
-   --  Node structure with bounded storage (discriminated record with default)
-   type Node (Kind : Node_Kind := Element) is record
-      Parent_Index       : Node_Index;
-      First_Child_Index  : Node_Index;
-      Next_Sibling_Index : Node_Index;
-      Is_Deleted         : Boolean := False;  -- Logical deletion flag
-
-      --  Content based on kind discriminant
-      case Kind is
-         when Element =>
-            Element_Name_Ref : String_Ref;
-            Num_Children     : Natural;
-
-         when Text =>
-            Text_Content_Ref : String_Ref;
-      end case;
-   end record
-   with
-     Predicate =>
-       (case Kind is
-          when Element => Num_Children <= Max_Children_Local,
-          when Text => First_Child_Index = No_Node_Index);
-
-   --  Array of nodes for arena allocation (defined after Node type)
-   type Node_Array is array (Node_Index range <>) of aliased Node;
-
-   ---------------------------------------------------------------------------
-   --  Arena Allocator Type
-   ---------------------------------------------------------------------------
-
-   --  Arena-based memory pool for nodes and strings
-   type Arena_Pool is limited record
-      --  Node storage
-      Nodes           : Node_Array (1 .. Max_Document_Nodes);
-      Next_Node_Index : Node_Index := 1;
-
-      --  String storage
-      Strings         : String_Storage (1 .. Max_String_Storage);
-      Next_String_Pos : String_Index := 1;
-
-      --  Ghost fields for memory accounting (Ghost documented in comments)
-      Allocated_Nodes : Natural := 0;
-      Allocated_Bytes : Natural := 0;
-      High_Water_Mark : Natural := 0;  -- Maximum allocation reached
-   end record
-   with
-     Relaxed_Initialization,
-     Predicate =>
-       Next_Node_Index <= Max_Document_Nodes + 1
-       and then Next_String_Pos <= Max_String_Storage + 1
-       and then Allocated_Nodes <= Next_Node_Index
-       and then Allocated_Bytes <= Max_String_Storage;
+   --  This package provides concrete memory management operations for the SML
+   --  library using arena allocation. All types are defined in
+   --  SML_Memory_Model_Types, and ghost functions are in SML_Memory_Model_Ghost.
 
    ---------------------------------------------------------------------------
    --  Allocation Functions
@@ -259,7 +118,7 @@ is
        and then Ref.Start > 0
        and then Ref.Start + Ref.Length - 1 <= Max_String_Storage
        and then Ref.Start + Ref.Length - 1 <= Pool.Next_String_Pos,
-     Post => String_Stored (Pool, Ref, Text);
+     Post => SML_Memory_Model_Ghost.String_Stored (Pool, Ref, Text);
 
    --  Retrieve string from arena
    function Get_String (Pool : Arena_Pool; Ref : String_Ref) return String
@@ -281,93 +140,38 @@ is
    ---------------------------------------------------------------------------
    --  Ghost Functions for Proofs
    ---------------------------------------------------------------------------
-   --  These are implemented in SML.Memory_Model.Proof
+   --  These are now implemented in SML_Memory_Model_Ghost (no Import needed)
 
-   --  Check if string is stored at reference
    function String_Stored
      (Pool : Arena_Pool; Ref : String_Ref; Text : String) return Boolean
-     with
-       Ghost,
-       Import,
-       Pre => Text'Length = Ref.Length,
-       Post =>
-         String_Stored'Result =
-           (for all I in 1 .. Ref.Length =>
-              Pool.Strings (Ref.Start + I - 1) = Text (Text'First + I - 1));
+     renames SML_Memory_Model_Ghost.String_Stored;
 
-   --  Memory usage bounded by input size
    function Memory_Bounded_By_Input
      (Pool : Arena_Pool; Input_Size : Natural) return Boolean
-     with
-       Ghost,
-       Import,
-       Post =>
-         Memory_Bounded_By_Input'Result =
-           (Memory_Used (Pool) <= Input_Size * Memory_Expansion_Factor);
+     renames SML_Memory_Model_Ghost.Memory_Bounded_By_Input;
 
-   --  Check arena invariants
    function Arena_Invariants (Pool : Arena_Pool) return Boolean
-     with
-       Ghost,
-       Import,
-       Post =>
-         Arena_Invariants'Result =
-           (Pool.Next_Node_Index >= 1
-            and then Pool.Next_String_Pos >= 1
-            and then Pool.Allocated_Nodes < Pool.Next_Node_Index
-            and then Pool.Allocated_Bytes < Pool.Next_String_Pos
-            and then Pool.High_Water_Mark >= Pool.Allocated_Bytes);
+     renames SML_Memory_Model_Ghost.Arena_Invariants;
 
-   --  Strict allocation invariant (for proofs that need exact equality)
    function Has_Exact_Allocation_Count (Pool : Arena_Pool) return Boolean
-     with
-       Ghost,
-       Import,
-       Post =>
-         Has_Exact_Allocation_Count'Result =
-           (Pool.Allocated_Nodes = Pool.Next_Node_Index - 1);
+     renames SML_Memory_Model_Ghost.Has_Exact_Allocation_Count;
 
    ---------------------------------------------------------------------------
    --  Memory Safety Lemmas
    ---------------------------------------------------------------------------
 
-   --  Arena allocation never overflows
    procedure Lemma_Arena_No_Overflow (Pool : Arena_Pool)
-     with
-       Ghost,
-       Import,
-       Post =>
-         Pool.Next_Node_Index <= Max_Document_Nodes + 1
-         and then Pool.Next_String_Pos <= Max_String_Storage + 1;
+     renames SML_Memory_Model_Ghost.Lemma_Arena_No_Overflow;
 
-   --  All allocated nodes are valid
    procedure Lemma_Allocated_Nodes_Valid (Pool : Arena_Pool)
-     with
-       Ghost,
-       Import,
-       Post =>
-         (for all I in 1 .. Pool.Next_Node_Index - 1 =>
-            Valid_Node_Index (Pool, I));
+     renames SML_Memory_Model_Ghost.Lemma_Allocated_Nodes_Valid;
 
-   --  Memory usage is monotonic
    procedure Lemma_Memory_Monotonic (Pool_Before, Pool_After : Arena_Pool)
-     with
-       Ghost,
-       Import,
-       Pre =>
-         Pool_After.Allocated_Nodes >= Pool_Before.Allocated_Nodes
-         and then Pool_After.Allocated_Bytes >= Pool_Before.Allocated_Bytes,
-       Post => Memory_Used (Pool_After) >= Memory_Used (Pool_Before);
+     renames SML_Memory_Model_Ghost.Lemma_Memory_Monotonic;
 
-   --  Reset deallocates everything
    procedure Lemma_Reset_Deallocates_All
      (Pool_Before : Arena_Pool; Pool_After : Arena_Pool)
-     with
-       Ghost,
-       Import,
-       Pre =>
-         Pool_After.Next_Node_Index = 1 and then Pool_After.Allocated_Nodes = 0,
-       Post => Memory_Used (Pool_After) = 0;
+     renames SML_Memory_Model_Ghost.Lemma_Reset_Deallocates_All;
 
    ---------------------------------------------------------------------------
    --  Node Access Functions

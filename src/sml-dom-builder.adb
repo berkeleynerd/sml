@@ -5,7 +5,7 @@
 ------------------------------------------------------------------------------
 
 with SML.Memory_Model;
-use type SML.Memory_Model.Node_Kind;
+with SML_Memory_Model_Types; use SML_Memory_Model_Types;
 
 package body SML.DOM.Builder
   with SPARK_Mode => On
@@ -16,12 +16,12 @@ is
    ---------------------------------------------------------------------------
 
    --  Convert Node_Id to Memory_Model index
-   function To_Index (Node : Node_Id) return SML.Memory_Model.Node_Index
-   is (SML.Memory_Model.Node_Index (Node))
+   function To_Index (Node : Node_Id) return Node_Index
+   is (Node_Index (Node))
    with Inline;
 
    --  Convert Memory_Model index to Node_Id
-   function To_Node_Id (Index : SML.Memory_Model.Node_Index) return Node_Id
+   function To_Node_Id (Index : Node_Index) return Node_Id
    is (Node_Id (Index))
    with Inline;
 
@@ -30,8 +30,8 @@ is
    ---------------------------------------------------------------------------
 
    function Create_Document (Root_Name : String) return Document is
-      Root_Index : SML.Memory_Model.Node_Index;
-      Name_Ref   : SML.Memory_Model.String_Ref;
+      Root_Index : Node_Index;
+      Name_Ref   : String_Ref;
    begin
       --  Use extended return for limited type
       return Result : Document do
@@ -40,7 +40,7 @@ is
 
          --  Allocate root node
          SML.Memory_Model.Allocate_Node
-           (Result.Pool, SML.Memory_Model.Element, Root_Index);
+           (Result.Pool, SML_Memory_Model_Types.Element, Root_Index);
 
          --  Allocate and store element name
          SML.Memory_Model.Allocate_String (Result.Pool, Root_Name, Name_Ref);
@@ -48,11 +48,11 @@ is
 
          --  Initialize root node
          declare
-            Root_Node : SML.Memory_Model.Node (SML.Memory_Model.Element);
+            Root_Node : SML_Memory_Model_Types.Node (SML_Memory_Model_Types.Element);
          begin
-            Root_Node.Parent_Index := SML.Memory_Model.No_Node_Index;
-            Root_Node.First_Child_Index := SML.Memory_Model.No_Node_Index;
-            Root_Node.Next_Sibling_Index := SML.Memory_Model.No_Node_Index;
+            Root_Node.Parent_Index := No_Node_Index;
+            Root_Node.First_Child_Index := No_Node_Index;
+            Root_Node.Next_Sibling_Index := No_Node_Index;
             Root_Node.Is_Deleted := False;
             Root_Node.Element_Name_Ref := Name_Ref;
             Root_Node.Num_Children := 0;
@@ -76,16 +76,16 @@ is
       Name      : String;
       New_Child : out Node_Id)
    is
-      Parent_Index   : constant SML.Memory_Model.Node_Index :=
+      Parent_Index   : constant Node_Index :=
         To_Index (Parent);
-      Child_Index    : SML.Memory_Model.Node_Index;
-      Name_Ref       : SML.Memory_Model.String_Ref;
-      Parent_Node    : SML.Memory_Model.Node;
-      Last_Child_Idx : SML.Memory_Model.Node_Index;
+      Child_Index    : Node_Index;
+      Name_Ref       : String_Ref;
+      Parent_Node    : SML_Memory_Model_Types.Node;
+      Last_Child_Idx : Node_Index;
    begin
       --  Allocate new node
       SML.Memory_Model.Allocate_Node
-        (Doc.Pool, SML.Memory_Model.Element, Child_Index);
+        (Doc.Pool, SML_Memory_Model_Types.Element, Child_Index);
 
       --  Allocate and store element name
       SML.Memory_Model.Allocate_String (Doc.Pool, Name, Name_Ref);
@@ -93,11 +93,11 @@ is
 
       --  Initialize child node
       declare
-         Child_Node : SML.Memory_Model.Node (SML.Memory_Model.Element);
+         Child_Node : SML_Memory_Model_Types.Node (SML_Memory_Model_Types.Element);
       begin
          Child_Node.Parent_Index := Parent_Index;
-         Child_Node.First_Child_Index := SML.Memory_Model.No_Node_Index;
-         Child_Node.Next_Sibling_Index := SML.Memory_Model.No_Node_Index;
+         Child_Node.First_Child_Index := No_Node_Index;
+         Child_Node.Next_Sibling_Index := No_Node_Index;
          Child_Node.Is_Deleted := False;
          Child_Node.Element_Name_Ref := Name_Ref;
          Child_Node.Num_Children := 0;
@@ -116,8 +116,8 @@ is
          Last_Child_Idx := Parent_Node.First_Child_Index;
 
          declare
-            Current : SML.Memory_Model.Node_Index := Last_Child_Idx;
-            N       : SML.Memory_Model.Node;
+            Current : Node_Index := Last_Child_Idx;
+            N       : SML_Memory_Model_Types.Node;
             Count   : Natural := 0;
          begin
             --  Find last sibling
@@ -126,7 +126,7 @@ is
 
                N := SML.Memory_Model.Get_Node (Doc.Pool, Current);
 
-               exit when N.Next_Sibling_Index = SML.Memory_Model.No_Node_Index;
+               exit when N.Next_Sibling_Index = No_Node_Index;
 
                Current := N.Next_Sibling_Index;
                Count := Count + 1;
@@ -158,14 +158,14 @@ is
       Text     : String;
       New_Text : out Node_Id)
    is
-      Parent_Index : constant SML.Memory_Model.Node_Index := To_Index (Parent);
-      Text_Index   : SML.Memory_Model.Node_Index;
-      Text_Ref     : SML.Memory_Model.String_Ref;
-      Parent_Node  : SML.Memory_Model.Node;
+      Parent_Index : constant Node_Index := To_Index (Parent);
+      Text_Index   : Node_Index;
+      Text_Ref     : String_Ref;
+      Parent_Node  : SML_Memory_Model_Types.Node;
    begin
       --  Allocate new text node
       SML.Memory_Model.Allocate_Node
-        (Doc.Pool, SML.Memory_Model.Text, Text_Index);
+        (Doc.Pool, SML_Memory_Model_Types.Text, Text_Index);
 
       --  Allocate and store text content
       SML.Memory_Model.Allocate_String (Doc.Pool, Text, Text_Ref);
@@ -173,11 +173,11 @@ is
 
       --  Initialize text node
       declare
-         Text_Node : SML.Memory_Model.Node (SML.Memory_Model.Text);
+         Text_Node : SML_Memory_Model_Types.Node (SML_Memory_Model_Types.Text);
       begin
          Text_Node.Parent_Index := Parent_Index;
-         Text_Node.First_Child_Index := SML.Memory_Model.No_Node_Index;
-         Text_Node.Next_Sibling_Index := SML.Memory_Model.No_Node_Index;
+         Text_Node.First_Child_Index := No_Node_Index;
+         Text_Node.Next_Sibling_Index := No_Node_Index;
          Text_Node.Is_Deleted := False;
          Text_Node.Text_Content_Ref := Text_Ref;
 
@@ -193,9 +193,9 @@ is
       else
          --  Find last child and link as sibling
          declare
-            Current : SML.Memory_Model.Node_Index :=
+            Current : Node_Index :=
               Parent_Node.First_Child_Index;
-            N       : SML.Memory_Model.Node;
+            N       : SML_Memory_Model_Types.Node;
             Count   : Natural := 0;
          begin
             --  Find last sibling
@@ -204,7 +204,7 @@ is
 
                N := SML.Memory_Model.Get_Node (Doc.Pool, Current);
 
-               exit when N.Next_Sibling_Index = SML.Memory_Model.No_Node_Index;
+               exit when N.Next_Sibling_Index = No_Node_Index;
 
                Current := N.Next_Sibling_Index;
                Count := Count + 1;
@@ -237,10 +237,10 @@ is
    procedure Set_Text_Content
      (Doc : in out Document; Text_Node : Node_Id; New_Text : String)
    is
-      Text_Index : constant SML.Memory_Model.Node_Index :=
+      Text_Index : constant Node_Index :=
         To_Index (Text_Node);
-      New_Ref    : SML.Memory_Model.String_Ref;
-      N          : SML.Memory_Model.Node;
+      New_Ref    : String_Ref;
+      N          : SML_Memory_Model_Types.Node;
    begin
       --  Allocate new string storage
       SML.Memory_Model.Allocate_String (Doc.Pool, New_Text, New_Ref);
@@ -258,10 +258,10 @@ is
    procedure Set_Element_Name
      (Doc : in out Document; Element_Node : Node_Id; New_Name : String)
    is
-      Element_Index : constant SML.Memory_Model.Node_Index :=
+      Element_Index : constant Node_Index :=
         To_Index (Element_Node);
-      New_Ref       : SML.Memory_Model.String_Ref;
-      N             : SML.Memory_Model.Node;
+      New_Ref       : String_Ref;
+      N             : SML_Memory_Model_Types.Node;
    begin
       --  Allocate new string storage
       SML.Memory_Model.Allocate_String (Doc.Pool, New_Name, New_Ref);
@@ -282,26 +282,26 @@ is
 
    procedure Delete_Node (Doc : in out Document; Node : Node_Id) is
       --  Recursive helper to mark entire subtree as deleted
-      procedure Mark_Subtree_Deleted (Node_Index : SML.Memory_Model.Node_Index)
+      procedure Mark_Subtree_Deleted (Idx : Node_Index)
       is
-         N           : SML.Memory_Model.Node;
-         Child_Index : SML.Memory_Model.Node_Index;
+         N           : SML_Memory_Model_Types.Node;
+         Child_Index : Node_Index;
          Count       : Natural := 0;
       begin
          --  Get and mark this node as deleted
-         N := SML.Memory_Model.Get_Node (Doc.Pool, Node_Index);
+         N := SML.Memory_Model.Get_Node (Doc.Pool, Idx);
          N.Is_Deleted := True;
-         SML.Memory_Model.Set_Node (Doc.Pool, Node_Index, N);
+         SML.Memory_Model.Set_Node (Doc.Pool, Idx, N);
 
          --  Recursively mark all children if this is an element
-         if N.Kind = SML.Memory_Model.Element then
+         if N.Kind = SML_Memory_Model_Types.Element then
             Child_Index := N.First_Child_Index;
 
-            while Child_Index /= SML.Memory_Model.No_Node_Index loop
+            while Child_Index /= No_Node_Index loop
                pragma Loop_Variant (Increases => Count);
                pragma Loop_Invariant (Count <= Max_Children);
                pragma
-                 Loop_Invariant (Is_Deleted (Doc, To_Node_Id (Node_Index)));
+                 Loop_Invariant (Is_Deleted (Doc, To_Node_Id (Idx)));
 
                --  Recursively mark child subtree
                Mark_Subtree_Deleted (Child_Index);
@@ -322,8 +322,8 @@ is
    end Delete_Node;
 
    function Not_Deleted (Doc : Document; Node : Node_Id) return Boolean is
-      Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
-      N   : SML.Memory_Model.Node;
+      Idx : constant Node_Index := To_Index (Node);
+      N   : SML_Memory_Model_Types.Node;
    begin
       if not SML.Memory_Model.Valid_Node_Index (Doc.Pool, Idx) then
          return False;

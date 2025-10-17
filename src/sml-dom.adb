@@ -4,10 +4,12 @@
 --  Core Implementation File
 ------------------------------------------------------------------------------
 
+with SML_Memory_Model_Types; use SML_Memory_Model_Types;
+
 package body SML.DOM
   with SPARK_Mode => On
 is
-   use type SML.Memory_Model.Node_Kind;
+   use type Node_Kind;
 
    ---------------------------------------------------------------------------
    --  Internal Helper Functions
@@ -15,20 +17,20 @@ is
 
    --  Convert Node_Id to internal Node_Index
    --  INLINE optimization: frequently called in traversal operations
-   function To_Index (Node : Node_Id) return SML.Memory_Model.Node_Index
+   function To_Index (Node : Node_Id) return Node_Index
      with Inline
    is
    begin
-      return SML.Memory_Model.Node_Index (Node);
+      return Node_Index (Node);
    end To_Index;
 
    --  Convert internal Node_Index to public Node_Id
    --  INLINE optimization: used in all navigation functions
-   function To_Node_Id (Idx : SML.Memory_Model.Node_Index) return Node_Id
+   function To_Node_Id (Idx : Node_Index) return Node_Id
      with Inline
    is
    begin
-      if Idx = SML.Memory_Model.No_Node_Index then
+      if Idx = No_Node_Index then
          return Null_Node;
       else
          return Node_Id (Idx);
@@ -54,8 +56,8 @@ is
    ---------------------------------------------------------------------------
 
    function Parent (Doc : Document; Node : Node_Id) return Node_Id is
-      Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
-      N   : SML.Memory_Model.Node;
+      Idx : constant Node_Index := To_Index (Node);
+      N   : SML_Memory_Model_Types.Node;
    begin
       --  Precondition ensures node is valid
       N := SML.Memory_Model.Get_Node (Doc.Pool, Idx);
@@ -63,8 +65,8 @@ is
    end Parent;
 
    function First_Child (Doc : Document; Node : Node_Id) return Node_Id is
-      Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
-      N   : SML.Memory_Model.Node;
+      Idx : constant Node_Index := To_Index (Node);
+      N   : SML_Memory_Model_Types.Node;
    begin
       --  Precondition ensures node is valid
       N := SML.Memory_Model.Get_Node (Doc.Pool, Idx);
@@ -72,8 +74,8 @@ is
    end First_Child;
 
    function Next_Sibling (Doc : Document; Node : Node_Id) return Node_Id is
-      Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
-      N   : SML.Memory_Model.Node;
+      Idx : constant Node_Index := To_Index (Node);
+      N   : SML_Memory_Model_Types.Node;
    begin
       --  Precondition ensures node is valid
       N := SML.Memory_Model.Get_Node (Doc.Pool, Idx);
@@ -81,22 +83,22 @@ is
    end Next_Sibling;
 
    function Child_Count (Doc : Document; Node : Node_Id) return Natural is
-      Idx     : constant SML.Memory_Model.Node_Index := To_Index (Node);
-      N       : SML.Memory_Model.Node;
-      Current : SML.Memory_Model.Node_Index;
+      Idx     : constant Node_Index := To_Index (Node);
+      N       : SML_Memory_Model_Types.Node;
+      Current : Node_Index;
       Count   : Natural := 0;
    begin
       --  Precondition ensures node is valid
       N := SML.Memory_Model.Get_Node (Doc.Pool, Idx);
 
       --  Text nodes have no children by definition
-      if N.Kind = SML.Memory_Model.Text then
+      if N.Kind = SML_Memory_Model_Types.Text then
          return 0;
       end if;
 
       --  Count children by traversing sibling chain
       Current := N.First_Child_Index;
-      while Current /= SML.Memory_Model.No_Node_Index loop
+      while Current /= No_Node_Index loop
          pragma Loop_Variant (Increases => Count);
          pragma Loop_Invariant (Count < Max_Children);
 
@@ -104,7 +106,7 @@ is
          exit when Count >= Max_Children;  -- Safety bound
 
          declare
-            Child : constant SML.Memory_Model.Node :=
+            Child : constant SML_Memory_Model_Types.Node :=
               SML.Memory_Model.Get_Node (Doc.Pool, Current);
          begin
             Current := Child.Next_Sibling_Index;
@@ -117,9 +119,9 @@ is
    function Child_At
      (Doc : Document; Node : Node_Id; Index : Positive) return Node_Id
    is
-      Idx     : constant SML.Memory_Model.Node_Index := To_Index (Node);
-      N       : SML.Memory_Model.Node;
-      Current : SML.Memory_Model.Node_Index;
+      Idx     : constant Node_Index := To_Index (Node);
+      N       : SML_Memory_Model_Types.Node;
+      Current : Node_Index;
       Count   : Natural := 0;
    begin
       --  Precondition ensures node is valid and Index is in range
@@ -127,7 +129,7 @@ is
 
       --  Navigate to the Index'th child
       Current := N.First_Child_Index;
-      while Current /= SML.Memory_Model.No_Node_Index loop
+      while Current /= No_Node_Index loop
          pragma Loop_Variant (Increases => Count);
          pragma Loop_Invariant
            (Count < Index and then Count < Child_Count (Doc, Node));
@@ -138,7 +140,7 @@ is
          end if;
 
          declare
-            Child : constant SML.Memory_Model.Node :=
+            Child : constant SML_Memory_Model_Types.Node :=
               SML.Memory_Model.Get_Node (Doc.Pool, Current);
          begin
             Current := Child.Next_Sibling_Index;
@@ -154,30 +156,30 @@ is
    ---------------------------------------------------------------------------
 
    function Kind (Doc : Document; Node : Node_Id) return Node_Kind is
-      Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
-      N   : SML.Memory_Model.Node;
+      Idx : constant Node_Index := To_Index (Node);
+      N   : SML_Memory_Model_Types.Node;
    begin
       --  Precondition ensures node is valid
       N := SML.Memory_Model.Get_Node (Doc.Pool, Idx);
 
       --  Convert internal kind to public enum
       case N.Kind is
-         when SML.Memory_Model.Element =>
+         when SML_Memory_Model_Types.Element =>
             return Element;
-         when SML.Memory_Model.Text =>
+         when SML_Memory_Model_Types.Text =>
             return Text;
       end case;
    end Kind;
 
    function Name (Doc : Document; Node : Node_Id) return String is
-      Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
-      N   : SML.Memory_Model.Node;
+      Idx : constant Node_Index := To_Index (Node);
+      N   : SML_Memory_Model_Types.Node;
    begin
       --  Precondition ensures node is valid Element
       N := SML.Memory_Model.Get_Node (Doc.Pool, Idx);
 
       --  Safety: Verify node is actually an element
-      if N.Kind /= SML.Memory_Model.Element then
+      if N.Kind /= SML_Memory_Model_Types.Element then
          return "";  -- Should not happen with precondition
       end if;
 
@@ -186,14 +188,14 @@ is
    end Name;
 
    function Text_Value (Doc : Document; Node : Node_Id) return String is
-      Idx : constant SML.Memory_Model.Node_Index := To_Index (Node);
-      N   : SML.Memory_Model.Node;
+      Idx : constant Node_Index := To_Index (Node);
+      N   : SML_Memory_Model_Types.Node;
    begin
       --  Precondition ensures node is valid Text
       N := SML.Memory_Model.Get_Node (Doc.Pool, Idx);
 
       --  Safety: Verify node is actually text
-      if N.Kind /= SML.Memory_Model.Text then
+      if N.Kind /= SML_Memory_Model_Types.Text then
          return "";  -- Should not happen with precondition
       end if;
 
@@ -276,19 +278,19 @@ is
       Count : Natural := 0;
    begin
       --  Count all element nodes in document
-      for I in 1 .. SML.Memory_Model.Node_Index (Doc.Total_Nodes) loop
+      for I in 1 .. Node_Index (Doc.Total_Nodes) loop
          pragma Loop_Invariant (Count <= Natural (I));
 
          declare
-            Idx : constant SML.Memory_Model.Node_Index :=
-              SML.Memory_Model.Node_Index (I);
+            Idx : constant Node_Index :=
+              Node_Index (I);
          begin
             if SML.Memory_Model.Valid_Node_Index (Doc.Pool, Idx) then
                declare
-                  N : constant SML.Memory_Model.Node :=
+                  N : constant SML_Memory_Model_Types.Node :=
                     SML.Memory_Model.Get_Node (Doc.Pool, Idx);
                begin
-                  if N.Kind = SML.Memory_Model.Element
+                  if N.Kind = SML_Memory_Model_Types.Element
                     and then not N.Is_Deleted
                   then
                      Count := Count + 1;
@@ -305,19 +307,19 @@ is
       Count : Natural := 0;
    begin
       --  Count all text nodes in document
-      for I in 1 .. SML.Memory_Model.Node_Index (Doc.Total_Nodes) loop
+      for I in 1 .. Node_Index (Doc.Total_Nodes) loop
          pragma Loop_Invariant (Count <= Natural (I));
 
          declare
-            Idx : constant SML.Memory_Model.Node_Index :=
-              SML.Memory_Model.Node_Index (I);
+            Idx : constant Node_Index :=
+              Node_Index (I);
          begin
             if SML.Memory_Model.Valid_Node_Index (Doc.Pool, Idx) then
                declare
-                  N : constant SML.Memory_Model.Node :=
+                  N : constant SML_Memory_Model_Types.Node :=
                     SML.Memory_Model.Get_Node (Doc.Pool, Idx);
                begin
-                  if N.Kind = SML.Memory_Model.Text and then not N.Is_Deleted
+                  if N.Kind = SML_Memory_Model_Types.Text and then not N.Is_Deleted
                   then
                      Count := Count + 1;
                   end if;

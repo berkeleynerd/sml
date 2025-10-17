@@ -5,6 +5,7 @@
 ------------------------------------------------------------------------------
 
 with SML.Memory_Model;
+with SML_Memory_Model_Types; use SML_Memory_Model_Types;
 with SML.UTF8;
 
 package SML.DOM
@@ -216,16 +217,16 @@ private
    --  Node_Id is a discrete index type derived from Memory_Model
    --  (SPARK-compatible). Allows equality, quantified expressions,
    --  and full verification
-   type Node_Id is new SML.Memory_Model.Node_Index;
+   type Node_Id is new Node_Index;
 
    --  The Null_Node constant (index 0 is reserved as invalid)
-   Null_Node : constant Node_Id := Node_Id (SML.Memory_Model.No_Node_Index);
+   Null_Node : constant Node_Id := Node_Id (No_Node_Index);
 
    --  Document structure using arena-based allocation
    --  All nodes stored in fixed-size array pool for bounded memory
    type Document is limited record
       --  Arena pool for node and string storage
-      Pool : SML.Memory_Model.Arena_Pool;
+      Pool : Arena_Pool;
 
       --  Root node index (0 = no root)
       Root_Node : Node_Id := Null_Node;
@@ -236,11 +237,11 @@ private
    with
      Type_Invariant =>
        Pool.Next_Node_Index >= 1
-       and then Pool.Next_Node_Index <= SML.Memory_Model.Max_Document_Nodes + 1
+       and then Pool.Next_Node_Index <= Max_Document_Nodes + 1
        and then Pool.Allocated_Nodes = Pool.Next_Node_Index - 1
        and then Pool.Next_String_Pos >= 1
-       and then Pool.Next_String_Pos <= SML.Memory_Model.Max_String_Storage + 1
-       and then Pool.Allocated_Bytes <= SML.Memory_Model.Max_String_Storage;
+       and then Pool.Next_String_Pos <= Max_String_Storage + 1
+       and then Pool.Allocated_Bytes <= Max_String_Storage;
 
    --  Note: Node type is defined in SML.Memory_Model
    --  Node structure:
