@@ -4,6 +4,8 @@
 --  SPARK Ada Implementation with Formal Verification Support
 ------------------------------------------------------------------------------
 
+with SML_UTF8_Ghost;
+
 package SML.UTF8
   with SPARK_Mode => On
 is
@@ -228,78 +230,30 @@ is
    ---------------------------------------------------------------------------
    --  Ghost Functions for Proof
    ---------------------------------------------------------------------------
-   --  These are implemented in SML.UTF8.Proof
+   --  These are now implemented in SML_UTF8_Ghost (no Import needed)
 
-   --  Check if a string is normalized (no consecutive spaces)
    function Is_Normalized (Text : String) return Boolean
-     with Ghost, Import, Pre => Is_Valid_UTF8 (Text), Global => null;
+     renames SML_UTF8_Ghost.Is_Normalized;
 
-   --  Check if string has no leading/trailing whitespace
    function Is_Trimmed (Text : String) return Boolean
-     with
-       Ghost,
-       Import,
-       Pre => Is_Valid_UTF8 (Text),
-       Global => null,
-       Post =>
-         Is_Trimmed'Result =
-           ((Text'Length = 0)
-            or else (not Is_XML_Whitespace (Text (Text'First))
-                     and then not Is_XML_Whitespace (Text (Text'Last))));
+     renames SML_UTF8_Ghost.Is_Trimmed;
 
-   --  Count valid UTF-8 sequences in a range
    function Count_UTF8_Sequences
      (Text : String; First, Last : Natural) return Natural
-     with
-       Ghost,
-       Import,
-       Pre =>
-         First >= Text'First
-         and then Last <= Text'Last
-         and then First <= Last
-         and then Is_Valid_UTF8 (Text),
-       Post => Count_UTF8_Sequences'Result <= Last - First + 1,
-       Global => null;
+     renames SML_UTF8_Ghost.Count_UTF8_Sequences;
 
    ---------------------------------------------------------------------------
    --  Lemmas for UTF-8 Properties
    ---------------------------------------------------------------------------
 
-   --  Valid UTF-8 substring implies valid whole string at those positions
    procedure Lemma_Substring_Valid (Text : String; First, Last : Natural)
-     with
-       Ghost,
-       Import,
-       Pre =>
-         First >= Text'First
-         and then Last <= Text'Last
-         and then First <= Last
-         and then Is_Valid_UTF8_Range (Text, First, Last),
-       Post => (for all I in First .. Last => Is_Valid_UTF8_At (Text, I)),
-       Global => null;
+     renames SML_UTF8_Ghost.Lemma_Substring_Valid;
 
-   --  ASCII subset is always valid UTF-8
    procedure Lemma_ASCII_Is_Valid_UTF8 (Text : String)
-     with
-       Ghost,
-       Import,
-       Pre => (for all I in Text'Range => Is_ASCII (Text (I))),
-       Post => Is_Valid_UTF8 (Text),
-       Global => null;
+     renames SML_UTF8_Ghost.Lemma_ASCII_Is_Valid_UTF8;
 
-   --  Navigation preserves UTF-8 validity
    procedure Lemma_Navigation_Preserves_Validity
      (Text : String; Position : Natural)
-     with
-       Ghost,
-       Import,
-       Pre =>
-         Position >= Text'First
-         and then Position <= Text'Last
-         and then Is_Valid_UTF8 (Text),
-       Post =>
-         (if Next_UTF8_Position (Text, Position) <= Text'Last
-          then Is_Valid_UTF8_At (Text, Next_UTF8_Position (Text, Position))),
-       Global => null;
+     renames SML_UTF8_Ghost.Lemma_Navigation_Preserves_Validity;
 
 end SML.UTF8;
