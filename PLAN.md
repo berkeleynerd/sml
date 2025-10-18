@@ -2,7 +2,8 @@
 
 ## Current Status
 
-✅ **Phases 1-7 Complete** - Core implementation and documentation finished
+✅ **Phases 1-8 Complete** - Core implementation and documentation finished
+🔄 **Ghost Pattern Refactoring** - In progress (3 of 6 packages complete)
 
 **Completed Work:**
 - ✅ Phase 1: Fixed all 10 critical safety issues (0 high-priority issues achieved)
@@ -20,6 +21,73 @@
 - Testing: 26 test procedures across 4 test suites, all passing
 - Documentation: Complete with tutorials and examples
 - File I/O: Available as optional utility package
+- Ghost Pattern Migration: 3 of 6 packages refactored (Memory_Model, UTF8, Entities)
+
+---
+
+## Ghost Pattern Refactoring (In Progress)
+
+### Goal
+Enable SPARK formal verification of ghost code by eliminating circular dependencies between main packages and their `.Proof` child packages.
+
+### Completed (3 of 6 packages)
+
+**✅ SML.Memory_Model** (3-package pattern)
+- Created `SML_Memory_Model_Types` + `SML_Memory_Model_Ghost`
+- Ghost functions now analyzed by gnatprove (previously imported)
+- Required types extraction due to Arena_Pool complexity
+- Commit: 165a589
+
+**✅ SML.UTF8** (2-package pattern)
+- Created `SML_UTF8_Ghost` (self-contained)
+- No types extraction needed
+- Ghost functions operate on String types only
+- Commit: 0c30321
+
+**✅ SML.Entities** (2-package pattern)
+- Created `SML_Entities_Ghost` (self-contained)
+- No types extraction needed
+- Uses public types from main package
+- Commit: 9523461
+
+### Remaining Work (3 packages)
+
+**⏸️ SML.DOM** (requires 3-package pattern)
+- **Why complex:** Ghost functions inspect Document.Pool internal structure
+- **Required:**
+  1. Extract `SML_DOM_Types` with Document, Node_Id, Node_Kind to private section
+  2. Create `SML_DOM_Ghost` depending only on types
+  3. Update all files using Document/Node_Id to import types package
+- **Estimated effort:** 2-3 hours
+- **Blockers:** None, just complex due to many dependent packages
+
+**⏸️ SML.DOM.Parser** (likely 2-package pattern)
+- Can proceed after DOM is complete
+- Parser_State likely stays private, ghost functions don't need it
+- **Estimated effort:** 30-45 minutes
+
+**⏸️ SML.DOM.Builder** (likely 2-package pattern)
+- Can proceed after DOM is complete
+- Ghost functions track deletion state (simple predicates)
+- **Estimated effort:** 30-45 minutes
+
+### Benefits of Completing Ghost Pattern Refactoring
+
+- Ghost code implementations visible to SPARK prover
+- Better proof results (currently many VCs rely on opaque imports)
+- Cleaner architecture (no child package circular dependencies)
+- Maintains 0 high-priority issues throughout
+
+### Why Paused at DOM
+
+Attempted 2-package pattern initially, discovered circular dependency:
+```
+SML_DOM_Ghost needs SML.DOM.Document type
+SML.DOM needs SML_DOM_Ghost functions
+→ CIRCULAR DEPENDENCY
+```
+
+**Correct approach:** Follow Memory_Model pattern with types extraction.
 
 ---
 
