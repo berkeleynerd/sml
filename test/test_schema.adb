@@ -20,6 +20,7 @@ procedure Test_Schema is
    procedure Test_Content_Type_Validation;
    procedure Test_Enumeration_Validation;
    procedure Test_Choice_Group_Validation;
+   procedure Test_Typed_Children_Validation;
    procedure Test_Automatic_Content_Validation;
 
    procedure Test_Basic_Schema is
@@ -760,6 +761,165 @@ procedure Test_Schema is
       Put_Line ("PASSED");
    end Test_Choice_Group_Validation;
 
+   procedure Test_Typed_Children_Validation is
+      Schema  : Schema_Document;
+      Success : Boolean;
+   begin
+      Put ("Test: Typed Children Validation... ");
+
+      Initialize (Schema);
+
+      --  Simple type for host (string)
+      declare
+         Host_Type : Simple_Type_Definition;
+      begin
+         Host_Type.Name := To_Bounded_String ("hostType");
+         Host_Type.Base_Type := String_Type;
+         Add_Simple_Type (Schema, Host_Type, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add hostType");
+            return;
+         end if;
+      end;
+
+      --  Simple type for port (1..65535)
+      declare
+         Port_Type : Simple_Type_Definition;
+      begin
+         Port_Type.Name := To_Bounded_String ("portType");
+         Port_Type.Base_Type := Integer_Type;
+         Port_Type.Min_Value := 1;
+         Port_Type.Max_Value := 65535;
+         Add_Simple_Type (Schema, Port_Type, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add portType");
+            return;
+         end if;
+      end;
+
+      --  Complex type databaseType(host, port)
+      declare
+         DB_Type : Complex_Type_Definition;
+      begin
+         DB_Type.Name := To_Bounded_String ("databaseType");
+         DB_Type.Content_Model := Sequence_Model;
+         DB_Type.Child_Count := 2;
+
+         DB_Type.Children (1) :=
+           (Element_Name => To_Bounded_String ("host"),
+            Type_Name    => To_Bounded_String ("hostType"),
+            Min_Occurs   => 1,
+            Max_Occurs   => 1);
+
+         DB_Type.Children (2) :=
+           (Element_Name => To_Bounded_String ("port"),
+            Type_Name    => To_Bounded_String ("portType"),
+            Min_Occurs   => 1,
+            Max_Occurs   => 1);
+
+         Add_Complex_Type (Schema, DB_Type, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add databaseType");
+            return;
+         end if;
+      end;
+
+      --  Root element database of type databaseType
+      declare
+         Database_Element : constant Element_Definition :=
+           (Name       => To_Bounded_String ("database"),
+            Type_Name  => To_Bounded_String ("databaseType"),
+            Min_Occurs => 1,
+            Max_Occurs => 1);
+      begin
+         Add_Element (Schema, Database_Element, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add database element");
+            return;
+         end if;
+      end;
+
+      --  Valid instance
+      declare
+         Doc_Valid : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse (
+             "<database>"
+             & "<host>localhost</host>"
+             & "<port>5432</port>"
+             & "</database>");
+      begin
+         if not Doc_Valid.Success then
+            Put_Line ("FAILED: Could not parse valid database");
+            return;
+         end if;
+         declare
+            Result : constant Validation_Result :=
+              Validate_Document (Schema, Doc_Valid.Doc);
+         begin
+            if Result.Status = Valid then
+               Put ("✓ valid accepted, ");
+            else
+               Put_Line ("FAILED: valid rejected");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Invalid: port out of range
+      declare
+         Doc_Bad_Port : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse (
+             "<database>"
+             & "<host>localhost</host>"
+             & "<port>99999</port>"
+             & "</database>");
+      begin
+         if not Doc_Bad_Port.Success then
+            Put_Line ("FAILED: Could not parse bad port");
+            return;
+         end if;
+         declare
+            Result : constant Validation_Result :=
+              Validate_Document (Schema, Doc_Bad_Port.Doc);
+         begin
+            if Result.Status = Invalid then
+               Put ("✓ bad port rejected, ");
+            else
+               Put_Line ("FAILED: bad port accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Invalid: host with child element (simple type must be text-only)
+      declare
+         Doc_Bad_Host : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse (
+             "<database>"
+             & "<host><x/></host>"
+             & "<port>5432</port>"
+             & "</database>");
+      begin
+         if not Doc_Bad_Host.Success then
+            Put_Line ("FAILED: Could not parse bad host");
+            return;
+         end if;
+         declare
+            Result : constant Validation_Result :=
+              Validate_Document (Schema, Doc_Bad_Host.Doc);
+         begin
+            if Result.Status = Invalid then
+               Put_Line ("✓ simple child rejected");
+            else
+               Put_Line ("FAILED: simple child accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      Put_Line ("PASSED");
+   end Test_Typed_Children_Validation;
+
 begin
    Put_Line ("=== SML Schema Tests ===");
    New_Line;
@@ -771,6 +931,7 @@ begin
    Test_Content_Type_Validation;
    Test_Enumeration_Validation;
    Test_Choice_Group_Validation;
+   Test_Typed_Children_Validation;
    Test_Automatic_Content_Validation;
 
    New_Line;
