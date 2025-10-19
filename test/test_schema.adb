@@ -226,14 +226,16 @@ procedure Test_Schema is
          --  Database element (required, 1 occurrence)
          Config_Type.Children (1) :=
             (Element_Name => To_Bounded_String ("database"),
-             Min_Occurs => 1,
-             Max_Occurs => 1);
+             Type_Name    => Empty_String,
+             Min_Occurs   => 1,
+             Max_Occurs   => 1);
 
          --  Server element (optional, multiple)
          Config_Type.Children (2) :=
             (Element_Name => To_Bounded_String ("server"),
-             Min_Occurs => 0,
-             Max_Occurs => Natural'Last);  --  unbounded
+             Type_Name    => Empty_String,
+             Min_Occurs   => 0,
+             Max_Occurs   => Natural'Last);  --  unbounded
 
          Add_Complex_Type (Schema, Config_Type, Success);
          if not Success then
@@ -619,13 +621,15 @@ procedure Test_Schema is
 
          Contact_Type.Children (1) :=
             (Element_Name => To_Bounded_String ("email"),
-             Min_Occurs => 1,
-             Max_Occurs => 1);
+             Type_Name    => Empty_String,
+             Min_Occurs   => 1,
+             Max_Occurs   => 1);
 
          Contact_Type.Children (2) :=
             (Element_Name => To_Bounded_String ("phone"),
-             Min_Occurs => 1,
-             Max_Occurs => 1);
+             Type_Name    => Empty_String,
+             Min_Occurs   => 1,
+             Max_Occurs   => 1);
 
          Add_Complex_Type (Schema, Contact_Type, Success);
          if not Success then

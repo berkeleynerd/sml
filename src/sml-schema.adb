@@ -47,6 +47,7 @@ is
             Children      =>
               [others =>
                  (Element_Name => Empty_String,
+                  Type_Name    => Empty_String,
                   Min_Occurs   => 1,
                   Max_Occurs   => 1)],
             Child_Count   => 0);

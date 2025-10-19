@@ -139,6 +139,7 @@ is
    --  Element reference in sequences/choices
    type Element_Ref is record
       Element_Name : Bounded_String;
+      Type_Name    : Bounded_String := Empty_String;
       Min_Occurs   : Natural := 1;
       Max_Occurs   : Natural := 1;  --  Natural'Last = unbounded
    end record;
@@ -152,7 +153,10 @@ is
       Content_Model : Content_Model_Kind := Sequence_Model;
       Children      : Element_Ref_Array :=
         [others =>
-           (Element_Name => Empty_String, Min_Occurs => 1, Max_Occurs => 1)];
+           (Element_Name => Empty_String,
+            Type_Name    => Empty_String,
+            Min_Occurs   => 1,
+            Max_Occurs   => 1)];
       Child_Count   : Natural := 0;
    end record;
 
@@ -322,6 +326,7 @@ private
             Children      =>
               [others =>
                  (Element_Name => Empty_String,
+                  Type_Name    => Empty_String,
                   Min_Occurs   => 1,
                   Max_Occurs   => 1)],
             Child_Count   => 0)];
