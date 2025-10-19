@@ -309,12 +309,20 @@ is
                Ref       : Element_Ref;
                Name_Node : constant DOM.Node_Id :=
                  Find_Child_Element (Doc, Elem_Child, "name");
+               Type_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Elem_Child, "type");
                Max_Node  : constant DOM.Node_Id :=
                  Find_Child_Element (Doc, Elem_Child, "maxOccurs");
             begin
                if Name_Node /= DOM.Null_Node then
                   Ref.Element_Name :=
                     To_Bounded_String (Get_Element_Text (Doc, Name_Node));
+               end if;
+
+               --  Optional nested type binding for child element
+               if Type_Node /= DOM.Null_Node then
+                  Ref.Type_Name :=
+                    To_Bounded_String (Get_Element_Text (Doc, Type_Node));
                end if;
 
                Ref.Min_Occurs :=
