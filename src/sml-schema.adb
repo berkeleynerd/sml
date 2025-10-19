@@ -369,16 +369,19 @@ is
                            Expected     : Element_Ref
                              renames Complex_Type.Children (J);
                            Actual_Count : Natural := 0;
+                           Scan_Child   : Node_Id :=
+                             First_Child (Doc, Parent_Node);
                         begin
                            --  Count matching children
-                           while Child /= Null_Node loop
-                              if Kind (Doc, Child) = Element
-                                and then To_Bounded_String (Name (Doc, Child))
+                           while Scan_Child /= Null_Node loop
+                              if Kind (Doc, Scan_Child) = Element
+                                and then To_Bounded_String
+                                          (Name (Doc, Scan_Child))
                                          = Expected.Element_Name
                               then
                                  Actual_Count := Actual_Count + 1;
                               end if;
-                              Child := Next_Sibling (Doc, Child);
+                              Scan_Child := Next_Sibling (Doc, Scan_Child);
                            end loop;
 
                            --  Check cardinality
