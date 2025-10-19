@@ -183,17 +183,71 @@ is
          --  Find the element definition
          for I in 1 .. Schema.Element_Count loop
             if Schema.Elements (I).Name = To_Bounded_String (Element_Name) then
-               --  Validate structure if element has a complex type
                declare
-                  Element_Def      : Element_Definition
-                    renames Schema.Elements (I);
-                  Structure_Result : constant Validation_Result :=
-                    Validate_Structure
-                      (Schema, Doc, Node, Element_Def.Type_Name);
+                  Element_Def : Element_Definition renames Schema.Elements (I);
                begin
-                  if Structure_Result.Status = Invalid then
-                     return Structure_Result;
-                  end if;
+                  --  If a complex type with this name exists, validate structure
+                  declare
+                     Found_Complex : Boolean := False;
+                  begin
+                     if Element_Def.Type_Name.Length > 0 then
+                        for C in 1 .. Schema.Complex_Type_Count loop
+                           if Schema.Complex_Types (C).Name = Element_Def.Type_Name then
+                              Found_Complex := True;
+                              declare
+                                 Structure_Result : constant Validation_Result :=
+                                   Validate_Structure (Schema, Doc, Node, Element_Def.Type_Name);
+                              begin
+                                 if Structure_Result.Status = Invalid then
+                                    return Structure_Result;
+                                 end if;
+                              end;
+                              exit;
+                           end if;
+                        end loop;
+                     end if;
+
+                     --  If no complex type, check for simple type and validate content
+                     if not Found_Complex and then Element_Def.Type_Name.Length > 0 then
+                        --  Ensure there are no element children and extract first text node
+                        declare
+                           Child              : Node_Id := First_Child (Doc, Node);
+                           Has_Element_Child  : Boolean := False;
+                           First_Text_Node    : Node_Id := Null_Node;
+                        begin
+                           while Child /= Null_Node loop
+                              if Kind (Doc, Child) = Element then
+                                 Has_Element_Child := True;
+                              elsif Kind (Doc, Child) = Text and then First_Text_Node = Null_Node then
+                                 First_Text_Node := Child;
+                              end if;
+                              Child := Next_Sibling (Doc, Child);
+                           end loop;
+
+                           if Has_Element_Child then
+                              return
+                                (Status        => Invalid,
+                                 Error_Message =>
+                                   To_Bounded_String ("Simple content cannot have child elements"),
+                                 Error_Path    => To_Bounded_String ("/" & Element_Name),
+                                 Line          => 0,
+                                 Column        => 0);
+                           end if;
+
+                           declare
+                              Content : constant String :=
+                                (if First_Text_Node = Null_Node then "" else Text_Value (Doc, First_Text_Node));
+                              Content_Result : constant Validation_Result :=
+                                Validate_Content (Schema, Element_Def.Type_Name, Content);
+                           begin
+                              if Content_Result.Status = Invalid then
+                                 return Content_Result;
+                              end if;
+                           end;
+                        end;
+                     end if;
+                  end;
+
                end;
                exit;
             end if;

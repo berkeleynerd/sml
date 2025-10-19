@@ -20,6 +20,7 @@ procedure Test_Schema is
    procedure Test_Content_Type_Validation;
    procedure Test_Enumeration_Validation;
    procedure Test_Choice_Group_Validation;
+   procedure Test_Automatic_Content_Validation;
 
    procedure Test_Basic_Schema is
       Schema : Schema_Document;
@@ -468,6 +469,138 @@ procedure Test_Schema is
       Put_Line ("PASSED");
    end Test_Enumeration_Validation;
 
+   procedure Test_Automatic_Content_Validation is
+      Schema  : Schema_Document;
+      Success : Boolean;
+   begin
+      Put ("Test: Automatic Content Validation (element → simpleType)... ");
+
+      Initialize (Schema);
+
+      --  Define simple integer type: portType (1..65535)
+      declare
+         Port_Type : Simple_Type_Definition;
+      begin
+         Port_Type.Name       := To_Bounded_String ("portType");
+         Port_Type.Base_Type  := Integer_Type;
+         Port_Type.Min_Value  := 1;
+         Port_Type.Max_Value  := 65535;
+         Port_Type.Min_Length := 0;
+         Port_Type.Max_Length := Max_String_Length;
+         Add_Simple_Type (Schema, Port_Type, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add portType");
+            return;
+         end if;
+      end;
+
+      --  Map element 'port' to simple type 'portType'
+      declare
+         Port_Element : constant Element_Definition :=
+           (Name => To_Bounded_String ("port"),
+            Type_Name => To_Bounded_String ("portType"),
+            Min_Occurs => 1,
+            Max_Occurs => 1);
+      begin
+         Add_Element (Schema, Port_Element, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add port element");
+            return;
+         end if;
+      end;
+
+      --  Valid value
+      declare
+         Doc_Valid : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<port>5432</port>");
+      begin
+         if not Doc_Valid.Success then
+            Put_Line ("FAILED: Could not parse valid port document");
+            return;
+         end if;
+         declare
+            Result : constant Validation_Result :=
+              Validate_Document (Schema, Doc_Valid.Doc);
+         begin
+            if Result.Status = Valid then
+               Put ("✓ valid accepted, ");
+            else
+               Put_Line ("FAILED: valid port rejected: "
+                        & To_String (Result.Error_Message));
+               return;
+            end if;
+         end;
+      end;
+
+      --  Out of range
+      declare
+         Doc_Out : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<port>99999</port>");
+      begin
+         if not Doc_Out.Success then
+            Put_Line ("FAILED: Could not parse out-of-range port document");
+            return;
+         end if;
+         declare
+            Result : constant Validation_Result :=
+              Validate_Document (Schema, Doc_Out.Doc);
+         begin
+            if Result.Status = Invalid then
+               Put ("✓ out-of-range rejected, ");
+            else
+               Put_Line ("FAILED: out-of-range port accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Not a number
+      declare
+         Doc_NaN : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<port>not_a_number</port>");
+      begin
+         if not Doc_NaN.Success then
+            Put_Line ("FAILED: Could not parse non-numeric port document");
+            return;
+         end if;
+         declare
+            Result : constant Validation_Result :=
+              Validate_Document (Schema, Doc_NaN.Doc);
+         begin
+            if Result.Status = Invalid then
+               Put ("✓ non-numeric rejected, ");
+            else
+               Put_Line ("FAILED: non-numeric port accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Child element under simple type should be rejected
+      declare
+         Doc_Child : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<port><x/></port>");
+      begin
+         if not Doc_Child.Success then
+            Put_Line ("FAILED: Could not parse child-element port document");
+            return;
+         end if;
+         declare
+            Result : constant Validation_Result :=
+              Validate_Document (Schema, Doc_Child.Doc);
+         begin
+            if Result.Status = Invalid then
+               Put_Line ("✓ child elements rejected");
+            else
+               Put_Line ("FAILED: child elements accepted for simple type");
+               return;
+            end if;
+         end;
+      end;
+
+      Put_Line ("PASSED");
+   end Test_Automatic_Content_Validation;
+
    procedure Test_Choice_Group_Validation is
       Schema : Schema_Document;
       Success : Boolean;
@@ -634,6 +767,7 @@ begin
    Test_Content_Type_Validation;
    Test_Enumeration_Validation;
    Test_Choice_Group_Validation;
+   Test_Automatic_Content_Validation;
 
    New_Line;
    Put_Line ("=== All Tests Completed ===");

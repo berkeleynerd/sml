@@ -25,6 +25,11 @@
 
 ## Known Limitations (Discovered During Implementation)
 
+Update: Automatic content type validation integrated in `SML.Schema.Validate_Element`.
+Elements whose `Type_Name` refers to a simple type now validate their text
+content via `Validate_Content` and reject child elements. The examples in this
+section are now enforced as intended.
+
 ### Schema Validation - Content Type Integration
 
 **Current Behavior:**
@@ -50,7 +55,7 @@ Validate_Integer_Content ("8080", 1, 65535) → Valid
 Validate_Integer_Content ("99999", 1, 65535) → Invalid
 ```
 
-**What Doesn't Work Yet:**
+**What Didn't Work (now fixed):**
 ```xml
 <!-- Schema defines port as integer 1-65535 -->
 <element name="port" type="portType"/>
@@ -66,19 +71,18 @@ Validate_Integer_Content ("99999", 1, 65535) → Invalid
 </config>
 ```
 
-**Why:** The Validate_Element/Validate_Structure functions don't connect element nodes to their type definitions to validate content. They validate structure (presence, order, cardinality) but not the text content against simple types.
+**Why (originally):** `Validate_Element/Validate_Structure` didn't connect element nodes to their type definitions for content checks.
 
-**To Fix:** Would need to enhance Validate_Element to:
-1. Look up element's type name from schema
-2. If simple type, extract text content from element
-3. Call Validate_Content with the type definition
-4. Propagate validation errors
+**Implemented Fix:** `Validate_Element` now:
+1. Looks up the element's type
+2. If simple, extracts first text child (no element children allowed)
+3. Calls `Validate_Content` and propagates errors with element path
 
 **Effort:** 10-15 hours (requires careful integration without breaking existing validation)
 
-**Impact:** Medium - Limits schema validation to structural constraints for now
+**Impact:** Removed — documents now get automatic content type checks for simple types
 
-**Workaround:** Applications can manually call Validate_Content for specific elements they care about.
+**Workaround (no longer required):** Manual calls to `Validate_Content` are unnecessary for elements bound to simple types.
 
 ### File I/O - Limited Type Return Constraints
 
@@ -130,36 +134,11 @@ The following items are **optional enhancements** - the library is production-re
 4. Add ghost variables for complex state tracking
 5. Verify incrementally (don't break working code)
 
-### Optional Enhancement 2: Complete Element Content Type Validation
+### Completed Enhancement: Automatic Content Type Validation
 
-**Status:** Content type functions exist but aren't integrated with element validation
+**Status:** Implemented. Elements whose `Type_Name` maps to a simple type are now validated automatically inside `Validate_Element`, and child elements under simple types are rejected.
 
-**What needs to be done:**
-- Connect Validate_Element to type definitions
-- Look up simple type for each element
-- Extract and validate text content against type
-- Integrate with existing validation flow
-
-**Current capability:**
-- Structure validation: ✅ Working
-- Cardinality validation: ✅ Working
-- Content type validation: ⚠️ Functions exist but not auto-applied
-
-**Benefits if implemented:**
-- Full type safety for SML documents
-- Integer range checking automatic
-- Enumeration validation automatic
-- Complete XML Schema-like validation
-
-**Priority:** Medium-High - Closes the validation gap
-
-**Effort estimate:** 10-15 hours
-
-**Challenges:**
-- Must preserve existing structural validation
-- Need to maintain 0 high-priority SPARK issues
-- Complex types with simple content need special handling
-- Error reporting must be clear (which element, which type)
+**Impact:** Brings behavior closer to XSD: simple-type content is enforced without manual calls to `Validate_Content`.
 
 ### Optional Enhancement 3: Advanced Schema Features
 
@@ -241,6 +220,50 @@ with Pre => Input'Length > 0;
 
 ---
 
+## XML Schema (XSD) Compatibility Roadmap
+
+We aim to support as much of XSD as feasible within SML constraints (no attributes, namespaces, mixed content).
+
+### Supported Subset (today)
+- Global element declarations with `name` + `type`; `minOccurs`/`maxOccurs` (supports `unbounded`).
+- Simple types: `string`, `integer`, `boolean`, `decimal` with facets:
+  - Integer `minValue`/`maxValue`
+  - String `minLength`/`maxLength`, `enumeration`
+- Complex types: `sequence`, `choice` content models.
+- Automatic validation of simple-type element content.
+
+### Not Possible in SML
+- Attributes, namespaces
+- Mixed content (text + child elements simultaneously)
+- Wildcards (`any`, `anyAttribute`)
+
+### Feasible Near-Term Additions
+1. Child type binding in complex models
+   - Add `Type_Name` to `Element_Ref`
+   - Loader: parse nested `<type>` for child element refs
+   - Validator: recursively validate each child against its bound type
+   - Effort 12–18 hours; Risk Medium
+2. Strict sequence order enforcement
+   - Enforce declared order across siblings, not just counts
+   - Effort 6–10 hours; Risk Low–Medium
+3. Decimal facets
+   - Add `Min_Value`/`Max_Value` for decimals and digit constraints (bounded)
+   - Effort 6–8 hours; Risk Low
+
+### Medium-Term Additions
+- Additional string facets (prefix/suffix/contains; regex-free)
+- Bounded list-like simple types (SPARK-friendly)
+- Richer error diagnostics (paths and codes)
+
+### Out of Scope / High Effort
+- Regex `pattern`, derivation/extension, unions, keys/keyrefs, defaults/fixed, nillable
+
+### Acceptance Criteria
+- Loader accepts schemas where child element refs include `<type>` and stores it.
+- `Validate_Document` rejects instances when a typed child’s content violates its type.
+- Sequence order violations are detected with clear messages.
+- New tests cover typed children, order errors, decimal range.
+
 ## Deferred Medium-Priority SPARK Issues
 
 **Context:** 500 medium-priority verification issues exist
@@ -299,8 +322,8 @@ with Pre => Input'Length > 0;
    - `Validate_Boolean_Content (value)`
    - `Validate_Enum_Content (value, enum_list, count)`
 
-**⚠️ Partial:**
-5. **Automatic content type validation** - Type definitions exist but aren't automatically checked against element content
+**✅ Fully Working (updated):**
+5. **Automatic content type validation** - Elements bound to simple types are now validated against their type definitions during `Validate_Element`, and child elements under simple types are rejected.
 
 **Use Cases That Work Well:**
 - Configuration file structure validation (correct elements, correct order)
@@ -308,21 +331,14 @@ with Pre => Input'Length > 0;
 - Element count limits (max occurrences)
 - Vocabulary control (only allowed elements)
 
-**Use Cases Requiring Manual Validation:**
-- Content type checking (call Validate_*_Content functions explicitly)
-- Range validation for integers
-- Enumeration validation for strings
+**Manual Validation Still Useful For:**
+- Custom cross-field rules beyond schema types
+- Domain-specific constraints not expressible via current schema features
 
 **Example of Current Usage:**
 ```ada
--- Schema validates structure
-Result := Validate_Document (Schema, Doc);
-if Result.Status = Valid then
-   -- Structure is correct
-   -- Now manually validate specific element content if needed:
-   Port_Content := Get_Element_Content (Doc, "port");
-   Content_Result := Validate_Integer_Content (Port_Content, 1, 65535);
-end if;
+-- Schema validates structure and simple-type content automatically
+Validation := Validate_Document (Schema, Doc);
 ```
 
 ---
@@ -332,7 +348,7 @@ end if;
 ✅ Code compiles without errors
 ✅ Examples run successfully
 ✅ SPARK verification: 0 high-priority issues
-✅ Tests pass: 15 test procedures
+✅ Tests pass: 26+ procedures across suites
 ✅ Documentation complete and accurate
 ✅ Changes committed to git
 ✅ Production ready

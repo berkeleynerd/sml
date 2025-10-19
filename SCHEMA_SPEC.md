@@ -7,7 +7,7 @@
 - Schema language fully specified (this document)
 - Core validation engine implemented in `src/sml-schema.ads/.adb`
 - Reference loader implemented in `examples/sml-schema-loader.ads/.adb`
-- Comprehensive test coverage (15 test procedures across 3 test suites)
+- Comprehensive test coverage (16 test procedures: 7 core validation + 9 loader tests)
 - **0 high-priority SPARK verification issues**
 - Working examples demonstrating all features
 
@@ -317,10 +317,11 @@ Validation errors include:
 
 ### Memory Bounds
 
-- Maximum schema complexity: 1000 type definitions
-- Maximum enumeration values: 100 per type
-- Maximum sequence/choice elements: 50 per group
-- Maximum nesting depth: 20 levels
+- Maximum element definitions: 100
+- Maximum type definitions: 100 (simple + complex combined)
+- Maximum enumeration values: 20 per type
+- Maximum sequence/choice elements: 20 per group
+- Maximum nesting depth: 10 levels
 
 ### Performance Guarantees
 

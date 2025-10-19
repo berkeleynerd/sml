@@ -80,7 +80,7 @@ The repository includes three focused example programs demonstrating different a
 ### 3. test_schema_loader - File I/O & Integration (455 lines)
 **Purpose:** Comprehensive testing and file-based workflows
 **Features demonstrated:**
-- Schema loader unit tests (8 tests)
+- Schema loader unit tests (9 tests)
 - File-based schema loading (using SML.IO)
 - File-based instance loading
 - End-to-end validation from files
@@ -419,7 +419,7 @@ end if;
 # Core validation tests (7 tests)
 bin/test_schema
 
-# Schema loader tests (8 tests)
+# Schema loader tests (9 tests)
 bin/test_schema_loader
 
 # End-to-end demo

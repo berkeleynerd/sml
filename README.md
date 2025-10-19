@@ -75,6 +75,7 @@ See the example source files in `examples/` for complete working code.
 
 | File | Purpose |
 |------|---------|
+| **[AGENTS.md](AGENTS.md)** | Contributor guide with build, style, and review expectations |
 | **[CLAUDE.md](CLAUDE.md)** | Comprehensive development guide - architecture, implementation details, verification guidance |
 | **[MEMORY.md](MEMORY.md)** | Memory configuration guide - stack sizing, troubleshooting, performance tuning |
 | **[SCHEMA_SPEC.md](SCHEMA_SPEC.md)** | Schema language specification - types, constraints, validation rules |
@@ -204,10 +205,10 @@ end Validate_Config;
 # End-to-end validation demo
 bin/schema_validation_example
 
-# Schema loader tests (8 tests)
+# Schema loader tests (9 tests)
 bin/test_schema_loader
 
-# Core validation tests (7 tests)
+# Core validation tests (8 tests)
 bin/test_schema
 ```
 
