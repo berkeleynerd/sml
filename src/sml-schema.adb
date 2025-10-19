@@ -7,6 +7,72 @@
 package body SML.Schema
   with SPARK_Mode => On
 is
+   ---------------------------------------------------------------------------
+   --  Internal Helper: Validate node against a given type name
+   ---------------------------------------------------------------------------
+
+   function Validate_Node_Against_Type
+     (Schema    : Schema_Document;
+      Doc       : DOM.Document;
+      Node      : DOM.Node_Id;
+      Type_Name : Bounded_String) return Validation_Result
+   is
+      use DOM;
+   begin
+      --  Try complex type first
+      for I in 1 .. Schema.Complex_Type_Count loop
+         if Schema.Complex_Types (I).Name = Type_Name then
+            return Validate_Structure (Schema, Doc, Node, Type_Name);
+         end if;
+      end loop;
+
+      --  Then simple type: text-only element with content validation
+      for I in 1 .. Schema.Simple_Type_Count loop
+         if Schema.Simple_Types (I).Name = Type_Name then
+            declare
+               Child             : Node_Id := First_Child (Doc, Node);
+               Has_Element_Child : Boolean := False;
+               First_Text_Node   : Node_Id := Null_Node;
+            begin
+               while Child /= Null_Node loop
+                  pragma Loop_Variant (Structural => Child);
+                  if Kind (Doc, Child) = Element then
+                     Has_Element_Child := True;
+                  elsif Kind (Doc, Child) = Text
+                    and then First_Text_Node = Null_Node
+                  then
+                     First_Text_Node := Child;
+                  end if;
+                  Child := Next_Sibling (Doc, Child);
+               end loop;
+
+               if Has_Element_Child then
+                  return
+                    (Status        => Invalid,
+                     Error_Message =>
+                       To_Bounded_String
+                         ("Simple content cannot have child elements"),
+                     Error_Path    => Empty_String,
+                     Line          => 0,
+                     Column        => 0);
+               end if;
+
+               declare
+                  Content : constant String :=
+                    (if First_Text_Node = Null_Node then
+                       ""
+                     else
+                       Text_Value (Doc, First_Text_Node));
+               begin
+                  return Validate_Content (Schema, Type_Name, Content);
+               end;
+            end;
+         end if;
+      end loop;
+
+      --  Unknown type name: treat as valid (no-op)
+      return Valid_Result;
+   end Validate_Node_Against_Type;
 
    ---------------------------------------------------------------------------
    --  Schema Construction Implementation
@@ -331,6 +397,43 @@ is
                         end;
                      end loop;
 
+                     --  Validate typed children if types provided
+                     for J in 1 .. Complex_Type.Child_Count loop
+                        declare
+                           Expected   : Element_Ref
+                             renames Complex_Type.Children (J);
+                           Check_Child : Node_Id :=
+                             First_Child (Doc, Parent_Node);
+                        begin
+                           if Expected.Type_Name.Length > 0 then
+                              while Check_Child /= Null_Node loop
+                                 pragma Loop_Variant
+                                   (Structural => Check_Child);
+                                 if Kind (Doc, Check_Child) = Element
+                                   and then To_Bounded_String
+                                              (Name (Doc, Check_Child))
+                                            = Expected.Element_Name
+                                 then
+                                    declare
+                                       Vres : constant Validation_Result :=
+                                         Validate_Node_Against_Type
+                                           (Schema,
+                                            Doc,
+                                            Check_Child,
+                                            Expected.Type_Name);
+                                    begin
+                                       if Vres.Status = Invalid then
+                                          return Vres;
+                                       end if;
+                                    end;
+                                 end if;
+                                 Check_Child :=
+                                   Next_Sibling (Doc, Check_Child);
+                              end loop;
+                           end if;
+                        end;
+                     end loop;
+
                   when Choice_Model =>
                      --  Exactly one option must have elements
                      declare
@@ -400,6 +503,43 @@ is
                               Column        => 0);
                         end if;
                      end;
+
+                     --  Validate any present typed option children
+                     for J in 1 .. Complex_Type.Child_Count loop
+                        declare
+                           Expected    : Element_Ref
+                             renames Complex_Type.Children (J);
+                           Check_Child : Node_Id :=
+                             First_Child (Doc, Parent_Node);
+                        begin
+                           if Expected.Type_Name.Length > 0 then
+                              while Check_Child /= Null_Node loop
+                                 pragma Loop_Variant
+                                   (Structural => Check_Child);
+                                 if Kind (Doc, Check_Child) = Element
+                                   and then To_Bounded_String
+                                              (Name (Doc, Check_Child))
+                                            = Expected.Element_Name
+                                 then
+                                    declare
+                                       Vres : constant Validation_Result :=
+                                         Validate_Node_Against_Type
+                                           (Schema,
+                                            Doc,
+                                            Check_Child,
+                                            Expected.Type_Name);
+                                    begin
+                                       if Vres.Status = Invalid then
+                                          return Vres;
+                                       end if;
+                                    end;
+                                 end if;
+                                 Check_Child :=
+                                   Next_Sibling (Doc, Check_Child);
+                              end loop;
+                           end if;
+                        end;
+                     end loop;
 
                   when Simple_Model =>
                      --  Text content only - no element children allowed
