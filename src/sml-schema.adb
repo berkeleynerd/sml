@@ -35,7 +35,6 @@ is
                First_Text_Node   : Node_Id := Null_Node;
             begin
                while Child /= Null_Node loop
-                  pragma Loop_Variant (Structural => Child);
                   if Kind (Doc, Child) = Element then
                      Has_Element_Child := True;
                   elsif Kind (Doc, Child) = Text
@@ -363,66 +362,44 @@ is
                --  Validate based on content model
                case Complex_Type.Content_Model is
                   when Sequence_Model =>
-                     --  Children must appear in order
-                     for J in 1 .. Complex_Type.Child_Count loop
-                        declare
-                           Expected     : Element_Ref
-                             renames Complex_Type.Children (J);
-                           Actual_Count : Natural := 0;
-                           Scan_Child   : Node_Id :=
-                             First_Child (Doc, Parent_Node);
-                        begin
-                           --  Count matching children
-                           while Scan_Child /= Null_Node loop
-                              if Kind (Doc, Scan_Child) = Element
-                                and then To_Bounded_String
-                                          (Name (Doc, Scan_Child))
-                                         = Expected.Element_Name
-                              then
-                                 Actual_Count := Actual_Count + 1;
-                              end if;
-                              Scan_Child := Next_Sibling (Doc, Scan_Child);
-                           end loop;
+                     --  Strict order: consume children left-to-right
+                     --  For each expected, count consecutive matches
+                     --  Skip text nodes between elements
+                     declare
+                        J            : Natural := 1;
+                        Actual_Count : Natural := 0;
+                     begin
+                        --  Initialize to first child of parent
+                        Child := First_Child (Doc, Parent_Node);
 
-                           --  Check cardinality
+                        while J <= Complex_Type.Child_Count loop
                            declare
-                              Result : constant Validation_Result :=
-                                Check_Cardinality
-                                  (Expected.Min_Occurs,
-                                   Expected.Max_Occurs,
-                                   Actual_Count,
-                                   To_String (Expected.Element_Name));
+                              Expected : Element_Ref
+                                renames Complex_Type.Children (J);
                            begin
-                              if Result.Status = Invalid then
-                                 return Result;
-                              end if;
-                           end;
-                        end;
-                     end loop;
+                              --  Skip non-element nodes
+                              while Child /= Null_Node
+                                and then Kind (Doc, Child) /= Element
+                              loop
+                                 Child := Next_Sibling (Doc, Child);
+                              end loop;
 
-                     --  Validate typed children if types provided
-                     for J in 1 .. Complex_Type.Child_Count loop
-                        declare
-                           Expected   : Element_Ref
-                             renames Complex_Type.Children (J);
-                           Check_Child : Node_Id :=
-                             First_Child (Doc, Parent_Node);
-                        begin
-                           if Expected.Type_Name.Length > 0 then
-                              while Check_Child /= Null_Node loop
-                                 pragma Loop_Variant
-                                   (Structural => Check_Child);
-                                 if Kind (Doc, Check_Child) = Element
-                                   and then To_Bounded_String
-                                              (Name (Doc, Check_Child))
-                                            = Expected.Element_Name
-                                 then
+                              --  Count consecutive matches
+                              Actual_Count := 0;
+                              while Child /= Null_Node
+                                and then Kind (Doc, Child) = Element
+                                and then To_Bounded_String
+                                           (Name (Doc, Child))
+                                         = Expected.Element_Name
+                              loop
+                                 --  Validate typed child if type provided
+                                 if Expected.Type_Name.Length > 0 then
                                     declare
                                        Vres : constant Validation_Result :=
                                          Validate_Node_Against_Type
                                            (Schema,
                                             Doc,
-                                            Check_Child,
+                                            Child,
                                             Expected.Type_Name);
                                     begin
                                        if Vres.Status = Invalid then
@@ -430,12 +407,73 @@ is
                                        end if;
                                     end;
                                  end if;
-                                 Check_Child :=
-                                   Next_Sibling (Doc, Check_Child);
+
+                                 Actual_Count := Actual_Count + 1;
+
+                                 --  Early check for too many occurrences
+                                 if Expected.Max_Occurs /= Natural'Last
+                                   and then Actual_Count > Expected.Max_Occurs
+                                 then
+                                    return
+                                      Check_Cardinality
+                                        (Expected.Min_Occurs,
+                                         Expected.Max_Occurs,
+                                         Actual_Count,
+                                         To_String
+                                           (Expected.Element_Name));
+                                 end if;
+
+                                 Child := Next_Sibling (Doc, Child);
+                                 --  Skip non-element nodes between matches
+                                 while Child /= Null_Node
+                                   and then Kind (Doc, Child) /= Element
+                                 loop
+                                    Child := Next_Sibling (Doc, Child);
+                                 end loop;
                               end loop;
+
+                              --  Final cardinality check for this expected
+                              declare
+                                 Result : constant Validation_Result :=
+                                   Check_Cardinality
+                                     (Expected.Min_Occurs,
+                                      Expected.Max_Occurs,
+                                      Actual_Count,
+                                      To_String (Expected.Element_Name));
+                              begin
+                                 if Result.Status = Invalid then
+                                    return Result;
+                                 end if;
+                              end;
+
+                              --  Move to next expected item
+                              J := J + 1;
+                           end;
+                        end loop;
+
+                        --  Ensure no extra element children remain
+                        while Child /= Null_Node loop
+                           if Kind (Doc, Child) = Element then
+                              declare
+                                 Found_Name : constant String :=
+                                   Name (Doc, Child);
+                              begin
+                                 return
+                                   (Status        => Invalid,
+                                    Error_Message =>
+                                      To_Bounded_String
+                                        ("Unexpected element: "
+                                         & Found_Name),
+                                    Error_Path    =>
+                                      To_Bounded_String
+                                        ("/" & Found_Name),
+                                    Line          => 0,
+                                    Column        => 0);
+                              end;
                            end if;
-                        end;
-                     end loop;
+                           Child := Next_Sibling (Doc, Child);
+                        end loop;
+                     end;
 
                   when Choice_Model =>
                      --  Exactly one option must have elements
@@ -517,8 +555,6 @@ is
                         begin
                            if Expected.Type_Name.Length > 0 then
                               while Check_Child /= Null_Node loop
-                                 pragma Loop_Variant
-                                   (Structural => Check_Child);
                                  if Kind (Doc, Check_Child) = Element
                                    and then To_Bounded_String
                                               (Name (Doc, Check_Child))

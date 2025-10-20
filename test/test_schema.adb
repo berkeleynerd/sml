@@ -313,6 +313,59 @@ procedure Test_Schema is
          end;
       end;
 
+      --  Test out-of-order invalid: server before database
+      declare
+         Out_Of_Order : constant SML.DOM.Parser.Parse_Result :=
+            SML.DOM.Parser.Parse (
+               "<config>" &
+               "  <server>srv1</server>" &
+               "  <database>db1</database>" &
+               "</config>");
+      begin
+         if not Out_Of_Order.Success then
+            Put_Line ("FAILED: Could not parse out-of-order document");
+            return;
+         end if;
+         declare
+            Result : constant Validation_Result :=
+               Validate_Document (Schema, Out_Of_Order.Doc);
+         begin
+            if Result.Status = Invalid then
+               Put ("✓ Out-of-order rejected, ");
+            else
+               Put_Line ("FAILED: Out-of-order accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Test extra element invalid
+      declare
+         Extra_Elem : constant SML.DOM.Parser.Parse_Result :=
+            SML.DOM.Parser.Parse (
+               "<config>" &
+               "  <database>db1</database>" &
+               "  <server>srv1</server>" &
+               "  <extra>z</extra>" &
+               "</config>");
+      begin
+         if not Extra_Elem.Success then
+            Put_Line ("FAILED: Could not parse extra element document");
+            return;
+         end if;
+         declare
+            Result : constant Validation_Result :=
+               Validate_Document (Schema, Extra_Elem.Doc);
+         begin
+            if Result.Status = Invalid then
+               Put_Line ("✓ Extra element rejected");
+            else
+               Put_Line ("FAILED: Extra element accepted");
+               return;
+            end if;
+         end;
+      end;
+
       --  Test missing required element
       declare
          Invalid_Doc : constant SML.DOM.Parser.Parse_Result :=
