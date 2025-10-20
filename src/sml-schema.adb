@@ -389,6 +389,33 @@ is
                                  Child := Next_Sibling (Doc, Child);
                               end loop;
 
+                              --  If we need at least one and next element doesn't match, it's an order violation
+                              if Child /= Null_Node
+                                and then Kind (Doc, Child) = Element
+                                and then Expected.Min_Occurs > 0
+                                and then To_Bounded_String (Name (Doc, Child))
+                                         /= Expected.Element_Name
+                              then
+                                 declare
+                                    Found_Name : constant String :=
+                                      Name (Doc, Child);
+                                    Exp_Name   : constant String :=
+                                      To_String (Expected.Element_Name);
+                                 begin
+                                    return
+                                      (Status        => Invalid,
+                                       Error_Message =>
+                                         To_Bounded_String
+                                           ("Order violation: expected "
+                                            & Exp_Name & " before "
+                                            & Found_Name),
+                                       Error_Path    =>
+                                         To_Bounded_String ("/" & Found_Name),
+                                       Line          => 0,
+                                       Column        => 0);
+                                 end;
+                              end if;
+
                               --  Count consecutive matches
                               Actual_Count := 0;
                               while Child /= Null_Node
@@ -584,6 +611,97 @@ is
                            end if;
                         end;
                      end loop;
+
+                  when All_Model =>
+                     --  Unordered group: each expected element has independent
+                     --  cardinality; unexpected elements are rejected
+                     declare
+                        Counts : array (1 .. Complex_Type.Child_Count) of Natural :=
+                          [others => 0];
+                        EChild : Node_Id := First_Child (Doc, Parent_Node);
+                     begin
+                        --  Scan all element children
+                        while EChild /= Null_Node loop
+                           if Kind (Doc, EChild) = Element then
+                              declare
+                                 Found : constant Bounded_String :=
+                                   To_Bounded_String (Name (Doc, EChild));
+                                 Matched : Boolean := False;
+                              begin
+                                 for K in 1 .. Complex_Type.Child_Count loop
+                                    declare
+                                       RefK : constant Element_Ref :=
+                                         Complex_Type.Children (K);
+                                    begin
+                                       if RefK.Element_Name = Found then
+                                          Matched := True;
+                                          Counts (K) := Counts (K) + 1;
+                                          --  Early too-many check
+                                          if RefK.Max_Occurs /= Natural'Last
+                                            and then Counts (K) > RefK.Max_Occurs
+                                          then
+                                             return
+                                               Check_Cardinality
+                                                 (RefK.Min_Occurs,
+                                                  RefK.Max_Occurs,
+                                                  Counts (K),
+                                                  To_String (RefK.Element_Name));
+                                          end if;
+
+                                          --  Typed validation for this child
+                                          if RefK.Type_Name.Length > 0 then
+                                             declare
+                                                Vres : constant Validation_Result :=
+                                                  Validate_Node_Against_Type
+                                                    (Schema,
+                                                     Doc,
+                                                     EChild,
+                                                     RefK.Type_Name);
+                                             begin
+                                                if Vres.Status = Invalid then
+                                                   return Vres;
+                                                end if;
+                                             end;
+                                          end if;
+                                          exit;
+                                       end if;
+                                    end;
+                                 end loop;
+                                 if not Matched then
+                                    return
+                                      (Status        => Invalid,
+                                       Error_Message =>
+                                         To_Bounded_String
+                                           ("Unexpected element: "
+                                            & To_String (Found)),
+                                       Error_Path    => Found,
+                                       Line          => 0,
+                                       Column        => 0);
+                                 end if;
+                              end;
+                           end if;
+                           EChild := Next_Sibling (Doc, EChild);
+                        end loop;
+
+                        --  Check minimums
+                        for K in 1 .. Complex_Type.Child_Count loop
+                           declare
+                              RefK : constant Element_Ref :=
+                                Complex_Type.Children (K);
+                              Cnt : constant Natural := Counts (K);
+                              MinRes : constant Validation_Result :=
+                                Check_Cardinality
+                                  (RefK.Min_Occurs,
+                                   RefK.Max_Occurs,
+                                   Cnt,
+                                   To_String (RefK.Element_Name));
+                           begin
+                              if MinRes.Status = Invalid then
+                                 return MinRes;
+                              end if;
+                           end;
+                        end loop;
+                     end;
 
                   when Simple_Model =>
                      --  Text content only - no element children allowed

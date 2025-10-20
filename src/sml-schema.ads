@@ -98,6 +98,7 @@ is
    type Content_Model_Kind is
      (Sequence_Model,  --  Elements must appear in order
       Choice_Model,    --  Exactly one element must appear
+      All_Model,       --  Unordered; each child 0..1 unless specified
       Simple_Model     --  Simple content (text only)
      );
 

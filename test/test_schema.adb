@@ -22,6 +22,7 @@ procedure Test_Schema is
    procedure Test_Choice_Group_Validation;
    procedure Test_Typed_Children_Validation;
    procedure Test_Simple_Content_Model;
+   procedure Test_All_Model_Validation;
    procedure Test_Automatic_Content_Validation;
 
    procedure Test_Basic_Schema is
@@ -1177,6 +1178,122 @@ procedure Test_Schema is
       Put_Line ("PASSED");
    end Test_Simple_Content_Model;
 
+   procedure Test_All_Model_Validation is
+      Schema  : Schema_Document;
+      Success : Boolean;
+   begin
+      Put ("Test: All Model (unordered) Validation... ");
+
+      Initialize (Schema);
+
+      --  Define complex type with unordered children a, b
+      declare
+         All_Type : Complex_Type_Definition;
+      begin
+         All_Type.Name := To_Bounded_String ("pairType");
+         All_Type.Content_Model := All_Model;
+         All_Type.Child_Count := 2;
+         All_Type.Children (1) :=
+           (Element_Name => To_Bounded_String ("a"),
+            Type_Name    => Empty_String,
+            Min_Occurs   => 1,
+            Max_Occurs   => 1);
+         All_Type.Children (2) :=
+           (Element_Name => To_Bounded_String ("b"),
+            Type_Name    => Empty_String,
+            Min_Occurs   => 0,
+            Max_Occurs   => 1);
+         Add_Complex_Type (Schema, All_Type, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add pairType");
+            return;
+         end if;
+      end;
+
+      --  Root element using pairType
+      declare
+         Root : constant Element_Definition :=
+           (Name       => To_Bounded_String ("root"),
+            Type_Name  => To_Bounded_String ("pairType"),
+            Min_Occurs => 1,
+            Max_Occurs => 1);
+      begin
+         Add_Element (Schema, Root, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add root element");
+            return;
+         end if;
+      end;
+
+      --  Valid: any order
+      declare
+         Doc_Valid : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<root><b/><a/></root>");
+      begin
+         if not Doc_Valid.Success then
+            Put_Line ("FAILED: Could not parse all-model valid");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc_Valid.Doc);
+         begin
+            if R.Status = Valid then
+               Put ("✓ valid accepted, ");
+            else
+               Put_Line ("FAILED: valid all-model rejected");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Invalid: duplicate a
+      declare
+         Doc_Dup : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<root><a/><a/></root>");
+      begin
+         if not Doc_Dup.Success then
+            Put_Line ("FAILED: Could not parse duplicate all-model");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc_Dup.Doc);
+         begin
+            if R.Status = Invalid then
+               Put ("✓ duplicate rejected, ");
+            else
+               Put_Line ("FAILED: duplicate accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Invalid: missing required a
+      declare
+         Doc_Miss : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<root><b/></root>");
+      begin
+         if not Doc_Miss.Success then
+            Put_Line ("FAILED: Could not parse missing all-model");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc_Miss.Doc);
+         begin
+            if R.Status = Invalid then
+               Put_Line ("✓ missing required rejected");
+            else
+               Put_Line ("FAILED: missing required accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      Put_Line ("PASSED");
+   end Test_All_Model_Validation;
+
 begin
    Put_Line ("=== SML Schema Tests ===");
    New_Line;
@@ -1190,6 +1307,7 @@ begin
    Test_Choice_Group_Validation;
    Test_Typed_Children_Validation;
    Test_Simple_Content_Model;
+   Test_All_Model_Validation;
    Test_Automatic_Content_Validation;
 
    New_Line;

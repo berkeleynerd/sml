@@ -444,31 +444,37 @@ is
       if Content_Node /= DOM.Null_Node then
          Type_Def.Content_Model := Sequence_Model;
          Parse_Element_References (Doc, Content_Node, Type_Def);
-      else
-         Content_Node := Find_Child_Element (Doc, Type_Node, "choice");
-         if Content_Node /= DOM.Null_Node then
-            Type_Def.Content_Model := Choice_Model;
-            Parse_Element_References (Doc, Content_Node, Type_Def);
          else
-            Content_Node := Find_Child_Element (Doc, Type_Node, "simpleContent");
+            Content_Node := Find_Child_Element (Doc, Type_Node, "choice");
             if Content_Node /= DOM.Null_Node then
-               Type_Def.Content_Model := Simple_Model;
-               declare
-                  TNode : constant DOM.Node_Id :=
-                    Find_Child_Element (Doc, Content_Node, "type");
-               begin
-                  if TNode /= DOM.Null_Node then
-                     Type_Def.Simple_Content_Type_Name :=
-                       To_Bounded_String (Get_Element_Text (Doc, TNode));
-                  end if;
-               end;
+               Type_Def.Content_Model := Choice_Model;
+               Parse_Element_References (Doc, Content_Node, Type_Def);
             else
-               return (Success   => False,
-                       Error_Msg => To_Bounded_String
-                         ("complexType missing <sequence>, <choice>, or <simpleContent>"));
+               Content_Node := Find_Child_Element (Doc, Type_Node, "all");
+               if Content_Node /= DOM.Null_Node then
+                  Type_Def.Content_Model := All_Model;
+                  Parse_Element_References (Doc, Content_Node, Type_Def);
+               else
+                  Content_Node := Find_Child_Element (Doc, Type_Node, "simpleContent");
+                  if Content_Node /= DOM.Null_Node then
+                     Type_Def.Content_Model := Simple_Model;
+                     declare
+                        TNode : constant DOM.Node_Id :=
+                          Find_Child_Element (Doc, Content_Node, "type");
+                     begin
+                        if TNode /= DOM.Null_Node then
+                           Type_Def.Simple_Content_Type_Name :=
+                             To_Bounded_String (Get_Element_Text (Doc, TNode));
+                        end if;
+                     end;
+                  else
+                     return (Success   => False,
+                             Error_Msg => To_Bounded_String
+                               ("complexType missing <sequence>, <choice>, <all>, or <simpleContent>"));
+                  end if;
+               end if;
             end if;
          end if;
-      end if;
 
       return (Success => True, Complex_Def => Type_Def);
    end Parse_Complex_Type;
