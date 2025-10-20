@@ -103,6 +103,50 @@ begin
 end;
 ```
 
+#### Complex Type with All (Unordered)
+
+```ada
+-- Define unordered group with children a (required) and b (optional)
+declare
+   Pair : Complex_Type_Definition;
+begin
+   Pair.Name := To_Bounded_String ("pairType");
+   Pair.Content_Model := All_Model;
+   Pair.Child_Count := 2;
+
+   Pair.Children (1).Element_Name := To_Bounded_String ("a");
+   Pair.Children (1).Min_Occurs := 1;  -- required
+   Pair.Children (1).Max_Occurs := 1;
+
+   Pair.Children (2).Element_Name := To_Bounded_String ("b");
+   Pair.Children (2).Min_Occurs := 0;  -- optional
+   Pair.Children (2).Max_Occurs := 1;
+
+   Add_Complex_Type (Schema, Pair, Success);
+end;
+```
+
+#### Simple Content Binding
+
+```ada
+-- Bind a complex type to a simple type for text-only content
+declare
+   Port_Type : Simple_Type_Definition;
+   Wrap      : Complex_Type_Definition;
+begin
+   Port_Type.Name := To_Bounded_String ("portType");
+   Port_Type.Base_Type := Integer_Type;
+   Port_Type.Min_Value := 1;
+   Port_Type.Max_Value := 65535;
+   Add_Simple_Type (Schema, Port_Type, Success);
+
+   Wrap.Name := To_Bounded_String ("portWrapperType");
+   Wrap.Content_Model := Simple_Model;
+   Wrap.Simple_Content_Type_Name := To_Bounded_String ("portType");
+   Add_Complex_Type (Schema, Wrap, Success);
+end;
+```
+
 Note on ordering: Sequences are validated strictly left-to-right. The declared order must be respected; extra element siblings after the last expected item are rejected. Text/whitespace nodes between elements are ignored for ordering.
 
 ### Step 3: Validate Documents

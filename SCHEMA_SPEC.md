@@ -387,3 +387,38 @@ The following features are intentionally deferred:
 - Whitespace normalization
 
 These can be added incrementally while maintaining backward compatibility.
+#### All (unordered)
+
+Children may appear in any order; each child has its own cardinality (default 0..1):
+
+```xml
+<all>
+  <element>
+    <name>a</name>
+    <type>string</type>
+    <minOccurs>1</minOccurs>
+  </element>
+  <element>
+    <name>b</name>
+    <type>string</type>
+  </element>
+  <!-- etc. -->
+  <!-- Each child is validated independently; duplicates beyond maxOccurs are rejected. -->
+  <!-- Unexpected elements are rejected. -->
+  <!-- Text/whitespace nodes between elements are ignored. -->
+  <!-- Order is not enforced. -->
+```
+
+#### Simple Content
+
+Bind a complex type to a simple type for text-only content:
+
+```xml
+<simpleContent>
+  <type>portType</type>
+</simpleContent>
+```
+
+Validation rules:
+- Reject any child elements under simple content
+- Validate text against the referenced simple type
