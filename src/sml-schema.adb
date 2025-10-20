@@ -99,8 +99,12 @@ is
             Base_Type   => String_Type,
             Min_Value   => Integer'First,
             Max_Value   => Integer'Last,
+            Dec_Min     => Float'First,
+            Dec_Max     => Float'Last,
             Min_Length  => 0,
             Max_Length  => Max_String_Length,
+            Prefix      => Empty_String,
+            Suffix      => Empty_String,
             Enum_Values => [others => Empty_String],
             Enum_Count  => 0);
       end loop;
@@ -741,6 +745,49 @@ is
                              Type_Def.Enum_Count);
                      end if;
 
+                     --  Optional prefix/suffix constraints
+                     if Type_Def.Prefix.Length > 0 then
+                        declare
+                           P : constant String := To_String (Type_Def.Prefix);
+                        begin
+                           if Content'Length < P'Length or else
+                             (P'Length > 0 and then
+                              Content (Content'First .. Content'First + P'Length - 1) /= P)
+                           then
+                              return
+                                (Status        => Invalid,
+                                 Error_Message =>
+                                   To_Bounded_String
+                                     ("String must start with: " & P),
+                                 Error_Path    => Empty_String,
+                                 Line          => 0,
+                                 Column        => 0);
+                           end if;
+                        end;
+                     end if;
+
+                     if Type_Def.Suffix.Length > 0 then
+                        declare
+                           S : constant String := To_String (Type_Def.Suffix);
+                           L : constant Natural := S'Length;
+                           CL: constant Natural := Content'Length;
+                        begin
+                           if CL < L or else
+                             (L > 0 and then
+                              Content (Content'Last - L + 1 .. Content'Last) /= S)
+                           then
+                              return
+                                (Status        => Invalid,
+                                 Error_Message =>
+                                   To_Bounded_String
+                                     ("String must end with: " & S),
+                                 Error_Path    => Empty_String,
+                                 Line          => 0,
+                                 Column        => 0);
+                           end if;
+                        end;
+                     end if;
+
                      return Valid_Result;
 
                   when Integer_Type =>
@@ -752,7 +799,51 @@ is
                      return Validate_Boolean_Content (Content);
 
                   when Decimal_Type =>
-                     return Validate_Decimal_Content (Content);
+                     declare
+                        Res : Validation_Result :=
+                          Validate_Decimal_Content (Content);
+                        V   : Float;
+                     begin
+                        if Res.Status = Invalid then
+                           return Res;
+                        end if;
+                        --  Parse again to check range (safe under try/catch)
+                        begin
+                           V := Float'Value (Content);
+                        exception
+                           when Constraint_Error =>
+                              return
+                                (Status        => Invalid,
+                                 Error_Message =>
+                                   To_Bounded_String
+                                     ("Invalid decimal value: " & Content),
+                                 Error_Path    => Empty_String,
+                                 Line          => 0,
+                                 Column        => 0);
+                        end;
+                        if V < Type_Def.Dec_Min then
+                           return
+                             (Status        => Invalid,
+                              Error_Message =>
+                                To_Bounded_String
+                                  ("Decimal too small: minimum "
+                                   & Float'Image (Type_Def.Dec_Min)),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
+                        elsif V > Type_Def.Dec_Max then
+                           return
+                             (Status        => Invalid,
+                              Error_Message =>
+                                To_Bounded_String
+                                  ("Decimal too large: maximum "
+                                   & Float'Image (Type_Def.Dec_Max)),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
+                        end if;
+                        return Valid_Result;
+                     end;
                end case;
             end;
          end if;

@@ -122,9 +122,14 @@ is
       --  Integer restrictions
       Min_Value   : Integer := Integer'First;
       Max_Value   : Integer := Integer'Last;
+      --  Decimal restrictions
+      Dec_Min     : Float := Float'First;
+      Dec_Max     : Float := Float'Last;
       --  String restrictions
       Min_Length  : Natural := 0;
       Max_Length  : Natural := Max_String_Length;
+      Prefix      : Bounded_String := Empty_String;
+      Suffix      : Bounded_String := Empty_String;
       --  Enumeration values
       Enum_Values : Enum_Value_Array := [others => Empty_String];
       Enum_Count  : Natural := 0;
@@ -312,8 +317,12 @@ private
             Base_Type   => String_Type,
             Min_Value   => Integer'First,
             Max_Value   => Integer'Last,
+            Dec_Min     => Float'First,
+            Dec_Max     => Float'Last,
             Min_Length  => 0,
             Max_Length  => Max_String_Length,
+            Prefix      => Empty_String,
+            Suffix      => Empty_String,
             Enum_Values => [others => Empty_String],
             Enum_Count  => 0)];
       Simple_Type_Count : Natural := 0;

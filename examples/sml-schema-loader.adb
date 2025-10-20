@@ -141,6 +141,36 @@ is
       end;
    end Get_Integer_Value;
 
+   --  Float parsing (SPARK_Mode Off due to Float'Value)
+   function Parse_Float (Text : String; Default : Float) return Float
+     with SPARK_Mode => Off
+   is
+   begin
+      if Text'Length = 0 then
+         return Default;
+      end if;
+      begin
+         return Float'Value (Text);
+      exception
+         when Constraint_Error =>
+            return Default;
+      end;
+   end Parse_Float;
+
+   function Get_Float_Value
+     (Doc           : DOM.Document;
+      Parent        : DOM.Node_Id;
+      Child_Name    : String;
+      Default_Value : Float) return Float
+   is
+      Node : constant DOM.Node_Id := Find_Child_Element (Doc, Parent, Child_Name);
+   begin
+      if Node = DOM.Null_Node then
+         return Default_Value;
+      end if;
+      return Parse_Float (Get_Element_Text (Doc, Node), Default_Value);
+   end Get_Float_Value;
+
    function Get_Natural_Value
      (Doc           : DOM.Document;
       Parent        : DOM.Node_Id;
@@ -266,12 +296,45 @@ is
                   Parse_Enumeration_Values (Doc, Enum_Node, Type_Def);
                end if;
             end;
+            --  Optional length and prefix/suffix facets
+            declare
+               MinLen_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "minLength");
+               MaxLen_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "maxLength");
+               Prefix_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "prefix");
+               Suffix_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "suffix");
+            begin
+               if MinLen_Node /= DOM.Null_Node then
+                  Type_Def.Min_Length :=
+                    Get_Natural_Value (Doc, Restriction_Node, "minLength", 0);
+               end if;
+               if MaxLen_Node /= DOM.Null_Node then
+                  Type_Def.Max_Length :=
+                    Get_Natural_Value (Doc, Restriction_Node, "maxLength", Max_String_Length);
+               end if;
+               if Prefix_Node /= DOM.Null_Node then
+                  Type_Def.Prefix :=
+                    To_Bounded_String (Get_Element_Text (Doc, Prefix_Node));
+               end if;
+               if Suffix_Node /= DOM.Null_Node then
+                  Type_Def.Suffix :=
+                    To_Bounded_String (Get_Element_Text (Doc, Suffix_Node));
+               end if;
+            end;
 
          elsif Base_Text = "boolean" then
             Type_Def.Base_Type := Boolean_Type;
 
          elsif Base_Text = "decimal" then
             Type_Def.Base_Type := Decimal_Type;
+            --  Optional min/max constraints
+            Type_Def.Dec_Min :=
+              Get_Float_Value (Doc, Restriction_Node, "minValue", Float'First);
+            Type_Def.Dec_Max :=
+              Get_Float_Value (Doc, Restriction_Node, "maxValue", Float'Last);
 
          else
             return (Success   => False,

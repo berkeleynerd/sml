@@ -173,8 +173,12 @@ procedure Test_Schema is
              Base_Type   => Integer_Type,
              Min_Value   => 1,
              Max_Value   => 65535,
+             Dec_Min     => Float'First,
+             Dec_Max     => Float'Last,
              Min_Length  => 0,
              Max_Length  => Max_String_Length,
+             Prefix      => Empty_String,
+             Suffix      => Empty_String,
              Enum_Values => [others => Empty_String],
              Enum_Count  => 0);
       begin
@@ -192,8 +196,12 @@ procedure Test_Schema is
              Base_Type   => String_Type,
              Min_Value   => Integer'First,
              Max_Value   => Integer'Last,
+             Dec_Min     => Float'First,
+             Dec_Max     => Float'Last,
              Min_Length  => 0,
              Max_Length  => Max_String_Length,
+             Prefix      => Empty_String,
+             Suffix      => Empty_String,
              Enum_Values => [others => Empty_String],
              Enum_Count  => 0);
       begin
@@ -476,6 +484,79 @@ procedure Test_Schema is
             Put_Line ("FAILED: Boolean validation error");
             return;
          end if;
+      end;
+
+      --  Decimal validation with range
+      declare
+         Dec_Type : Simple_Type_Definition;
+      begin
+         Dec_Type.Name := To_Bounded_String ("ratioType");
+         Dec_Type.Base_Type := Decimal_Type;
+         Dec_Type.Dec_Min := 0.0;
+         Dec_Type.Dec_Max := 1.0;
+         Add_Simple_Type (Schema, Dec_Type, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add ratioType");
+            return;
+         end if;
+
+         declare
+            Ok   : constant Validation_Result :=
+              Validate_Content (Schema, Dec_Type.Name, "0.75");
+            Low  : constant Validation_Result :=
+              Validate_Content (Schema, Dec_Type.Name, "-0.1");
+            High : constant Validation_Result :=
+              Validate_Content (Schema, Dec_Type.Name, "1.1");
+            All_Good : constant Boolean :=
+              Ok.Status = Valid
+              and then Low.Status = Invalid
+              and then High.Status = Invalid;
+         begin
+            if All_Good then
+               Put ("✓ Decimal range enforced, ");
+            else
+               Put_Line ("FAILED: Decimal range validation error");
+               return;
+            end if;
+         end;
+      end;
+
+      --  String prefix/suffix validation
+      declare
+         Path_Type : Simple_Type_Definition;
+      begin
+         Path_Type.Name := To_Bounded_String ("logPathType");
+         Path_Type.Base_Type := String_Type;
+         Path_Type.Prefix := To_Bounded_String ("file://");
+         Path_Type.Suffix := To_Bounded_String (".log");
+         Add_Simple_Type (Schema, Path_Type, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add logPathType");
+            return;
+         end if;
+
+         declare
+            Ok   : constant Validation_Result :=
+              Validate_Content
+                (Schema, Path_Type.Name, "file:///var/log/app.log");
+            Bad1 : constant Validation_Result :=
+              Validate_Content
+                (Schema, Path_Type.Name, "/var/log/app.log");
+            Bad2 : constant Validation_Result :=
+              Validate_Content
+                (Schema, Path_Type.Name, "file:///var/log/app.txt");
+            All_Good : constant Boolean :=
+              Ok.Status = Valid
+              and then Bad1.Status = Invalid
+              and then Bad2.Status = Invalid;
+         begin
+            if All_Good then
+               Put_Line ("✓ String prefix/suffix enforced");
+            else
+               Put_Line ("FAILED: String prefix/suffix validation error");
+               return;
+            end if;
+         end;
       end;
 
       Put_Line ("PASSED");
