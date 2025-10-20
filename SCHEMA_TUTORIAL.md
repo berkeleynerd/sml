@@ -126,6 +126,48 @@ begin
 end;
 ```
 
+#### Group-Level Occurs (Sequence)
+
+```ada
+-- Repeat an ordered block twice
+declare
+   Block : Complex_Type_Definition;
+begin
+   Block.Name := To_Bounded_String ("pairSeq");
+   Block.Content_Model := Sequence_Model;
+   Block.Group_Min_Occurs := 2;
+   Block.Group_Max_Occurs := 2;
+   Block.Child_Count := 2;
+   Block.Children (1).Element_Name := To_Bounded_String ("a");
+   Block.Children (1).Min_Occurs := 1;
+   Block.Children (2).Element_Name := To_Bounded_String ("b");
+   Block.Children (2).Min_Occurs := 1;
+   Add_Complex_Type (Schema, Block, Success);
+end;
+```
+
+#### Group-Level Occurs (Choice)
+
+```ada
+-- Allow 2..3 picks from {a|b}
+declare
+   Ch : Complex_Type_Definition;
+begin
+   Ch.Name := To_Bounded_String ("choiceRep");
+   Ch.Content_Model := Choice_Model;
+   Ch.Group_Min_Occurs := 2;
+   Ch.Group_Max_Occurs := 3;
+   Ch.Child_Count := 2;
+   Ch.Children (1).Element_Name := To_Bounded_String ("a");
+   Ch.Children (1).Min_Occurs := 1;
+   Ch.Children (1).Max_Occurs := 1;
+   Ch.Children (2).Element_Name := To_Bounded_String ("b");
+   Ch.Children (2).Min_Occurs := 1;
+   Ch.Children (2).Max_Occurs := 1;
+   Add_Complex_Type (Schema, Ch, Success);
+end;
+```
+
 #### Simple Content Binding
 
 ```ada

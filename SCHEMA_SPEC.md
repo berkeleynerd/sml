@@ -447,8 +447,29 @@ Bind a complex type to a simple type for text-only content:
 Validation rules:
 - Reject any child elements under simple content
 - Validate text against the referenced simple type
-#### Group-Level Occurrence (Unsupported)
+#### Group-Level Occurrence
 
-XSD allows `minOccurs`/`maxOccurs` on groups (`sequence`, `choice`, `all`) to repeat the entire group as a unit. SML has no attributes and repeating groups carry subtle semantics (especially for `choice` and the restricted `all`). This library does not support group-level occurrence. Recommended patterns:
-- Wrap the group in an explicit container element and repeat the container.
-- For `choice`, model repeated selections as a list of container items, each holding exactly one choice member.
+SML supports `minOccurs`/`maxOccurs` on groups using child elements under the model element:
+
+```xml
+<sequence>
+  <minOccurs>2</minOccurs>
+  <maxOccurs>2</maxOccurs>
+  <!-- children ... -->
+</sequence>
+
+<choice>
+  <minOccurs>2</minOccurs>
+  <maxOccurs>3</maxOccurs>
+  <!-- options ... -->
+</choice>
+```
+
+Semantics:
+- `sequence`: repeats the entire ordered block `minOccurs..maxOccurs` times.
+- `choice`: counts “picks” — each option element encountered counts as one pick; total picks must be within `minOccurs..maxOccurs`.
+- `all`: follows XSD constraints — `minOccurs` must be 0 or 1 and `maxOccurs` is 1.
+
+Encoding rules:
+- Use child elements `<minOccurs>` and `<maxOccurs>`; use `unbounded` for max when allowed (not for `all`).
+- Per-child `minOccurs`/`maxOccurs` inside groups continue to apply in addition to group-level occurrence.
