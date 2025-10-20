@@ -4,6 +4,9 @@
 --  SPARK Ada Implementation with Formal Verification Support
 ------------------------------------------------------------------------------
 
+with SML.DOM.Parser;
+with SML.IO;
+
 package body SML.Schema.Loader
   with SPARK_Mode => On
 is
@@ -599,6 +602,52 @@ is
                         Error_Info.Message := Parse_Result.Error_Msg;
                         return;
                      end if;
+                  end;
+
+               elsif Child_Name = "include" then
+                  --  Include external schema file: <include><path>...</path></include>
+                  declare
+                     Path_Node : constant DOM.Node_Id :=
+                       Find_Child_Element (Doc, Child, "path");
+                  begin
+                     if Path_Node = DOM.Null_Node then
+                        Had_Error := True;
+                        Error_Info.Message :=
+                          To_Bounded_String ("include missing <path>");
+                        return;
+                     end if;
+                     declare
+                        Path_Str   : constant String :=
+                          Get_Element_Text (Doc, Path_Node);
+                        Inc_Result : constant SML.DOM.Parser.Parse_Result :=
+                          SML.IO.Parse_File (Path_Str);
+                     begin
+                        if not Inc_Result.Success then
+                           Had_Error := True;
+                           Error_Info.Message :=
+                             To_Bounded_String ("Failed to parse include: "
+                                                & Path_Str);
+                           return;
+                        end if;
+                        --  Recurse into included schema
+                        declare
+                           Inc_Root   : constant DOM.Node_Id :=
+                             DOM.Root (Inc_Result.Doc);
+                           Inc_Error  : Schema_Load_Error_Info;
+                           Inc_Failed : Boolean;
+                        begin
+                           Build_Schema_From_DOM (Inc_Result.Doc,
+                                                  Inc_Root,
+                                                  Schema,
+                                                  Inc_Failed,
+                                                  Inc_Error);
+                           if Inc_Failed then
+                              Had_Error := True;
+                              Error_Info := Inc_Error;
+                              return;
+                           end if;
+                        end;
+                     end;
                   end;
                end if;
             end;

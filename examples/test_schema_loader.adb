@@ -436,6 +436,75 @@ procedure Test_Schema_Loader is
       Put_Line ("✓ PASSED (file-based validation works)");
    end Test_File_Based_Validation;
 
+   procedure Test_Schema_Include is
+   begin
+      Put ("Test: Schema Include... ");
+
+      --  Load top-level schema that includes another schema file
+      declare
+         Schema_Parse : constant SML.DOM.Parser.Parse_Result :=
+           SML.IO.Parse_File ("test/fixtures/schema_include_main.sml");
+      begin
+         if not Schema_Parse.Success then
+            Put_Line ("FAILED: Could not parse include main schema");
+            return;
+         end if;
+
+         declare
+            Schema_Load : constant Schema_Load_Result :=
+              Load_Schema (Schema_Parse.Doc);
+         begin
+            if not Schema_Load.Success then
+               Put_Line ("FAILED: Could not load included schema: " &
+                        To_String (Schema_Load.Error_Message));
+               return;
+            end if;
+
+            --  Validate valid instance using included definitions
+            declare
+               Valid_Parse : constant SML.DOM.Parser.Parse_Result :=
+                 SML.IO.Parse_File ("test/fixtures/config_valid_pair.sml");
+            begin
+               if not Valid_Parse.Success then
+                  Put_Line ("FAILED: Could not parse valid pair instance");
+                  return;
+               end if;
+               declare
+                  R : constant Validation_Result :=
+                    Validate_Document (Schema_Load.Schema, Valid_Parse.Doc);
+               begin
+                  if R.Status /= Valid then
+                     Put_Line ("FAILED: Valid pair instance rejected");
+                     return;
+                  end if;
+               end;
+            end;
+
+            --  Validate invalid duplicate
+            declare
+               Invalid_Parse : constant SML.DOM.Parser.Parse_Result :=
+                 SML.DOM.Parser.Parse ("<root><a/><a/></root>");
+            begin
+               if not Invalid_Parse.Success then
+                  Put_Line ("FAILED: Could not parse invalid duplicate pair");
+                  return;
+               end if;
+               declare
+                  R2 : constant Validation_Result :=
+                    Validate_Document (Schema_Load.Schema, Invalid_Parse.Doc);
+               begin
+                  if R2.Status /= Invalid then
+                     Put_Line ("FAILED: Duplicate pair incorrectly accepted");
+                     return;
+                  end if;
+               end;
+            end;
+         end;
+      end;
+
+      Put_Line ("✓ PASSED (include works)");
+   end Test_Schema_Include;
+
 begin
    Put_Line ("=== SML Schema Loader Tests ===");
    Put_Line ("");
@@ -449,6 +518,7 @@ begin
    Test_Missing_Name_Error;
    Test_Unknown_Base_Type_Error;
    Test_File_Based_Validation;
+   Test_Schema_Include;
 
    Put_Line ("");
    Put_Line ("=== All Tests Completed ===");

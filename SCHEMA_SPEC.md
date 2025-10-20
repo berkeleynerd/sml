@@ -49,6 +49,23 @@ Every schema document starts with a `<schema>` root element:
 </schema>
 ```
 
+### Includes
+
+Schemas can include other schema files for modularity:
+
+```xml
+<schema>
+  <include>
+    <path>path/to/other.schema.sml</path>
+  </include>
+</schema>
+```
+
+Rules:
+- Included schemas are merged into the current document (elements and types).
+- Duplicate definitions are rejected.
+- Cycles and multi-include resolution are not currently detected or supported.
+
 ### Element Definitions
 
 Elements are defined with vocabulary, type, and cardinality constraints:
