@@ -7,6 +7,8 @@ Quick start guide for using SML's formally verified schema validation system.
 SML Schema provides type-safe validation for configuration files and data interchange with:
 - **Formal verification** - 0 high-priority SPARK issues
 - **Type constraints** - integer, boolean, decimal, string with ranges
+  - Strings: length, optional prefix/suffix
+  - Decimals: min/max range
 - **Enumerations** - Restrict values to allowed lists
 - **Structure rules** - Sequence (ordered) and choice (one-of) models
 - **Cardinality** - Required/optional elements with min/max occurrences

@@ -79,6 +79,32 @@ Simple types define content validation for text elements:
 </simpleType>
 ```
 
+Additional facets (implemented):
+- String: `<minLength>`, `<maxLength>`, optional `<prefix>`, `<suffix>`
+- Decimal: `<minValue>`, `<maxValue>`
+
+Examples:
+```xml
+<simpleType>
+  <name>logPathType</name>
+  <restriction>
+    <base>string</base>
+    <prefix>file://</prefix>
+    <suffix>.log</suffix>
+    <minLength>8</minLength>
+  </restriction>
+</simpleType>
+
+<simpleType>
+  <name>ratioType</name>
+  <restriction>
+    <base>decimal</base>
+    <minValue>0.0</minValue>
+    <maxValue>1.0</maxValue>
+  </restriction>
+</simpleType>
+```
+
 Base types:
 - `string` - Any text content
 - `integer` - Signed integer values

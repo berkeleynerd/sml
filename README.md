@@ -160,6 +160,8 @@ SML includes a formally verified schema validation system for type-safe configur
 **SML.Schema** - Validation engine with:
 - **Element vocabulary** - Define allowed element names
 - **Content types** - integer, boolean, decimal, string with ranges/lengths
+  - Strings: length, optional prefix/suffix
+  - Decimals: min/max range
 - **Enumerations** - Restrict values to specific lists (e.g., log levels)
 - **Cardinality** - Min/max occurrence constraints (minOccurs, maxOccurs)
 - **Structure rules** - Sequence (ordered) and choice (one-of) models
