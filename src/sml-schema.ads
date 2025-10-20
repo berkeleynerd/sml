@@ -131,6 +131,7 @@ is
       Max_Length  : Natural := Max_String_Length;
       Prefix      : Bounded_String := Empty_String;
       Suffix      : Bounded_String := Empty_String;
+      Contains    : Bounded_String := Empty_String;
       --  Enumeration values
       Enum_Values : Enum_Value_Array := [others => Empty_String];
       Enum_Count  : Natural := 0;
@@ -333,6 +334,7 @@ private
             Max_Length  => Max_String_Length,
             Prefix      => Empty_String,
             Suffix      => Empty_String,
+            Contains    => Empty_String,
             Enum_Values => [others => Empty_String],
             Enum_Count  => 0)];
       Simple_Type_Count : Natural := 0;

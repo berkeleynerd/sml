@@ -184,6 +184,7 @@ procedure Test_Schema is
              Max_Length  => Max_String_Length,
              Prefix      => Empty_String,
              Suffix      => Empty_String,
+             Contains    => Empty_String,
              Enum_Values => [others => Empty_String],
              Enum_Count  => 0);
       begin
@@ -207,6 +208,7 @@ procedure Test_Schema is
              Max_Length  => Max_String_Length,
              Prefix      => Empty_String,
              Suffix      => Empty_String,
+             Contains    => Empty_String,
              Enum_Values => [others => Empty_String],
              Enum_Count  => 0);
       begin
@@ -559,6 +561,81 @@ procedure Test_Schema is
                Put_Line ("✓ String prefix/suffix enforced");
             else
                Put_Line ("FAILED: String prefix/suffix validation error");
+               return;
+            end if;
+         end;
+      end;
+
+      --  String contains validation
+      declare
+         C_Type : Simple_Type_Definition;
+      begin
+         C_Type.Name := To_Bounded_String ("containsType");
+         C_Type.Base_Type := String_Type;
+         C_Type.Contains := To_Bounded_String ("log");
+         Add_Simple_Type (Schema, C_Type, Success);
+         declare
+            Ok  : constant Validation_Result :=
+              Validate_Content
+                (Schema, C_Type.Name, "file:///var/log/app.txt");
+            Bad : constant Validation_Result :=
+              Validate_Content
+                (Schema, C_Type.Name, "file:///var/tmp/app.txt");
+         begin
+            if Ok.Status = Valid and then Bad.Status = Invalid then
+               Put ("✓ String contains enforced, ");
+            else
+               Put_Line ("FAILED: String contains validation error");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Integer enumeration validation
+      declare
+         I_Type : Simple_Type_Definition;
+      begin
+         I_Type.Name := To_Bounded_String ("intEnum");
+         I_Type.Base_Type := Integer_Type;
+         I_Type.Enum_Count := 2;
+         I_Type.Enum_Values (1) := To_Bounded_String ("21");
+         I_Type.Enum_Values (2) := To_Bounded_String ("65");
+         Add_Simple_Type (Schema, I_Type, Success);
+         declare
+            OkI  : constant Validation_Result :=
+              Validate_Content (Schema, I_Type.Name, "21");
+            BadI : constant Validation_Result :=
+              Validate_Content (Schema, I_Type.Name, "22");
+         begin
+            if OkI.Status = Valid and then BadI.Status = Invalid then
+               Put ("✓ Integer enum enforced, ");
+            else
+               Put_Line ("FAILED: Integer enum validation error");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Decimal enumeration validation
+      declare
+         D_Type : Simple_Type_Definition;
+      begin
+         D_Type.Name := To_Bounded_String ("decEnum");
+         D_Type.Base_Type := Decimal_Type;
+         D_Type.Enum_Count := 2;
+         D_Type.Enum_Values (1) := To_Bounded_String ("0.50");
+         D_Type.Enum_Values (2) := To_Bounded_String ("0.75");
+         Add_Simple_Type (Schema, D_Type, Success);
+         declare
+            OkD  : constant Validation_Result :=
+              Validate_Content (Schema, D_Type.Name, "0.50");
+            BadD : constant Validation_Result :=
+              Validate_Content (Schema, D_Type.Name, "0.60");
+         begin
+            if OkD.Status = Valid and then BadD.Status = Invalid then
+               Put_Line ("✓ Decimal enum enforced");
+            else
+               Put_Line ("FAILED: Decimal enum validation error");
                return;
             end if;
          end;

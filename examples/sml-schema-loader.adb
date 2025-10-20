@@ -299,7 +299,7 @@ is
                   Parse_Enumeration_Values (Doc, Enum_Node, Type_Def);
                end if;
             end;
-            --  Optional length and prefix/suffix facets
+            --  Optional length and prefix/suffix/contains facets
             declare
                MinLen_Node : constant DOM.Node_Id :=
                  Find_Child_Element (Doc, Restriction_Node, "minLength");
@@ -309,6 +309,8 @@ is
                  Find_Child_Element (Doc, Restriction_Node, "prefix");
                Suffix_Node : constant DOM.Node_Id :=
                  Find_Child_Element (Doc, Restriction_Node, "suffix");
+               Contains_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "contains");
             begin
                if MinLen_Node /= DOM.Null_Node then
                   Type_Def.Min_Length :=
@@ -325,6 +327,10 @@ is
                if Suffix_Node /= DOM.Null_Node then
                   Type_Def.Suffix :=
                     To_Bounded_String (Get_Element_Text (Doc, Suffix_Node));
+               end if;
+               if Contains_Node /= DOM.Null_Node then
+                  Type_Def.Contains :=
+                    To_Bounded_String (Get_Element_Text (Doc, Contains_Node));
                end if;
             end;
 

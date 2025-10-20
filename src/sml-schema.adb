@@ -105,6 +105,7 @@ is
             Max_Length  => Max_String_Length,
             Prefix      => Empty_String,
             Suffix      => Empty_String,
+            Contains    => Empty_String,
             Enum_Values => [others => Empty_String],
             Enum_Count  => 0);
       end loop;
@@ -851,7 +852,7 @@ is
                              Type_Def.Enum_Count);
                      end if;
 
-                     --  Optional prefix/suffix constraints
+                     --  Optional prefix/suffix/contains constraints
                      if Type_Def.Prefix.Length > 0 then
                         declare
                            P : constant String := To_String (Type_Def.Prefix);
@@ -894,12 +895,92 @@ is
                         end;
                      end if;
 
+                     if Type_Def.Contains.Length > 0 then
+                        declare
+                           Sub : constant String := To_String (Type_Def.Contains);
+                           CL  : constant Natural := Content'Length;
+                           SL  : constant Natural := Sub'Length;
+                           Found : Boolean := False;
+                        begin
+                           if SL = 0 then
+                              Found := True;
+                           elsif SL <= CL then
+                              declare
+                                 I : Natural := 1;
+                              begin
+                                 while I <= CL - SL + 1 loop
+                                    if Content (I .. I + SL - 1) = Sub then
+                                       Found := True;
+                                       exit;
+                                    end if;
+                                    I := I + 1;
+                                 end loop;
+                              end;
+                           end if;
+                           if not Found then
+                              return
+                                (Status        => Invalid,
+                                 Error_Message =>
+                                   To_Bounded_String ("String must contain: " & Sub),
+                                 Error_Path    => Empty_String,
+                                 Line          => 0,
+                                 Column        => 0);
+                           end if;
+                        end;
+                     end if;
+
                      return Valid_Result;
 
                   when Integer_Type =>
-                     return
-                       Validate_Integer_Content
-                         (Content, Type_Def.Min_Value, Type_Def.Max_Value);
+                     declare
+                        IRes  : constant Validation_Result :=
+                          Validate_Integer_Content (Content, Type_Def.Min_Value, Type_Def.Max_Value);
+                        Value : Integer;
+                     begin
+                        if IRes.Status = Invalid then
+                           return IRes;
+                        end if;
+                        --  If enumeration present, enforce numeric membership
+                        if Type_Def.Enum_Count > 0 then
+                           begin
+                              Value := Integer'Value (Content);
+                           exception
+                              when Constraint_Error =>
+                                 return
+                                   (Status        => Invalid,
+                                    Error_Message => To_Bounded_String ("Invalid integer value: " & Content),
+                                    Error_Path    => Empty_String,
+                                    Line          => 0,
+                                    Column        => 0);
+                           end;
+                           for E in 1 .. Type_Def.Enum_Count loop
+                              declare
+                                 EV_Str : constant String := To_String (Type_Def.Enum_Values (E));
+                                 EV     : Integer;
+                                 Match  : Boolean := False;
+                              begin
+                                 begin
+                                    EV := Integer'Value (EV_Str);
+                                    if EV = Value then
+                                       Match := True;
+                                    end if;
+                                 exception
+                                    when Constraint_Error => null;
+                                 end;
+                                 if Match then
+                                    return Valid_Result;
+                                 end if;
+                              end;
+                           end loop;
+                           return
+                             (Status        => Invalid,
+                              Error_Message => To_Bounded_String ("Value not in enumeration: " & Content),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
+                        end if;
+                        return Valid_Result;
+                     end;
 
                   when Boolean_Type =>
                      return Validate_Boolean_Content (Content);
@@ -944,6 +1025,34 @@ is
                                 To_Bounded_String
                                   ("Decimal too large: maximum "
                                    & Float'Image (Type_Def.Dec_Max)),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
+                        end if;
+                        --  If enumeration present, enforce numeric membership
+                        if Type_Def.Enum_Count > 0 then
+                           for E in 1 .. Type_Def.Enum_Count loop
+                              declare
+                                 EV_Str : constant String := To_String (Type_Def.Enum_Values (E));
+                                 EV     : Float;
+                                 Match  : Boolean := False;
+                              begin
+                                 begin
+                                    EV := Float'Value (EV_Str);
+                                    if EV = V then
+                                       Match := True;
+                                    end if;
+                                 exception
+                                    when Constraint_Error => null;
+                                 end;
+                                 if Match then
+                                    return Valid_Result;
+                                 end if;
+                              end;
+                           end loop;
+                           return
+                             (Status        => Invalid,
+                              Error_Message => To_Bounded_String ("Value not in enumeration: " & Content),
                               Error_Path    => Empty_String,
                               Line          => 0,
                               Column        => 0);
