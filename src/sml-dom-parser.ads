@@ -5,6 +5,8 @@
 --  Child Package with Privileged Access to DOM Internals
 ------------------------------------------------------------------------------
 
+with SML.Schema;
+
 package SML.DOM.Parser
   with SPARK_Mode => On
 is
@@ -100,6 +102,15 @@ is
        (if Parse_With_Options'Result.Success
         then Is_Well_Formed (Parse_With_Options'Result.Doc)),
      Global => null;
+
+   ---------------------------------------------------------------------------
+   --  Convenience API
+   ---------------------------------------------------------------------------
+
+   --  Parse and then validate against a schema
+   function Parse_With_Schema
+     (Input : String; Schema : SML.Schema.Schema_Document) return Parse_Result
+   with Pre => Input'Length > 0;
 
    ---------------------------------------------------------------------------
    --  Ghost Functions for Formal Verification

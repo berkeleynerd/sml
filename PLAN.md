@@ -150,6 +150,23 @@ The following items are **optional enhancements** - the library is production-re
 - Key/keyref constraints (referential integrity)
 - Import/include for schema composition
 
+### Optional Enhancement 8: Additional XSD-Compatible Facets
+
+**Feasible facets to add (within SML constraints):**
+- Decimal digits: `<totalDigits>`, `<fractionDigits>` (validate textual length/dot position)
+- Numeric exclusives: `<minExclusive>`, `<maxExclusive>` (in addition to inclusive bounds)
+- String exact length: `<length>` (exact match)
+- Whitespace handling: `<whitespace>` (documented as `preserve`/`collapse` or a simpler `<trim>` boolean)
+
+**Work items:**
+1. Extend `Simple_Type_Definition` with required fields
+2. Loader: parse new facets under `<restriction>`
+3. Validator: enforce in `Validate_Content`
+4. Tests: unit + loader; update examples
+5. Docs: SCHEMA_SPEC + tutorial + README
+
+**Priority:** Medium — common schema needs with modest implementation cost
+
 **Priority:** Low - Current feature set handles most use cases
 
 **Effort estimate:** 20-40 hours depending on complexity
