@@ -446,16 +446,90 @@ is
       Content_Node := Find_Child_Element (Doc, Type_Node, "sequence");
       if Content_Node /= DOM.Null_Node then
          Type_Def.Content_Model := Sequence_Model;
+         -- Group-level occurs (optional)
+         declare
+            GMin_Node : constant DOM.Node_Id :=
+              Find_Child_Element (Doc, Content_Node, "minOccurs");
+            GMax_Node : constant DOM.Node_Id :=
+              Find_Child_Element (Doc, Content_Node, "maxOccurs");
+         begin
+            if GMin_Node /= DOM.Null_Node then
+               Type_Def.Group_Min_Occurs :=
+                 Get_Natural_Value (Doc, Content_Node, "minOccurs", 1);
+            end if;
+            if GMax_Node /= DOM.Null_Node then
+               declare
+                  T : constant String := Get_Element_Text (Doc, GMax_Node);
+               begin
+                  if T = "unbounded" then
+                     Type_Def.Group_Max_Occurs := Natural'Last;
+                  else
+                     Type_Def.Group_Max_Occurs :=
+                       Get_Natural_Value (Doc, Content_Node, "maxOccurs", 1);
+                  end if;
+               end;
+            end if;
+         end;
          Parse_Element_References (Doc, Content_Node, Type_Def);
          else
             Content_Node := Find_Child_Element (Doc, Type_Node, "choice");
-            if Content_Node /= DOM.Null_Node then
-               Type_Def.Content_Model := Choice_Model;
-               Parse_Element_References (Doc, Content_Node, Type_Def);
+         if Content_Node /= DOM.Null_Node then
+            Type_Def.Content_Model := Choice_Model;
+            -- Group-level occurs (optional)
+            declare
+               GMin_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Content_Node, "minOccurs");
+               GMax_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Content_Node, "maxOccurs");
+            begin
+               if GMin_Node /= DOM.Null_Node then
+                  Type_Def.Group_Min_Occurs :=
+                    Get_Natural_Value (Doc, Content_Node, "minOccurs", 1);
+               end if;
+               if GMax_Node /= DOM.Null_Node then
+                  declare
+                     T : constant String := Get_Element_Text (Doc, GMax_Node);
+                  begin
+                     if T = "unbounded" then
+                        Type_Def.Group_Max_Occurs := Natural'Last;
+                     else
+                        Type_Def.Group_Max_Occurs :=
+                          Get_Natural_Value (Doc, Content_Node, "maxOccurs", 1);
+                     end if;
+                  end;
+               end if;
+            end;
+            Parse_Element_References (Doc, Content_Node, Type_Def);
             else
                Content_Node := Find_Child_Element (Doc, Type_Node, "all");
                if Content_Node /= DOM.Null_Node then
                   Type_Def.Content_Model := All_Model;
+                  -- Enforce XSD restriction: min ∈ {0,1}, max = 1
+                  declare
+                     GMin_Node : constant DOM.Node_Id :=
+                       Find_Child_Element (Doc, Content_Node, "minOccurs");
+                     GMax_Node : constant DOM.Node_Id :=
+                       Find_Child_Element (Doc, Content_Node, "maxOccurs");
+                  begin
+                     if GMin_Node /= DOM.Null_Node then
+                        Type_Def.Group_Min_Occurs :=
+                          Get_Natural_Value (Doc, Content_Node, "minOccurs", 1);
+                     end if;
+                     if GMax_Node /= DOM.Null_Node then
+                        -- Regardless of value, all must be 1
+                        Type_Def.Group_Max_Occurs := 1;
+                     end if;
+                     if not (Type_Def.Group_Min_Occurs = 0 or else Type_Def.Group_Min_Occurs = 1) then
+                        return (Success   => False,
+                                Error_Msg => To_Bounded_String
+                                  ("<all> group minOccurs must be 0 or 1"));
+                     end if;
+                     if Type_Def.Group_Max_Occurs /= 1 then
+                        return (Success   => False,
+                                Error_Msg => To_Bounded_String
+                                  ("<all> group maxOccurs must be 1"));
+                     end if;
+                  end;
                   Parse_Element_References (Doc, Content_Node, Type_Def);
                else
                   Content_Node := Find_Child_Element (Doc, Type_Node, "simpleContent");

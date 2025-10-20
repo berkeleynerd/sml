@@ -23,6 +23,8 @@ procedure Test_Schema is
    procedure Test_Typed_Children_Validation;
    procedure Test_Simple_Content_Model;
    procedure Test_All_Model_Validation;
+   procedure Test_Sequence_Group_Repeats;
+   procedure Test_Choice_Group_Repeats;
    procedure Test_Automatic_Content_Validation;
 
    procedure Test_Basic_Schema is
@@ -1294,6 +1296,251 @@ procedure Test_Schema is
       Put_Line ("PASSED");
    end Test_All_Model_Validation;
 
+   procedure Test_Sequence_Group_Repeats is
+      Schema  : Schema_Document;
+      Success : Boolean;
+   begin
+      Put ("Test: Sequence Group Repeats... ");
+
+      Initialize (Schema);
+
+      --  Define sequence group a,b with group minOccurs=2
+      declare
+         Seq : Complex_Type_Definition;
+      begin
+         Seq.Name := To_Bounded_String ("pairSeq");
+         Seq.Content_Model := Sequence_Model;
+         Seq.Group_Min_Occurs := 2;
+         Seq.Group_Max_Occurs := 2;
+         Seq.Child_Count := 2;
+         Seq.Children (1) :=
+           (Element_Name => To_Bounded_String ("a"),
+            Type_Name    => Empty_String,
+            Min_Occurs   => 1,
+            Max_Occurs   => 1);
+         Seq.Children (2) :=
+           (Element_Name => To_Bounded_String ("b"),
+            Type_Name    => Empty_String,
+            Min_Occurs   => 1,
+            Max_Occurs   => 1);
+         Add_Complex_Type (Schema, Seq, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add pairSeq");
+            return;
+         end if;
+      end;
+
+      --  Root element using pairSeq
+      declare
+         Root : constant Element_Definition :=
+           (Name       => To_Bounded_String ("rootSeq"),
+            Type_Name  => To_Bounded_String ("pairSeq"),
+            Min_Occurs => 1,
+            Max_Occurs => 1);
+      begin
+         Add_Element (Schema, Root, Success);
+      end;
+
+      --  Valid: two repetitions
+      declare
+         Doc_OK : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<rootSeq><a/><b/><a/><b/></rootSeq>");
+      begin
+         if not Doc_OK.Success then
+            Put_Line ("FAILED: Could not parse sequence repetitions");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc_OK.Doc);
+         begin
+            if R.Status = Valid then
+               Put ("✓ valid accepted, ");
+            else
+               Put_Line ("FAILED: valid seq repeats rejected");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Invalid: too few repetitions
+      declare
+         Doc_Few : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<rootSeq><a/><b/></rootSeq>");
+      begin
+         if not Doc_Few.Success then
+            Put_Line ("FAILED: Could not parse too few seq repeats");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc_Few.Doc);
+         begin
+            if R.Status = Invalid then
+               Put ("✓ too few rejected, ");
+            else
+               Put_Line ("FAILED: too few seq repeats accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Invalid: incomplete second repetition
+      declare
+         Doc_Incomplete : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<rootSeq><a/><b/><a/></rootSeq>");
+      begin
+         if not Doc_Incomplete.Success then
+            Put_Line ("FAILED: Could not parse incomplete seq repeats");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc_Incomplete.Doc);
+         begin
+            if R.Status = Invalid then
+               Put_Line ("✓ incomplete repetition rejected");
+            else
+               Put_Line ("FAILED: incomplete repetition accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      Put_Line ("PASSED");
+   end Test_Sequence_Group_Repeats;
+
+   procedure Test_Choice_Group_Repeats is
+      Schema  : Schema_Document;
+      Success : Boolean;
+   begin
+      Put ("Test: Choice Group Repeats... ");
+
+      Initialize (Schema);
+
+      --  Define choice (a|b) with group minOccurs=2, maxOccurs=3
+      declare
+         Ch : Complex_Type_Definition;
+      begin
+         Ch.Name := To_Bounded_String ("choiceRep");
+         Ch.Content_Model := Choice_Model;
+         Ch.Group_Min_Occurs := 2;
+         Ch.Group_Max_Occurs := 3;
+         Ch.Child_Count := 2;
+         Ch.Children (1) :=
+           (Element_Name => To_Bounded_String ("a"),
+            Type_Name    => Empty_String,
+            Min_Occurs   => 1,
+            Max_Occurs   => 1);
+         Ch.Children (2) :=
+           (Element_Name => To_Bounded_String ("b"),
+            Type_Name    => Empty_String,
+            Min_Occurs   => 1,
+            Max_Occurs   => 1);
+         Add_Complex_Type (Schema, Ch, Success);
+      end;
+
+      declare
+         Root : constant Element_Definition :=
+           (Name       => To_Bounded_String ("rootChoice"),
+            Type_Name  => To_Bounded_String ("choiceRep"),
+            Min_Occurs => 1,
+            Max_Occurs => 1);
+      begin
+         Add_Element (Schema, Root, Success);
+      end;
+
+      --  Valid: 2 picks
+      declare
+         Doc_OK2 : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<rootChoice><a/><b/></rootChoice>");
+      begin
+         if not Doc_OK2.Success then
+            Put_Line ("FAILED: Could not parse choice 2 picks");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc_OK2.Doc);
+         begin
+            if R.Status = Valid then
+               Put ("✓ 2 picks accepted, ");
+            else
+               Put_Line ("FAILED: 2 picks rejected");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Valid: 3 picks
+      declare
+         Doc_OK3 : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<rootChoice><a/><b/><a/></rootChoice>");
+      begin
+         if not Doc_OK3.Success then
+            Put_Line ("FAILED: Could not parse choice 3 picks");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc_OK3.Doc);
+         begin
+            if R.Status = Valid then
+               Put ("✓ 3 picks accepted, ");
+            else
+               Put_Line ("FAILED: 3 picks rejected");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Invalid: 1 pick
+      declare
+         Doc_Too_Few : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<rootChoice><a/></rootChoice>");
+      begin
+         if not Doc_Too_Few.Success then
+            Put_Line ("FAILED: Could not parse choice 1 pick");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc_Too_Few.Doc);
+         begin
+            if R.Status = Invalid then
+               Put ("✓ too few picks rejected, ");
+            else
+               Put_Line ("FAILED: too few picks accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Invalid: 4 picks
+      declare
+         Doc_Too_Many : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<rootChoice><a/><b/><a/><b/></rootChoice>");
+      begin
+         if not Doc_Too_Many.Success then
+            Put_Line ("FAILED: Could not parse choice 4 picks");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc_Too_Many.Doc);
+         begin
+            if R.Status = Invalid then
+               Put_Line ("✓ too many picks rejected");
+            else
+               Put_Line ("FAILED: too many picks accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      Put_Line ("PASSED");
+   end Test_Choice_Group_Repeats;
+
 begin
    Put_Line ("=== SML Schema Tests ===");
    New_Line;
@@ -1308,6 +1555,8 @@ begin
    Test_Typed_Children_Validation;
    Test_Simple_Content_Model;
    Test_All_Model_Validation;
+   Test_Sequence_Group_Repeats;
+   Test_Choice_Group_Repeats;
    Test_Automatic_Content_Validation;
 
    New_Line;

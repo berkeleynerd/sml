@@ -49,6 +49,14 @@ Every schema document starts with a `<schema>` root element:
 </schema>
 ```
 
+### Attribute-Free Encoding
+
+SML forbids attributes, so XSD concepts that are attribute-based are expressed as child elements here. Common mappings:
+- `element/@name`, `element/@type`, `element/@minOccurs`, `element/@maxOccurs` → `<name>`, `<type>`, `<minOccurs>`, `<maxOccurs>`
+- `restriction/@base` → `<base>`; numeric facets → `<minValue>`, `<maxValue>`; string length → `<minLength>`, `<maxLength>`; enumeration value → `<enumeration><value>…` entries
+- `simpleContent` type binding: XSD typically uses `base` on restriction; here we use `<simpleContent><type>…`.
+- `include/@schemaLocation` → `<include><path>…</path></include>`
+
 ### Includes
 
 Schemas can include other schema files for modularity:
@@ -439,3 +447,8 @@ Bind a complex type to a simple type for text-only content:
 Validation rules:
 - Reject any child elements under simple content
 - Validate text against the referenced simple type
+#### Group-Level Occurrence (Unsupported)
+
+XSD allows `minOccurs`/`maxOccurs` on groups (`sequence`, `choice`, `all`) to repeat the entire group as a unit. SML has no attributes and repeating groups carry subtle semantics (especially for `choice` and the restricted `all`). This library does not support group-level occurrence. Recommended patterns:
+- Wrap the group in an explicit container element and repeat the container.
+- For `choice`, model repeated selections as a list of container items, each holding exactly one choice member.

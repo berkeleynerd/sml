@@ -157,6 +157,9 @@ is
    type Complex_Type_Definition is record
       Name          : Bounded_String;
       Content_Model : Content_Model_Kind := Sequence_Model;
+      --  Group-level occurrence (sequence/choice). For All_Model, Max must be 1 and Min ∈ {0,1}
+      Group_Min_Occurs : Natural := 1;
+      Group_Max_Occurs : Natural := 1;  -- Natural'Last = unbounded (not for All_Model)
       --  For Simple_Model: text content validated against this simple type
       Simple_Content_Type_Name : Bounded_String := Empty_String;
       Children      : Element_Ref_Array :=
@@ -335,6 +338,8 @@ private
         [others =>
            (Name          => Empty_String,
             Content_Model => Sequence_Model,
+            Group_Min_Occurs => 1,
+            Group_Max_Occurs => 1,
             Simple_Content_Type_Name => Empty_String,
             Children      =>
               [others =>
