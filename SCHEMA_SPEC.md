@@ -128,6 +128,27 @@ Elements must appear in the specified order:
 </sequence>
 ```
 
+Strict ordering semantics (implemented):
+- Siblings are validated left-to-right; required order is enforced.
+- Extra elements after the last expected element are rejected.
+- Text nodes (including whitespace) are ignored between elements.
+- Cardinality (`minOccurs`/`maxOccurs`) applies to each expected item consecutively.
+
+Examples:
+```xml
+<!-- Expected: <first> then <second> -->
+<root>
+  <second/>   <!-- Rejected: out of order (expected <first>) -->
+  <first/>
+</root>
+
+<root>
+  <first/>
+  <second/>
+  <extra/>    <!-- Rejected: unexpected element after sequence -->
+</root>
+```
+
 #### Choice
 
 Exactly one of the elements must appear:
