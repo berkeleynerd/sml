@@ -177,6 +177,7 @@ SML includes a formally verified schema validation system for type-safe configur
 - Complete working implementation
 - Users can copy/adapt for their needs
 - One function uses `Integer'Value` (documented, isolated)
+ - Supports `<include><path>…</path></include>` to merge external schema files
 
 ### Quick Start: Programmatic Schema
 
@@ -211,10 +212,10 @@ end Validate_Config;
 # End-to-end validation demo
 bin/schema_validation_example
 
-# Schema loader tests (9 tests)
+# Schema loader tests (10 tests)
 bin/test_schema_loader
 
-# Core validation tests (8 tests)
+# Core validation tests (13 tests)
 bin/test_schema
 ```
 

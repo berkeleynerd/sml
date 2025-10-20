@@ -7,7 +7,7 @@
 - Schema language fully specified (this document)
 - Core validation engine implemented in `src/sml-schema.ads/.adb`
 - Reference loader implemented in `examples/sml-schema-loader.ads/.adb`
-- Comprehensive test coverage (16 test procedures: 7 core validation + 9 loader tests)
+- Comprehensive test coverage (23 test procedures: 13 core validation + 10 loader tests)
 - **0 high-priority SPARK verification issues**
 - Working examples demonstrating all features
 

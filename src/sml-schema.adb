@@ -51,7 +51,7 @@ is
                      Error_Message =>
                        To_Bounded_String
                          ("Simple content cannot have child elements"),
-                     Error_Path    => Empty_String,
+                     Error_Path    => To_Bounded_String ("/" & Name (Doc, Node)),
                      Line          => 0,
                      Column        => 0);
                end if;
@@ -539,7 +539,7 @@ is
                                     return
                                       (Status        => Invalid,
                                        Error_Message => To_Bounded_String ("Unexpected element: " & To_String (NameB)),
-                                       Error_Path    => NameB,
+                                       Error_Path    => To_Bounded_String ("/" & To_String (NameB)),
                                        Line          => 0,
                                        Column        => 0);
                                  end if;
@@ -548,8 +548,8 @@ is
                                  if Max_Picks /= Natural'Last and then Picks > Max_Picks then
                                     return
                                       (Status        => Invalid,
-                                       Error_Message => To_Bounded_String ("Too many choices: maximum" & Natural'Image (Complex_Type.Group_Max_Occurs)),
-                                       Error_Path    => NameB,
+                                       Error_Message => To_Bounded_String ("Too many choices: maximum" & Natural'Image (Complex_Type.Group_Max_Occurs) & ", got" & Natural'Image (Picks)),
+                                       Error_Path    => To_Bounded_String ("/" & To_String (NameB)),
                                        Line          => 0,
                                        Column        => 0);
                                  end if;
@@ -562,7 +562,7 @@ is
                         if Picks < Complex_Type.Group_Min_Occurs then
                            return
                              (Status        => Invalid,
-                              Error_Message => To_Bounded_String ("Too few choices: minimum" & Natural'Image (Complex_Type.Group_Min_Occurs)),
+                              Error_Message => To_Bounded_String ("Too few choices: minimum" & Natural'Image (Complex_Type.Group_Min_Occurs) & ", got" & Natural'Image (Picks)),
                               Error_Path    => Empty_String,
                               Line          => 0,
                               Column        => 0);
@@ -681,16 +681,16 @@ is
                         end loop;
 
                         --  Simple content cannot have element children
-                        if Has_Element_Child then
-                           return
-                             (Status        => Invalid,
-                              Error_Message =>
-                                To_Bounded_String
-                                  ("Simple content cannot have child elements"),
-                              Error_Path    => Empty_String,
-                              Line          => 0,
-                              Column        => 0);
-                        end if;
+               if Has_Element_Child then
+                  return
+                    (Status        => Invalid,
+                     Error_Message =>
+                       To_Bounded_String
+                         ("Simple content cannot have child elements"),
+                     Error_Path    => To_Bounded_String ("/" & Name (Doc, Parent_Node)),
+                     Line          => 0,
+                     Column        => 0);
+               end if;
 
                         --  Validate text against bound simple type if provided
                         if Complex_Type.Simple_Content_Type_Name.Length > 0 then
