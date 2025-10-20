@@ -378,8 +378,8 @@ is
 
                         while J <= Complex_Type.Child_Count loop
                            declare
-                              Expected : Element_Ref
-                                renames Complex_Type.Children (J);
+                              Expected : constant Element_Ref :=
+                                Complex_Type.Children (J);
                            begin
                               --  Skip non-element nodes
                               while Child /= Null_Node
@@ -487,8 +487,8 @@ is
                         --  Count which options have elements
                         for J in 1 .. Complex_Type.Child_Count loop
                            declare
-                              Expected     : Element_Ref
-                                renames Complex_Type.Children (J);
+                              Expected     : constant Element_Ref :=
+                                Complex_Type.Children (J);
                               Option_Count : Natural := 0;
                               Check_Child  : Node_Id :=
                                 First_Child (Doc, Parent_Node);
@@ -552,8 +552,8 @@ is
                      --  Validate any present typed option children
                      for J in 1 .. Complex_Type.Child_Count loop
                         declare
-                           Expected    : Element_Ref
-                             renames Complex_Type.Children (J);
+                           Expected    : constant Element_Ref :=
+                             Complex_Type.Children (J);
                            Check_Child : Node_Id :=
                              First_Child (Doc, Parent_Node);
                         begin
