@@ -156,6 +156,8 @@ is
    type Complex_Type_Definition is record
       Name          : Bounded_String;
       Content_Model : Content_Model_Kind := Sequence_Model;
+      --  For Simple_Model: text content validated against this simple type
+      Simple_Content_Type_Name : Bounded_String := Empty_String;
       Children      : Element_Ref_Array :=
         [others =>
            (Element_Name => Empty_String,
@@ -332,6 +334,7 @@ private
         [others =>
            (Name          => Empty_String,
             Content_Model => Sequence_Model,
+            Simple_Content_Type_Name => Empty_String,
             Children      =>
               [others =>
                  (Element_Name => Empty_String,

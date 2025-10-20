@@ -113,6 +113,7 @@ is
          Schema.Complex_Types (I) :=
            (Name          => Empty_String,
             Content_Model => Sequence_Model,
+            Simple_Content_Type_Name => Empty_String,
             Children      =>
               [others =>
                  (Element_Name => Empty_String,
@@ -616,18 +617,23 @@ is
                               Column        => 0);
                         end if;
 
-                        --  If there's text content, validate it
-                        --  Note: In full implementation, would validate
-                        --  against the simple type for this element
-                        if First_Text_Node /= Null_Node then
-                           --  For now, just check it's not empty
+                        --  Validate text against bound simple type if provided
+                        if Complex_Type.Simple_Content_Type_Name.Length > 0 then
                            declare
-                              Text : constant String :=
-                                Text_Value (Doc, First_Text_Node);
-                              pragma Unreferenced (Text);
+                              Content : constant String :=
+                                (if First_Text_Node = Null_Node then
+                                   ""
+                                 else
+                                   Text_Value (Doc, First_Text_Node));
+                              Result : constant Validation_Result :=
+                                Validate_Content
+                                  (Schema,
+                                   Complex_Type.Simple_Content_Type_Name,
+                                   Content);
                            begin
-                              --  Empty text is OK for simple content
-                              null;
+                              if Result.Status = Invalid then
+                                 return Result;
+                              end if;
                            end;
                         end if;
                      end;

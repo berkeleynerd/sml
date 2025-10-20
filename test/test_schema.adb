@@ -21,6 +21,7 @@ procedure Test_Schema is
    procedure Test_Enumeration_Validation;
    procedure Test_Choice_Group_Validation;
    procedure Test_Typed_Children_Validation;
+   procedure Test_Simple_Content_Model;
    procedure Test_Automatic_Content_Validation;
 
    procedure Test_Basic_Schema is
@@ -1054,6 +1055,128 @@ procedure Test_Schema is
       Put_Line ("PASSED");
    end Test_Typed_Children_Validation;
 
+--  Test bodies above; main driver below
+   procedure Test_Simple_Content_Model is
+      Schema  : Schema_Document;
+      Success : Boolean;
+   begin
+      Put ("Test: Simple Content Model... ");
+
+      Initialize (Schema);
+
+      --  Define a simple integer type (1..65535)
+      declare
+         Port_Type : Simple_Type_Definition;
+      begin
+         Port_Type.Name := To_Bounded_String ("portType");
+         Port_Type.Base_Type := Integer_Type;
+         Port_Type.Min_Value := 1;
+         Port_Type.Max_Value := 65535;
+         Add_Simple_Type (Schema, Port_Type, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add portType");
+            return;
+         end if;
+      end;
+
+      --  Complex type with simple content bound to portType
+      declare
+         Wrapper : Complex_Type_Definition;
+      begin
+         Wrapper.Name := To_Bounded_String ("portWrapperType");
+         Wrapper.Content_Model := Simple_Model;
+         Wrapper.Simple_Content_Type_Name := To_Bounded_String ("portType");
+         Add_Complex_Type (Schema, Wrapper, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add portWrapperType");
+            return;
+         end if;
+      end;
+
+      --  Element mapping to complex simple-content type
+      declare
+         Elem : constant Element_Definition :=
+           (Name       => To_Bounded_String ("port"),
+            Type_Name  => To_Bounded_String ("portWrapperType"),
+            Min_Occurs => 1,
+            Max_Occurs => 1);
+      begin
+         Add_Element (Schema, Elem, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add port element");
+            return;
+         end if;
+      end;
+
+      --  Valid value
+      declare
+         Doc_Valid : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<port>5432</port>");
+      begin
+         if not Doc_Valid.Success then
+            Put_Line ("FAILED: Could not parse valid simple content");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc_Valid.Doc);
+         begin
+            if R.Status = Valid then
+               Put ("✓ valid accepted, ");
+            else
+               Put_Line ("FAILED: valid simple content rejected");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Invalid value
+      declare
+         Doc_Bad : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<port>99999</port>");
+      begin
+         if not Doc_Bad.Success then
+            Put_Line ("FAILED: Could not parse bad simple content");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc_Bad.Doc);
+         begin
+            if R.Status = Invalid then
+               Put ("✓ out-of-range rejected, ");
+            else
+               Put_Line ("FAILED: out-of-range accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Invalid: child element present
+      declare
+         Doc_Child : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<port><x/></port>");
+      begin
+         if not Doc_Child.Success then
+            Put_Line ("FAILED: Could not parse child simple content");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc_Child.Doc);
+         begin
+            if R.Status = Invalid then
+               Put_Line ("✓ child elements rejected");
+            else
+               Put_Line ("FAILED: child elements accepted in simple content");
+               return;
+            end if;
+         end;
+      end;
+
+      Put_Line ("PASSED");
+   end Test_Simple_Content_Model;
+
 begin
    Put_Line ("=== SML Schema Tests ===");
    New_Line;
@@ -1066,6 +1189,7 @@ begin
    Test_Enumeration_Validation;
    Test_Choice_Group_Validation;
    Test_Typed_Children_Validation;
+   Test_Simple_Content_Model;
    Test_Automatic_Content_Validation;
 
    New_Line;
