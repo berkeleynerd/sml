@@ -101,6 +101,8 @@ begin
 end;
 ```
 
+Note on ordering: Sequences are validated strictly left-to-right. The declared order must be respected; extra element siblings after the last expected item are rejected. Text/whitespace nodes between elements are ignored for ordering.
+
 ### Step 3: Validate Documents
 
 ```ada

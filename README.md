@@ -163,6 +163,7 @@ SML includes a formally verified schema validation system for type-safe configur
 - **Enumerations** - Restrict values to specific lists (e.g., log levels)
 - **Cardinality** - Min/max occurrence constraints (minOccurs, maxOccurs)
 - **Structure rules** - Sequence (ordered) and choice (one-of) models
+  - Sequences enforce strict sibling order; extra elements are rejected; text/whitespace between elements is ignored. See `SCHEMA_SPEC.md`.
 - **Type safety** - Formal invariants with 0 high-priority SPARK issues
 
 ### Example/Reference Code (examples/)
