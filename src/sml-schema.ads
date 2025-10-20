@@ -245,6 +245,10 @@ is
    function Validate_Document
      (Schema : Schema_Document; Doc : DOM.Document) return Validation_Result;
 
+   --  Set the required root element name (optional policy)
+   procedure Set_Root_Element (Schema : in out Schema_Document; Name : String)
+   with Pre => Name'Length > 0 and then Name'Length <= Max_Name_Length;
+
    --  Validate element children against complex type structure
    function Validate_Structure
      (Schema      : Schema_Document;

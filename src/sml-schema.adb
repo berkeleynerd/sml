@@ -150,6 +150,11 @@ is
       Success := True;
    end Add_Element;
 
+   procedure Set_Root_Element (Schema : in out Schema_Document; Name : String) is
+   begin
+      Schema.Root_Element := To_Bounded_String (Name);
+   end Set_Root_Element;
+
    procedure Add_Simple_Type
      (Schema   : in out Schema_Document;
       Type_Def : Simple_Type_Definition;
@@ -344,6 +349,26 @@ is
             Error_Path    => Empty_String,
             Line          => 0,
             Column        => 0);
+      end if;
+
+      --  Enforce specific root element if specified in schema
+      if Schema.Root_Element.Length > 0 then
+         declare
+            Root_Name : constant String := Name (Doc, Root_Node);
+         begin
+            if To_Bounded_String (Root_Name) /= Schema.Root_Element then
+               return
+                 (Status        => Invalid,
+                  Error_Message =>
+                    To_Bounded_String
+                      ("Invalid root element: expected "
+                       & To_String (Schema.Root_Element)
+                       & ", got " & Root_Name),
+                  Error_Path    => To_Bounded_String ("/" & Root_Name),
+                  Line          => 0,
+                  Column        => 0);
+            end if;
+         end;
       end if;
 
       --  Start validation from root

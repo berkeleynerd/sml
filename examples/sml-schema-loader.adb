@@ -616,6 +616,22 @@ is
             declare
                Child_Name : constant String := DOM.Name (Doc, Child);
             begin
+               if Child_Name = "root" then
+                  declare
+                     Name_Node : constant DOM.Node_Id :=
+                       Find_Child_Element (Doc, Child, "name");
+                  begin
+                     if Name_Node = DOM.Null_Node then
+                        Had_Error := True;
+                        Error_Info.Message :=
+                          To_Bounded_String ("root missing <name>");
+                        return;
+                     end if;
+                     Schema.Root_Element :=
+                       To_Bounded_String (Get_Element_Text (Doc, Name_Node));
+                  end;
+               end if;
+
                if Child_Name = "simpleType" then
                   declare
                      Parse_Result : constant Parse_Simple_Result :=

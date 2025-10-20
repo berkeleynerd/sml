@@ -25,6 +25,7 @@ procedure Test_Schema is
    procedure Test_All_Model_Validation;
    procedure Test_Sequence_Group_Repeats;
    procedure Test_Choice_Group_Repeats;
+   procedure Test_Root_Element_Policy;
    procedure Test_Automatic_Content_Validation;
 
    procedure Test_Basic_Schema is
@@ -1541,6 +1542,65 @@ procedure Test_Schema is
       Put_Line ("PASSED");
    end Test_Choice_Group_Repeats;
 
+   procedure Test_Root_Element_Policy is
+      Schema  : Schema_Document;
+      Success : Boolean;
+   begin
+      Put ("Test: Root Element Policy... ");
+
+      Initialize (Schema);
+
+      --  Set root element name explicitly
+      Set_Root_Element (Schema, "config");
+
+      --  Add element definition for root
+      declare
+         Root_Elem : constant Element_Definition :=
+           (Name       => To_Bounded_String ("config"),
+            Type_Name  => Empty_String,
+            Min_Occurs => 1,
+            Max_Occurs => 1);
+      begin
+         Add_Element (Schema, Root_Elem, Success);
+      end;
+
+      --  Valid root
+      declare
+         Doc_OK : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<config/>");
+      begin
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc_OK.Doc);
+         begin
+            if R.Status = Valid then
+               Put ("✓ valid root accepted, ");
+            else
+               Put_Line ("FAILED: valid root rejected");
+            end if;
+         end;
+      end;
+
+      --  Invalid root
+      declare
+         Doc_Bad : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<settings/>");
+      begin
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc_Bad.Doc);
+         begin
+            if R.Status = Invalid then
+               Put_Line ("✓ invalid root rejected");
+            else
+               Put_Line ("FAILED: invalid root accepted");
+            end if;
+         end;
+      end;
+
+      Put_Line ("PASSED");
+   end Test_Root_Element_Policy;
+
 begin
    Put_Line ("=== SML Schema Tests ===");
    New_Line;
@@ -1557,6 +1617,7 @@ begin
    Test_All_Model_Validation;
    Test_Sequence_Group_Repeats;
    Test_Choice_Group_Repeats;
+   Test_Root_Element_Policy;
    Test_Automatic_Content_Validation;
 
    New_Line;
