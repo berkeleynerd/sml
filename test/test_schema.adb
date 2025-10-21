@@ -178,10 +178,18 @@ procedure Test_Schema is
              Base_Type   => Integer_Type,
              Min_Value   => 1,
              Max_Value   => 65535,
+             Int_Min_Exclusive => False,
+             Int_Max_Exclusive => False,
              Dec_Min     => Float'First,
              Dec_Max     => Float'Last,
+             Dec_Min_Exclusive => False,
+             Dec_Max_Exclusive => False,
+             Total_Digits    => Natural'Last,
+             Fraction_Digits => Natural'Last,
              Min_Length  => 0,
              Max_Length  => Max_String_Length,
+             Length      => Natural'Last,
+             Trim        => False,
              Prefix      => Empty_String,
              Suffix      => Empty_String,
              Contains    => Empty_String,
@@ -202,10 +210,18 @@ procedure Test_Schema is
              Base_Type   => String_Type,
              Min_Value   => Integer'First,
              Max_Value   => Integer'Last,
+             Int_Min_Exclusive => False,
+             Int_Max_Exclusive => False,
              Dec_Min     => Float'First,
              Dec_Max     => Float'Last,
+             Dec_Min_Exclusive => False,
+             Dec_Max_Exclusive => False,
+             Total_Digits    => Natural'Last,
+             Fraction_Digits => Natural'Last,
              Min_Length  => 0,
              Max_Length  => Max_String_Length,
+             Length      => Natural'Last,
+             Trim        => False,
              Prefix      => Empty_String,
              Suffix      => Empty_String,
              Contains    => Empty_String,
@@ -501,6 +517,8 @@ procedure Test_Schema is
          Dec_Type.Base_Type := Decimal_Type;
          Dec_Type.Dec_Min := 0.0;
          Dec_Type.Dec_Max := 1.0;
+         Dec_Type.Total_Digits := Natural'Last;
+         Dec_Type.Fraction_Digits := Natural'Last;
          Add_Simple_Type (Schema, Dec_Type, Success);
          if not Success then
             Put_Line ("FAILED: Could not add ratioType");
@@ -523,6 +541,35 @@ procedure Test_Schema is
                Put ("✓ Decimal range enforced, ");
             else
                Put_Line ("FAILED: Decimal range validation error");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Decimal digits facets (max): totalDigits=3, fractionDigits=2
+      declare
+         Dig_Type : Simple_Type_Definition;
+      begin
+         Dig_Type.Name := To_Bounded_String ("digType");
+         Dig_Type.Base_Type := Decimal_Type;
+         Dig_Type.Total_Digits := 3;
+         Dig_Type.Fraction_Digits := 2;
+         Add_Simple_Type (Schema, Dig_Type, Success);
+         declare
+            OkD1 : constant Validation_Result :=
+              Validate_Content (Schema, Dig_Type.Name, "9.99");
+            BadT : constant Validation_Result :=
+              Validate_Content (Schema, Dig_Type.Name, "99.99");
+            BadF : constant Validation_Result :=
+              Validate_Content (Schema, Dig_Type.Name, "9.999");
+         begin
+            if OkD1.Status = Valid
+              and then BadT.Status = Invalid
+              and then BadF.Status = Invalid
+            then
+               Put ("✓ Decimal digits enforced, ");
+            else
+               Put_Line ("FAILED: Decimal digits validation error");
                return;
             end if;
          end;
@@ -586,6 +633,78 @@ procedure Test_Schema is
                Put ("✓ String contains enforced, ");
             else
                Put_Line ("FAILED: String contains validation error");
+               return;
+            end if;
+         end;
+      end;
+
+      --  String exact length and trim
+      declare
+         L_Type : Simple_Type_Definition;
+      begin
+         L_Type.Name := To_Bounded_String ("lenType");
+         L_Type.Base_Type := String_Type;
+         L_Type.Length := 3;
+         L_Type.Trim := True;
+         Add_Simple_Type (Schema, L_Type, Success);
+         declare
+            Ok  : constant Validation_Result :=
+              Validate_Content (Schema, L_Type.Name, "  abc  ");
+            Bad : constant Validation_Result :=
+              Validate_Content (Schema, L_Type.Name, "abcd");
+         begin
+            if Ok.Status = Valid and then Bad.Status = Invalid then
+               Put ("✓ String exact length + trim, ");
+            else
+               Put_Line ("FAILED: String length/trim validation error");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Integer exclusive bounds
+      declare
+         IE : Simple_Type_Definition;
+      begin
+         IE.Name := To_Bounded_String ("intExc");
+         IE.Base_Type := Integer_Type;
+         IE.Min_Value := 10;
+         IE.Int_Min_Exclusive := True;
+         Add_Simple_Type (Schema, IE, Success);
+         declare
+            Ok  : constant Validation_Result :=
+              Validate_Content (Schema, IE.Name, "11");
+            Bad : constant Validation_Result :=
+              Validate_Content (Schema, IE.Name, "10");
+         begin
+            if Ok.Status = Valid and then Bad.Status = Invalid then
+               Put ("✓ Integer exclusive bounds, ");
+            else
+               Put_Line ("FAILED: Integer exclusive bounds error");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Decimal exclusive bounds
+      declare
+         DE : Simple_Type_Definition;
+      begin
+         DE.Name := To_Bounded_String ("decExc");
+         DE.Base_Type := Decimal_Type;
+         DE.Dec_Min := 0.5;
+         DE.Dec_Min_Exclusive := True;
+         Add_Simple_Type (Schema, DE, Success);
+         declare
+            Ok  : constant Validation_Result :=
+              Validate_Content (Schema, DE.Name, "0.6");
+            Bad : constant Validation_Result :=
+              Validate_Content (Schema, DE.Name, "0.5");
+         begin
+            if Ok.Status = Valid and then Bad.Status = Invalid then
+               Put_Line ("✓ Decimal exclusive bounds enforced");
+            else
+               Put_Line ("FAILED: Decimal exclusive bounds error");
                return;
             end if;
          end;

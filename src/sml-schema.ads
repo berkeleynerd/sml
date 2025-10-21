@@ -123,12 +123,20 @@ is
       --  Integer restrictions
       Min_Value   : Integer := Integer'First;
       Max_Value   : Integer := Integer'Last;
+      Int_Min_Exclusive : Boolean := False;
+      Int_Max_Exclusive : Boolean := False;
       --  Decimal restrictions
       Dec_Min     : Float := Float'First;
       Dec_Max     : Float := Float'Last;
+      Dec_Min_Exclusive : Boolean := False;
+      Dec_Max_Exclusive : Boolean := False;
+      Total_Digits    : Natural := Natural'Last;   --  max total digits (no limit if Natural'Last)
+      Fraction_Digits : Natural := Natural'Last;   --  max fraction digits (no limit if Natural'Last)
       --  String restrictions
       Min_Length  : Natural := 0;
       Max_Length  : Natural := Max_String_Length;
+      Length      : Natural := Natural'Last;        --  exact length (no exact check if Natural'Last)
+      Trim        : Boolean := False;               --  trim leading/trailing whitespace before checks
       Prefix      : Bounded_String := Empty_String;
       Suffix      : Bounded_String := Empty_String;
       Contains    : Bounded_String := Empty_String;
@@ -328,10 +336,18 @@ private
             Base_Type   => String_Type,
             Min_Value   => Integer'First,
             Max_Value   => Integer'Last,
+            Int_Min_Exclusive => False,
+            Int_Max_Exclusive => False,
             Dec_Min     => Float'First,
             Dec_Max     => Float'Last,
+            Dec_Min_Exclusive => False,
+            Dec_Max_Exclusive => False,
+            Total_Digits    => Natural'Last,
+            Fraction_Digits => Natural'Last,
             Min_Length  => 0,
             Max_Length  => Max_String_Length,
+            Length      => Natural'Last,
+            Trim        => False,
             Prefix      => Empty_String,
             Suffix      => Empty_String,
             Contains    => Empty_String,

@@ -4,6 +4,8 @@
 --  SPARK Ada Implementation
 ------------------------------------------------------------------------------
 
+with SML.UTF8;
+
 package body SML.Schema
   with SPARK_Mode => On
 is
@@ -99,16 +101,24 @@ is
             Base_Type   => String_Type,
             Min_Value   => Integer'First,
             Max_Value   => Integer'Last,
+            Int_Min_Exclusive => False,
+            Int_Max_Exclusive => False,
             Dec_Min     => Float'First,
             Dec_Max     => Float'Last,
+            Dec_Min_Exclusive => False,
+            Dec_Max_Exclusive => False,
+            Total_Digits    => Natural'Last,
+            Fraction_Digits => Natural'Last,
             Min_Length  => 0,
             Max_Length  => Max_String_Length,
+            Length      => Natural'Last,
+            Trim        => False,
             Prefix      => Empty_String,
             Suffix      => Empty_String,
             Contains    => Empty_String,
             Enum_Values => [others => Empty_String],
             Enum_Count  => 0);
-      end loop;
+     end loop;
 
       for I in Schema.Complex_Types'Range loop
          Schema.Complex_Types (I) :=
@@ -807,8 +817,16 @@ is
             begin
                case Type_Def.Base_Type is
                   when String_Type =>
+                     --  Optional trim
+                     declare
+                        S : constant String :=
+                          (if Type_Def.Trim then
+                             SML.UTF8.Trim_Whitespace (Content)
+                           else
+                             Content);
+                     begin
                      --  Check string length
-                     if Content'Length < Type_Def.Min_Length then
+                     if S'Length < Type_Def.Min_Length then
                         return
                           (Status        => Invalid,
                            Error_Message =>
@@ -819,7 +837,7 @@ is
                            Error_Path    => Empty_String,
                            Line          => 0,
                            Column        => 0);
-                     elsif Content'Length > Type_Def.Max_Length then
+                     elsif S'Length > Type_Def.Max_Length then
                         return
                           (Status        => Invalid,
                            Error_Message =>
@@ -833,9 +851,23 @@ is
                      end if;
 
                      --  Check enumeration if defined
+                     --  Exact length if configured
+                     if Type_Def.Length /= Natural'Last and then S'Length /= Type_Def.Length then
+                        return
+                          (Status        => Invalid,
+                           Error_Message =>
+                             To_Bounded_String
+                               ("String length must be "
+                                & Natural'Image (Type_Def.Length)
+                                & " characters"),
+                           Error_Path    => Empty_String,
+                           Line          => 0,
+                           Column        => 0);
+                     end if;
+
                      if Type_Def.Enum_Count > 0 then
                         --  Check content length before validation
-                        if Content'Length > Max_Name_Length then
+                        if S'Length > Max_Name_Length then
                            return
                              (Status        => Invalid,
                               Error_Message =>
@@ -847,7 +879,7 @@ is
                         end if;
                         return
                           Validate_Enum_Content
-                            (Content,
+                            (S,
                              Type_Def.Enum_Values,
                              Type_Def.Enum_Count);
                      end if;
@@ -857,9 +889,9 @@ is
                         declare
                            P : constant String := To_String (Type_Def.Prefix);
                         begin
-                           if Content'Length < P'Length or else
+                           if S'Length < P'Length or else
                              (P'Length > 0 and then
-                              Content (Content'First .. Content'First + P'Length - 1) /= P)
+                              S (S'First .. S'First + P'Length - 1) /= P)
                            then
                               return
                                 (Status        => Invalid,
@@ -877,11 +909,11 @@ is
                         declare
                            S : constant String := To_String (Type_Def.Suffix);
                            L : constant Natural := S'Length;
-                           CL: constant Natural := Content'Length;
+                           CL: constant Natural := S'Length;
                         begin
                            if CL < L or else
                              (L > 0 and then
-                              Content (Content'Last - L + 1 .. Content'Last) /= S)
+                              S (S'Last - L + 1 .. S'Last) /= S)
                            then
                               return
                                 (Status        => Invalid,
@@ -898,7 +930,7 @@ is
                      if Type_Def.Contains.Length > 0 then
                         declare
                            Sub : constant String := To_String (Type_Def.Contains);
-                           CL  : constant Natural := Content'Length;
+                           CL  : constant Natural := S'Length;
                            SL  : constant Natural := Sub'Length;
                            Found : Boolean := False;
                         begin
@@ -909,7 +941,7 @@ is
                                  I : Natural := 1;
                               begin
                                  while I <= CL - SL + 1 loop
-                                    if Content (I .. I + SL - 1) = Sub then
+                                    if S (I .. I + SL - 1) = Sub then
                                        Found := True;
                                        exit;
                                     end if;
@@ -930,6 +962,7 @@ is
                      end if;
 
                      return Valid_Result;
+                     end;
 
                   when Integer_Type =>
                      declare
@@ -940,19 +973,37 @@ is
                         if IRes.Status = Invalid then
                            return IRes;
                         end if;
+                        --  Exclusive bounds
+                        begin
+                           Value := Integer'Value (Content);
+                        exception
+                           when Constraint_Error =>
+                              return
+                                (Status        => Invalid,
+                                 Error_Message => To_Bounded_String ("Invalid integer value: " & Content),
+                                 Error_Path    => Empty_String,
+                                 Line          => 0,
+                                 Column        => 0);
+                        end;
+                        if Type_Def.Int_Min_Exclusive and then Value <= Type_Def.Min_Value then
+                           return
+                             (Status        => Invalid,
+                              Error_Message => To_Bounded_String ("Integer must be > " & Integer'Image (Type_Def.Min_Value)),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
+                        end if;
+                        if Type_Def.Int_Max_Exclusive and then Value >= Type_Def.Max_Value then
+                           return
+                             (Status        => Invalid,
+                              Error_Message => To_Bounded_String ("Integer must be < " & Integer'Image (Type_Def.Max_Value)),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
+                        end if;
+
                         --  If enumeration present, enforce numeric membership
                         if Type_Def.Enum_Count > 0 then
-                           begin
-                              Value := Integer'Value (Content);
-                           exception
-                              when Constraint_Error =>
-                                 return
-                                   (Status        => Invalid,
-                                    Error_Message => To_Bounded_String ("Invalid integer value: " & Content),
-                                    Error_Path    => Empty_String,
-                                    Line          => 0,
-                                    Column        => 0);
-                           end;
                            for E in 1 .. Type_Def.Enum_Count loop
                               declare
                                  EV_Str : constant String := To_String (Type_Def.Enum_Values (E));
@@ -990,6 +1041,10 @@ is
                         Res : Validation_Result :=
                           Validate_Decimal_Content (Content);
                         V   : Float;
+                        --  Digit counts
+                        Total_D  : Natural := 0;
+                        Fraction : Natural := 0;
+                        Seen_Dot : Boolean := False;
                      begin
                         if Res.Status = Invalid then
                            return Res;
@@ -1009,7 +1064,7 @@ is
                                  Column        => 0);
                         end;
                         if V < Type_Def.Dec_Min then
-                           return
+                            return
                              (Status        => Invalid,
                               Error_Message =>
                                 To_Bounded_String
@@ -1028,6 +1083,56 @@ is
                               Error_Path    => Empty_String,
                               Line          => 0,
                               Column        => 0);
+                        end if;
+                        --  Enforce totalDigits/fractionDigits (max)
+                        if Type_Def.Total_Digits /= Natural'Last or else
+                           Type_Def.Fraction_Digits /= Natural'Last
+                        then
+                           -- Count digits in content (ignore sign and dot)
+                           declare
+                              S : constant String := Content;
+                           begin
+                              for I in S'Range loop
+                                 if S (I) = '-' then
+                                    null;
+                                 elsif S (I) = '.' then
+                                    Seen_Dot := True;
+                                 elsif S (I) >= '0' and then S (I) <= '9' then
+                                    Total_D := Total_D + 1;
+                                    if Seen_Dot then
+                                       Fraction := Fraction + 1;
+                                    end if;
+                                 else
+                                    null;
+                                 end if;
+                              end loop;
+                           end;
+                           if Type_Def.Total_Digits /= Natural'Last and then
+                              Total_D > Type_Def.Total_Digits
+                           then
+                              return
+                                (Status        => Invalid,
+                                 Error_Message =>
+                                   To_Bounded_String
+                                     ("Too many digits: maximum total "
+                                      & Natural'Image (Type_Def.Total_Digits)),
+                                 Error_Path    => Empty_String,
+                                 Line          => 0,
+                                 Column        => 0);
+                           end if;
+                           if Type_Def.Fraction_Digits /= Natural'Last and then
+                              Fraction > Type_Def.Fraction_Digits
+                           then
+                              return
+                                (Status        => Invalid,
+                                 Error_Message =>
+                                   To_Bounded_String
+                                     ("Too many fraction digits: maximum "
+                                      & Natural'Image (Type_Def.Fraction_Digits)),
+                                 Error_Path    => Empty_String,
+                                 Line          => 0,
+                                 Column        => 0);
+                           end if;
                         end if;
                         --  If enumeration present, enforce numeric membership
                         if Type_Def.Enum_Count > 0 then

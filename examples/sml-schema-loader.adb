@@ -287,6 +287,24 @@ is
             Type_Def.Max_Value :=
               Get_Integer_Value (Doc, Restriction_Node, "maxValue",
                                 Integer'Last);
+            --  Exclusive bounds override
+            declare
+               MinE : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "minExclusive");
+               MaxE : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "maxExclusive");
+            begin
+               if MinE /= DOM.Null_Node then
+                  Type_Def.Min_Value :=
+                    Get_Integer_Value (Doc, Restriction_Node, "minExclusive", Integer'First);
+                  Type_Def.Int_Min_Exclusive := True;
+               end if;
+               if MaxE /= DOM.Null_Node then
+                  Type_Def.Max_Value :=
+                    Get_Integer_Value (Doc, Restriction_Node, "maxExclusive", Integer'Last);
+                  Type_Def.Int_Max_Exclusive := True;
+               end if;
+            end;
 
          elsif Base_Text = "string" then
             Type_Def.Base_Type := String_Type;
@@ -305,12 +323,16 @@ is
                  Find_Child_Element (Doc, Restriction_Node, "minLength");
                MaxLen_Node : constant DOM.Node_Id :=
                  Find_Child_Element (Doc, Restriction_Node, "maxLength");
+               Len_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "length");
                Prefix_Node : constant DOM.Node_Id :=
                  Find_Child_Element (Doc, Restriction_Node, "prefix");
                Suffix_Node : constant DOM.Node_Id :=
                  Find_Child_Element (Doc, Restriction_Node, "suffix");
                Contains_Node : constant DOM.Node_Id :=
                  Find_Child_Element (Doc, Restriction_Node, "contains");
+               Trim_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "trim");
             begin
                if MinLen_Node /= DOM.Null_Node then
                   Type_Def.Min_Length :=
@@ -319,6 +341,10 @@ is
                if MaxLen_Node /= DOM.Null_Node then
                   Type_Def.Max_Length :=
                     Get_Natural_Value (Doc, Restriction_Node, "maxLength", Max_String_Length);
+               end if;
+               if Len_Node /= DOM.Null_Node then
+                  Type_Def.Length :=
+                    Get_Natural_Value (Doc, Restriction_Node, "length", Natural'Last);
                end if;
                if Prefix_Node /= DOM.Null_Node then
                   Type_Def.Prefix :=
@@ -332,6 +358,13 @@ is
                   Type_Def.Contains :=
                     To_Bounded_String (Get_Element_Text (Doc, Contains_Node));
                end if;
+               if Trim_Node /= DOM.Null_Node then
+                  declare
+                     T : constant String := Get_Element_Text (Doc, Trim_Node);
+                  begin
+                     Type_Def.Trim := (T = "true");
+                  end;
+               end if;
             end;
 
          elsif Base_Text = "boolean" then
@@ -344,6 +377,29 @@ is
               Get_Float_Value (Doc, Restriction_Node, "minValue", Float'First);
             Type_Def.Dec_Max :=
               Get_Float_Value (Doc, Restriction_Node, "maxValue", Float'Last);
+            --  Exclusive bounds override
+            declare
+               MinE : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "minExclusive");
+               MaxE : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "maxExclusive");
+            begin
+               if MinE /= DOM.Null_Node then
+                  Type_Def.Dec_Min :=
+                    Get_Float_Value (Doc, Restriction_Node, "minExclusive", Float'First);
+                  Type_Def.Dec_Min_Exclusive := True;
+               end if;
+               if MaxE /= DOM.Null_Node then
+                  Type_Def.Dec_Max :=
+                    Get_Float_Value (Doc, Restriction_Node, "maxExclusive", Float'Last);
+                  Type_Def.Dec_Max_Exclusive := True;
+               end if;
+            end;
+            --  Optional digit constraints
+            Type_Def.Total_Digits :=
+              Get_Natural_Value (Doc, Restriction_Node, "totalDigits", Natural'Last);
+            Type_Def.Fraction_Digits :=
+              Get_Natural_Value (Doc, Restriction_Node, "fractionDigits", Natural'Last);
 
          else
             return (Success   => False,
