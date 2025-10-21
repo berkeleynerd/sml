@@ -7,7 +7,7 @@
 - Schema language fully specified (this document)
 - Core validation engine implemented in `src/sml-schema.ads/.adb`
 - Reference loader implemented in `examples/sml-schema-loader.ads/.adb`
-- Comprehensive test coverage (16 test procedures: 7 core validation + 9 loader tests)
+- Comprehensive test coverage (23 test procedures: 13 core validation + 10 loader tests)
 - **0 high-priority SPARK verification issues**
 - Working examples demonstrating all features
 
@@ -49,6 +49,31 @@ Every schema document starts with a `<schema>` root element:
 </schema>
 ```
 
+### Attribute-Free Encoding
+
+SML forbids attributes, so XSD concepts that are attribute-based are expressed as child elements here. Common mappings:
+- `element/@name`, `element/@type`, `element/@minOccurs`, `element/@maxOccurs` → `<name>`, `<type>`, `<minOccurs>`, `<maxOccurs>`
+- `restriction/@base` → `<base>`; numeric facets → `<minValue>`, `<maxValue>`; string length → `<minLength>`, `<maxLength>`; enumeration value → `<enumeration><value>…` entries
+- `simpleContent` type binding: XSD typically uses `base` on restriction; here we use `<simpleContent><type>…`.
+- `include/@schemaLocation` → `<include><path>…</path></include>`
+
+### Includes
+
+Schemas can include other schema files for modularity:
+
+```xml
+<schema>
+  <include>
+    <path>path/to/other.schema.sml</path>
+  </include>
+</schema>
+```
+
+Rules:
+- Included schemas are merged into the current document (elements and types).
+- Duplicate definitions are rejected.
+- Cycles and multi-include resolution are not currently detected or supported.
+
 ### Element Definitions
 
 Elements are defined with vocabulary, type, and cardinality constraints:
@@ -75,6 +100,32 @@ Simple types define content validation for text elements:
     <base>integer</base>
     <minValue>1</minValue>
     <maxValue>65535</maxValue>
+  </restriction>
+</simpleType>
+```
+
+Additional facets (implemented):
+- String: `<minLength>`, `<maxLength>`, optional `<prefix>`, `<suffix>`
+- Decimal: `<minValue>`, `<maxValue>`
+
+Examples:
+```xml
+<simpleType>
+  <name>logPathType</name>
+  <restriction>
+    <base>string</base>
+    <prefix>file://</prefix>
+    <suffix>.log</suffix>
+    <minLength>8</minLength>
+  </restriction>
+</simpleType>
+
+<simpleType>
+  <name>ratioType</name>
+  <restriction>
+    <base>decimal</base>
+    <minValue>0.0</minValue>
+    <maxValue>1.0</maxValue>
   </restriction>
 </simpleType>
 ```
@@ -126,6 +177,27 @@ Elements must appear in the specified order:
     <type>string</type>
   </element>
 </sequence>
+```
+
+Strict ordering semantics (implemented):
+- Siblings are validated left-to-right; required order is enforced.
+- Extra elements after the last expected element are rejected.
+- Text nodes (including whitespace) are ignored between elements.
+- Cardinality (`minOccurs`/`maxOccurs`) applies to each expected item consecutively.
+
+Examples:
+```xml
+<!-- Expected: <first> then <second> -->
+<root>
+  <second/>   <!-- Rejected: out of order (expected <first>) -->
+  <first/>
+</root>
+
+<root>
+  <first/>
+  <second/>
+  <extra/>    <!-- Rejected: unexpected element after sequence -->
+</root>
 ```
 
 #### Choice
@@ -340,3 +412,64 @@ The following features are intentionally deferred:
 - Whitespace normalization
 
 These can be added incrementally while maintaining backward compatibility.
+#### All (unordered)
+
+Children may appear in any order; each child has its own cardinality (default 0..1):
+
+```xml
+<all>
+  <element>
+    <name>a</name>
+    <type>string</type>
+    <minOccurs>1</minOccurs>
+  </element>
+  <element>
+    <name>b</name>
+    <type>string</type>
+  </element>
+  <!-- etc. -->
+  <!-- Each child is validated independently; duplicates beyond maxOccurs are rejected. -->
+  <!-- Unexpected elements are rejected. -->
+  <!-- Text/whitespace nodes between elements are ignored. -->
+  <!-- Order is not enforced. -->
+```
+
+#### Simple Content
+
+Bind a complex type to a simple type for text-only content:
+
+```xml
+<simpleContent>
+  <type>portType</type>
+</simpleContent>
+```
+
+Validation rules:
+- Reject any child elements under simple content
+- Validate text against the referenced simple type
+#### Group-Level Occurrence
+
+SML supports `minOccurs`/`maxOccurs` on groups using child elements under the model element:
+
+```xml
+<sequence>
+  <minOccurs>2</minOccurs>
+  <maxOccurs>2</maxOccurs>
+  <!-- children ... -->
+</sequence>
+
+<choice>
+  <minOccurs>2</minOccurs>
+  <maxOccurs>3</maxOccurs>
+  <!-- options ... -->
+</choice>
+```
+
+Semantics:
+- `sequence`: repeats the entire ordered block `minOccurs..maxOccurs` times.
+- `choice`: counts “picks” — each option element encountered counts as one pick; total picks must be within `minOccurs..maxOccurs`.
+- `all`: follows XSD constraints — `minOccurs` must be 0 or 1 and `maxOccurs` is 1.
+
+Encoding rules:
+- Use child elements `<minOccurs>` and `<maxOccurs>`; use `unbounded` for max when allowed (not for `all`).
+- Per-child `minOccurs`/`maxOccurs` inside groups continue to apply in addition to group-level occurrence.

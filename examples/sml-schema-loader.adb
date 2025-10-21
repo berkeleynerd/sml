@@ -4,6 +4,9 @@
 --  SPARK Ada Implementation with Formal Verification Support
 ------------------------------------------------------------------------------
 
+with SML.DOM.Parser;
+with SML.IO;
+
 package body SML.Schema.Loader
   with SPARK_Mode => On
 is
@@ -141,6 +144,36 @@ is
       end;
    end Get_Integer_Value;
 
+   --  Float parsing (SPARK_Mode Off due to Float'Value)
+   function Parse_Float (Text : String; Default : Float) return Float
+     with SPARK_Mode => Off
+   is
+   begin
+      if Text'Length = 0 then
+         return Default;
+      end if;
+      begin
+         return Float'Value (Text);
+      exception
+         when Constraint_Error =>
+            return Default;
+      end;
+   end Parse_Float;
+
+   function Get_Float_Value
+     (Doc           : DOM.Document;
+      Parent        : DOM.Node_Id;
+      Child_Name    : String;
+      Default_Value : Float) return Float
+   is
+      Node : constant DOM.Node_Id := Find_Child_Element (Doc, Parent, Child_Name);
+   begin
+      if Node = DOM.Null_Node then
+         return Default_Value;
+      end if;
+      return Parse_Float (Get_Element_Text (Doc, Node), Default_Value);
+   end Get_Float_Value;
+
    function Get_Natural_Value
      (Doc           : DOM.Document;
       Parent        : DOM.Node_Id;
@@ -254,6 +287,24 @@ is
             Type_Def.Max_Value :=
               Get_Integer_Value (Doc, Restriction_Node, "maxValue",
                                 Integer'Last);
+            --  Exclusive bounds override
+            declare
+               MinE : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "minExclusive");
+               MaxE : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "maxExclusive");
+            begin
+               if MinE /= DOM.Null_Node then
+                  Type_Def.Min_Value :=
+                    Get_Integer_Value (Doc, Restriction_Node, "minExclusive", Integer'First);
+                  Type_Def.Int_Min_Exclusive := True;
+               end if;
+               if MaxE /= DOM.Null_Node then
+                  Type_Def.Max_Value :=
+                    Get_Integer_Value (Doc, Restriction_Node, "maxExclusive", Integer'Last);
+                  Type_Def.Int_Max_Exclusive := True;
+               end if;
+            end;
 
          elsif Base_Text = "string" then
             Type_Def.Base_Type := String_Type;
@@ -266,12 +317,89 @@ is
                   Parse_Enumeration_Values (Doc, Enum_Node, Type_Def);
                end if;
             end;
+            --  Optional length and prefix/suffix/contains facets
+            declare
+               MinLen_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "minLength");
+               MaxLen_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "maxLength");
+               Len_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "length");
+               Prefix_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "prefix");
+               Suffix_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "suffix");
+               Contains_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "contains");
+               Trim_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "trim");
+            begin
+               if MinLen_Node /= DOM.Null_Node then
+                  Type_Def.Min_Length :=
+                    Get_Natural_Value (Doc, Restriction_Node, "minLength", 0);
+               end if;
+               if MaxLen_Node /= DOM.Null_Node then
+                  Type_Def.Max_Length :=
+                    Get_Natural_Value (Doc, Restriction_Node, "maxLength", Max_String_Length);
+               end if;
+               if Len_Node /= DOM.Null_Node then
+                  Type_Def.Length :=
+                    Get_Natural_Value (Doc, Restriction_Node, "length", Natural'Last);
+               end if;
+               if Prefix_Node /= DOM.Null_Node then
+                  Type_Def.Prefix :=
+                    To_Bounded_String (Get_Element_Text (Doc, Prefix_Node));
+               end if;
+               if Suffix_Node /= DOM.Null_Node then
+                  Type_Def.Suffix :=
+                    To_Bounded_String (Get_Element_Text (Doc, Suffix_Node));
+               end if;
+               if Contains_Node /= DOM.Null_Node then
+                  Type_Def.Contains :=
+                    To_Bounded_String (Get_Element_Text (Doc, Contains_Node));
+               end if;
+               if Trim_Node /= DOM.Null_Node then
+                  declare
+                     T : constant String := Get_Element_Text (Doc, Trim_Node);
+                  begin
+                     Type_Def.Trim := (T = "true");
+                  end;
+               end if;
+            end;
 
          elsif Base_Text = "boolean" then
             Type_Def.Base_Type := Boolean_Type;
 
          elsif Base_Text = "decimal" then
             Type_Def.Base_Type := Decimal_Type;
+            --  Optional min/max constraints
+            Type_Def.Dec_Min :=
+              Get_Float_Value (Doc, Restriction_Node, "minValue", Float'First);
+            Type_Def.Dec_Max :=
+              Get_Float_Value (Doc, Restriction_Node, "maxValue", Float'Last);
+            --  Exclusive bounds override
+            declare
+               MinE : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "minExclusive");
+               MaxE : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Restriction_Node, "maxExclusive");
+            begin
+               if MinE /= DOM.Null_Node then
+                  Type_Def.Dec_Min :=
+                    Get_Float_Value (Doc, Restriction_Node, "minExclusive", Float'First);
+                  Type_Def.Dec_Min_Exclusive := True;
+               end if;
+               if MaxE /= DOM.Null_Node then
+                  Type_Def.Dec_Max :=
+                    Get_Float_Value (Doc, Restriction_Node, "maxExclusive", Float'Last);
+                  Type_Def.Dec_Max_Exclusive := True;
+               end if;
+            end;
+            --  Optional digit constraints
+            Type_Def.Total_Digits :=
+              Get_Natural_Value (Doc, Restriction_Node, "totalDigits", Natural'Last);
+            Type_Def.Fraction_Digits :=
+              Get_Natural_Value (Doc, Restriction_Node, "fractionDigits", Natural'Last);
 
          else
             return (Success   => False,
@@ -309,12 +437,20 @@ is
                Ref       : Element_Ref;
                Name_Node : constant DOM.Node_Id :=
                  Find_Child_Element (Doc, Elem_Child, "name");
+               Type_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Elem_Child, "type");
                Max_Node  : constant DOM.Node_Id :=
                  Find_Child_Element (Doc, Elem_Child, "maxOccurs");
             begin
                if Name_Node /= DOM.Null_Node then
                   Ref.Element_Name :=
                     To_Bounded_String (Get_Element_Text (Doc, Name_Node));
+               end if;
+
+               --  Optional nested type binding for child element
+               if Type_Node /= DOM.Null_Node then
+                  Ref.Type_Name :=
+                    To_Bounded_String (Get_Element_Text (Doc, Type_Node));
                end if;
 
                Ref.Min_Occurs :=
@@ -368,22 +504,116 @@ is
       end if;
       Type_Def.Name := To_Bounded_String (Get_Element_Text (Doc, Name_Node));
 
-      --  Find content model (sequence or choice)
+      --  Find content model: sequence, choice, or simpleContent
       Content_Node := Find_Child_Element (Doc, Type_Node, "sequence");
       if Content_Node /= DOM.Null_Node then
          Type_Def.Content_Model := Sequence_Model;
+         -- Group-level occurs (optional)
+         declare
+            GMin_Node : constant DOM.Node_Id :=
+              Find_Child_Element (Doc, Content_Node, "minOccurs");
+            GMax_Node : constant DOM.Node_Id :=
+              Find_Child_Element (Doc, Content_Node, "maxOccurs");
+         begin
+            if GMin_Node /= DOM.Null_Node then
+               Type_Def.Group_Min_Occurs :=
+                 Get_Natural_Value (Doc, Content_Node, "minOccurs", 1);
+            end if;
+            if GMax_Node /= DOM.Null_Node then
+               declare
+                  T : constant String := Get_Element_Text (Doc, GMax_Node);
+               begin
+                  if T = "unbounded" then
+                     Type_Def.Group_Max_Occurs := Natural'Last;
+                  else
+                     Type_Def.Group_Max_Occurs :=
+                       Get_Natural_Value (Doc, Content_Node, "maxOccurs", 1);
+                  end if;
+               end;
+            end if;
+         end;
          Parse_Element_References (Doc, Content_Node, Type_Def);
-      else
-         Content_Node := Find_Child_Element (Doc, Type_Node, "choice");
+         else
+            Content_Node := Find_Child_Element (Doc, Type_Node, "choice");
          if Content_Node /= DOM.Null_Node then
             Type_Def.Content_Model := Choice_Model;
+            -- Group-level occurs (optional)
+            declare
+               GMin_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Content_Node, "minOccurs");
+               GMax_Node : constant DOM.Node_Id :=
+                 Find_Child_Element (Doc, Content_Node, "maxOccurs");
+            begin
+               if GMin_Node /= DOM.Null_Node then
+                  Type_Def.Group_Min_Occurs :=
+                    Get_Natural_Value (Doc, Content_Node, "minOccurs", 1);
+               end if;
+               if GMax_Node /= DOM.Null_Node then
+                  declare
+                     T : constant String := Get_Element_Text (Doc, GMax_Node);
+                  begin
+                     if T = "unbounded" then
+                        Type_Def.Group_Max_Occurs := Natural'Last;
+                     else
+                        Type_Def.Group_Max_Occurs :=
+                          Get_Natural_Value (Doc, Content_Node, "maxOccurs", 1);
+                     end if;
+                  end;
+               end if;
+            end;
             Parse_Element_References (Doc, Content_Node, Type_Def);
-         else
-            return (Success   => False,
-                    Error_Msg => To_Bounded_String
-                      ("complexType missing <sequence> or <choice>"));
+            else
+               Content_Node := Find_Child_Element (Doc, Type_Node, "all");
+               if Content_Node /= DOM.Null_Node then
+                  Type_Def.Content_Model := All_Model;
+                  -- Enforce XSD restriction: min ∈ {0,1}, max = 1
+                  declare
+                     GMin_Node : constant DOM.Node_Id :=
+                       Find_Child_Element (Doc, Content_Node, "minOccurs");
+                     GMax_Node : constant DOM.Node_Id :=
+                       Find_Child_Element (Doc, Content_Node, "maxOccurs");
+                  begin
+                     if GMin_Node /= DOM.Null_Node then
+                        Type_Def.Group_Min_Occurs :=
+                          Get_Natural_Value (Doc, Content_Node, "minOccurs", 1);
+                     end if;
+                     if GMax_Node /= DOM.Null_Node then
+                        -- Regardless of value, all must be 1
+                        Type_Def.Group_Max_Occurs := 1;
+                     end if;
+                     if not (Type_Def.Group_Min_Occurs = 0 or else Type_Def.Group_Min_Occurs = 1) then
+                        return (Success   => False,
+                                Error_Msg => To_Bounded_String
+                                  ("<all> group minOccurs must be 0 or 1"));
+                     end if;
+                     if Type_Def.Group_Max_Occurs /= 1 then
+                        return (Success   => False,
+                                Error_Msg => To_Bounded_String
+                                  ("<all> group maxOccurs must be 1"));
+                     end if;
+                  end;
+                  Parse_Element_References (Doc, Content_Node, Type_Def);
+               else
+                  Content_Node := Find_Child_Element (Doc, Type_Node, "simpleContent");
+                  if Content_Node /= DOM.Null_Node then
+                     Type_Def.Content_Model := Simple_Model;
+                     declare
+                        TNode : constant DOM.Node_Id :=
+                          Find_Child_Element (Doc, Content_Node, "type");
+                     begin
+                        if TNode /= DOM.Null_Node then
+                           Type_Def.Simple_Content_Type_Name :=
+                             To_Bounded_String (Get_Element_Text (Doc, TNode));
+                        end if;
+                     end;
+                  else
+                     return (Success   => False,
+                             Error_Msg => To_Bounded_String
+                               ("complexType missing <sequence>, <choice>, <all>, or <simpleContent>"));
+                  end if;
+               end if;
+            end if;
          end if;
-      end if;
 
       return (Success => True, Complex_Def => Type_Def);
    end Parse_Complex_Type;
@@ -448,6 +678,22 @@ is
             declare
                Child_Name : constant String := DOM.Name (Doc, Child);
             begin
+               if Child_Name = "root" then
+                  declare
+                     Name_Node : constant DOM.Node_Id :=
+                       Find_Child_Element (Doc, Child, "name");
+                  begin
+                     if Name_Node = DOM.Null_Node then
+                        Had_Error := True;
+                        Error_Info.Message :=
+                          To_Bounded_String ("root missing <name>");
+                        return;
+                     end if;
+                     Schema.Root_Element :=
+                       To_Bounded_String (Get_Element_Text (Doc, Name_Node));
+                  end;
+               end if;
+
                if Child_Name = "simpleType" then
                   declare
                      Parse_Result : constant Parse_Simple_Result :=
@@ -508,6 +754,52 @@ is
                         Error_Info.Message := Parse_Result.Error_Msg;
                         return;
                      end if;
+                  end;
+
+               elsif Child_Name = "include" then
+                  --  Include external schema file: <include><path>...</path></include>
+                  declare
+                     Path_Node : constant DOM.Node_Id :=
+                       Find_Child_Element (Doc, Child, "path");
+                  begin
+                     if Path_Node = DOM.Null_Node then
+                        Had_Error := True;
+                        Error_Info.Message :=
+                          To_Bounded_String ("include missing <path>");
+                        return;
+                     end if;
+                     declare
+                        Path_Str   : constant String :=
+                          Get_Element_Text (Doc, Path_Node);
+                        Inc_Result : constant SML.DOM.Parser.Parse_Result :=
+                          SML.IO.Parse_File (Path_Str);
+                     begin
+                        if not Inc_Result.Success then
+                           Had_Error := True;
+                           Error_Info.Message :=
+                             To_Bounded_String ("Failed to parse include: "
+                                                & Path_Str);
+                           return;
+                        end if;
+                        --  Recurse into included schema
+                        declare
+                           Inc_Root   : constant DOM.Node_Id :=
+                             DOM.Root (Inc_Result.Doc);
+                           Inc_Error  : Schema_Load_Error_Info;
+                           Inc_Failed : Boolean;
+                        begin
+                           Build_Schema_From_DOM (Inc_Result.Doc,
+                                                  Inc_Root,
+                                                  Schema,
+                                                  Inc_Failed,
+                                                  Inc_Error);
+                           if Inc_Failed then
+                              Had_Error := True;
+                              Error_Info := Inc_Error;
+                              return;
+                           end if;
+                        end;
+                     end;
                   end;
                end if;
             end;

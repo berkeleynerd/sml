@@ -1,0 +1,22 @@
+<schema>
+  <complexType>
+    <name>pairType</name>
+    <all>
+      <element>
+        <name>a</name>
+        <type>string</type>
+        <minOccurs>1</minOccurs>
+      </element>
+      <element>
+        <name>b</name>
+        <type>string</type>
+        <minOccurs>0</minOccurs>
+        <maxOccurs>1</maxOccurs>
+      </element>
+    </all>
+  </complexType>
+  <element>
+    <name>root</name>
+    <type>pairType</type>
+  </element>
+</schema>

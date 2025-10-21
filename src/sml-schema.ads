@@ -98,6 +98,7 @@ is
    type Content_Model_Kind is
      (Sequence_Model,  --  Elements must appear in order
       Choice_Model,    --  Exactly one element must appear
+      All_Model,       --  Unordered; each child 0..1 unless specified
       Simple_Model     --  Simple content (text only)
      );
 
@@ -122,9 +123,23 @@ is
       --  Integer restrictions
       Min_Value   : Integer := Integer'First;
       Max_Value   : Integer := Integer'Last;
+      Int_Min_Exclusive : Boolean := False;
+      Int_Max_Exclusive : Boolean := False;
+      --  Decimal restrictions
+      Dec_Min     : Float := Float'First;
+      Dec_Max     : Float := Float'Last;
+      Dec_Min_Exclusive : Boolean := False;
+      Dec_Max_Exclusive : Boolean := False;
+      Total_Digits    : Natural := Natural'Last;   --  max total digits (no limit if Natural'Last)
+      Fraction_Digits : Natural := Natural'Last;   --  max fraction digits (no limit if Natural'Last)
       --  String restrictions
       Min_Length  : Natural := 0;
       Max_Length  : Natural := Max_String_Length;
+      Length      : Natural := Natural'Last;        --  exact length (no exact check if Natural'Last)
+      Trim        : Boolean := False;               --  trim leading/trailing whitespace before checks
+      Prefix      : Bounded_String := Empty_String;
+      Suffix      : Bounded_String := Empty_String;
+      Contains    : Bounded_String := Empty_String;
       --  Enumeration values
       Enum_Values : Enum_Value_Array := [others => Empty_String];
       Enum_Count  : Natural := 0;
@@ -139,6 +154,7 @@ is
    --  Element reference in sequences/choices
    type Element_Ref is record
       Element_Name : Bounded_String;
+      Type_Name    : Bounded_String := Empty_String;
       Min_Occurs   : Natural := 1;
       Max_Occurs   : Natural := 1;  --  Natural'Last = unbounded
    end record;
@@ -150,9 +166,17 @@ is
    type Complex_Type_Definition is record
       Name          : Bounded_String;
       Content_Model : Content_Model_Kind := Sequence_Model;
+      --  Group-level occurrence (sequence/choice). For All_Model, Max must be 1 and Min ∈ {0,1}
+      Group_Min_Occurs : Natural := 1;
+      Group_Max_Occurs : Natural := 1;  -- Natural'Last = unbounded (not for All_Model)
+      --  For Simple_Model: text content validated against this simple type
+      Simple_Content_Type_Name : Bounded_String := Empty_String;
       Children      : Element_Ref_Array :=
         [others =>
-           (Element_Name => Empty_String, Min_Occurs => 1, Max_Occurs => 1)];
+           (Element_Name => Empty_String,
+            Type_Name    => Empty_String,
+            Min_Occurs   => 1,
+            Max_Occurs   => 1)];
       Child_Count   : Natural := 0;
    end record;
 
@@ -229,6 +253,10 @@ is
    --  Validate entire document against schema
    function Validate_Document
      (Schema : Schema_Document; Doc : DOM.Document) return Validation_Result;
+
+   --  Set the required root element name (optional policy)
+   procedure Set_Root_Element (Schema : in out Schema_Document; Name : String)
+   with Pre => Name'Length > 0 and then Name'Length <= Max_Name_Length;
 
    --  Validate element children against complex type structure
    function Validate_Structure
@@ -308,8 +336,21 @@ private
             Base_Type   => String_Type,
             Min_Value   => Integer'First,
             Max_Value   => Integer'Last,
+            Int_Min_Exclusive => False,
+            Int_Max_Exclusive => False,
+            Dec_Min     => Float'First,
+            Dec_Max     => Float'Last,
+            Dec_Min_Exclusive => False,
+            Dec_Max_Exclusive => False,
+            Total_Digits    => Natural'Last,
+            Fraction_Digits => Natural'Last,
             Min_Length  => 0,
             Max_Length  => Max_String_Length,
+            Length      => Natural'Last,
+            Trim        => False,
+            Prefix      => Empty_String,
+            Suffix      => Empty_String,
+            Contains    => Empty_String,
             Enum_Values => [others => Empty_String],
             Enum_Count  => 0)];
       Simple_Type_Count : Natural := 0;
@@ -319,9 +360,13 @@ private
         [others =>
            (Name          => Empty_String,
             Content_Model => Sequence_Model,
+            Group_Min_Occurs => 1,
+            Group_Max_Occurs => 1,
+            Simple_Content_Type_Name => Empty_String,
             Children      =>
               [others =>
                  (Element_Name => Empty_String,
+                  Type_Name    => Empty_String,
                   Min_Occurs   => 1,
                   Max_Occurs   => 1)],
             Child_Count   => 0)];

@@ -8,7 +8,9 @@
 with SML.UTF8;
 with SML.Entities;
 with SML.Memory_Model;
+with SML.Schema;
 use type SML.Memory_Model.Node_Kind;
+use type SML.Schema.Validation_Status;
 
 package body SML.DOM.Parser
   with SPARK_Mode => On
@@ -128,6 +130,46 @@ is
          end if;
       end loop;
    end Advance;
+
+   ---------------------------------------------------------------------------
+   --  Convenience API: Parse + Validate
+   ---------------------------------------------------------------------------
+
+   function Parse_With_Schema
+     (Input : String; Schema : SML.Schema.Schema_Document) return Parse_Result
+   is
+   begin
+      -- First, try parsing; return parse failure directly
+      if not Parse (Input).Success then
+         return Parse (Input);
+      end if;
+
+      -- Validate parsed document; reparse to obtain Doc for validation
+      declare
+         P2 : constant Parse_Result := Parse (Input);
+         V  : constant SML.Schema.Validation_Result :=
+           SML.Schema.Validate_Document (Schema, P2.Doc);
+      begin
+         if V.Status = SML.Schema.Valid then
+            -- Return a fresh successful parse result
+            return Parse (Input);
+         else
+            -- Map schema validation failure to a parse error
+            declare
+               Err : constant Parse_Error :=
+                 Make_Error
+                   (Kind     => Disallowed_Construct,
+                    Position => 0,
+                    Line     => 1,
+                    Column   => 1,
+                    Message  => "Schema validation failed: "
+                                & SML.Schema.To_String (V.Error_Message));
+            begin
+               return (Success => False, Error => Err);
+            end;
+         end if;
+      end;
+   end Parse_With_Schema;
 
    --  Peek at current character without advancing
    function Peek (Input_Str : String; Ctx : Parser_Context) return Character

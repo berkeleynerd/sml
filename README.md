@@ -160,9 +160,15 @@ SML includes a formally verified schema validation system for type-safe configur
 **SML.Schema** - Validation engine with:
 - **Element vocabulary** - Define allowed element names
 - **Content types** - integer, boolean, decimal, string with ranges/lengths
+  - Strings: length, optional prefix/suffix
+  - Decimals: min/max range
 - **Enumerations** - Restrict values to specific lists (e.g., log levels)
 - **Cardinality** - Min/max occurrence constraints (minOccurs, maxOccurs)
-- **Structure rules** - Sequence (ordered) and choice (one-of) models
+- **Structure rules** - Sequence (ordered), choice (one-of), and all (unordered)
+  - Sequences enforce strict sibling order; extra elements are rejected; text/whitespace between elements is ignored.
+  - Group-level occurs on sequence/choice via child `<minOccurs>/<maxOccurs>`; `unbounded` allowed (not for `all`).
+  - `all` follows XSD: `minOccurs` ∈ {0,1}, `maxOccurs` = 1.
+  - See `SCHEMA_SPEC.md` for details and examples.
 - **Type safety** - Formal invariants with 0 high-priority SPARK issues
 
 ### Example/Reference Code (examples/)
@@ -171,6 +177,7 @@ SML includes a formally verified schema validation system for type-safe configur
 - Complete working implementation
 - Users can copy/adapt for their needs
 - One function uses `Integer'Value` (documented, isolated)
+ - Supports `<include><path>…</path></include>` to merge external schema files
 
 ### Quick Start: Programmatic Schema
 
@@ -205,10 +212,10 @@ end Validate_Config;
 # End-to-end validation demo
 bin/schema_validation_example
 
-# Schema loader tests (9 tests)
+# Schema loader tests (10 tests)
 bin/test_schema_loader
 
-# Core validation tests (8 tests)
+# Core validation tests (13 tests)
 bin/test_schema
 ```
 

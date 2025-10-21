@@ -4,9 +4,76 @@
 --  SPARK Ada Implementation
 ------------------------------------------------------------------------------
 
+with SML.UTF8;
+
 package body SML.Schema
   with SPARK_Mode => On
 is
+   ---------------------------------------------------------------------------
+   --  Internal Helper: Validate node against a given type name
+   ---------------------------------------------------------------------------
+
+   function Validate_Node_Against_Type
+     (Schema    : Schema_Document;
+      Doc       : DOM.Document;
+      Node      : DOM.Node_Id;
+      Type_Name : Bounded_String) return Validation_Result
+   is
+      use DOM;
+   begin
+      --  Try complex type first
+      for I in 1 .. Schema.Complex_Type_Count loop
+         if Schema.Complex_Types (I).Name = Type_Name then
+            return Validate_Structure (Schema, Doc, Node, Type_Name);
+         end if;
+      end loop;
+
+      --  Then simple type: text-only element with content validation
+      for I in 1 .. Schema.Simple_Type_Count loop
+         if Schema.Simple_Types (I).Name = Type_Name then
+            declare
+               Child             : Node_Id := First_Child (Doc, Node);
+               Has_Element_Child : Boolean := False;
+               First_Text_Node   : Node_Id := Null_Node;
+            begin
+               while Child /= Null_Node loop
+                  if Kind (Doc, Child) = Element then
+                     Has_Element_Child := True;
+                  elsif Kind (Doc, Child) = Text
+                    and then First_Text_Node = Null_Node
+                  then
+                     First_Text_Node := Child;
+                  end if;
+                  Child := Next_Sibling (Doc, Child);
+               end loop;
+
+               if Has_Element_Child then
+                  return
+                    (Status        => Invalid,
+                     Error_Message =>
+                       To_Bounded_String
+                         ("Simple content cannot have child elements"),
+                     Error_Path    => To_Bounded_String ("/" & Name (Doc, Node)),
+                     Line          => 0,
+                     Column        => 0);
+               end if;
+
+               declare
+                  Content : constant String :=
+                    (if First_Text_Node = Null_Node then
+                       ""
+                     else
+                       Text_Value (Doc, First_Text_Node));
+               begin
+                  return Validate_Content (Schema, Type_Name, Content);
+               end;
+            end;
+         end if;
+      end loop;
+
+      --  Unknown type name: treat as valid (no-op)
+      return Valid_Result;
+   end Validate_Node_Against_Type;
 
    ---------------------------------------------------------------------------
    --  Schema Construction Implementation
@@ -34,19 +101,36 @@ is
             Base_Type   => String_Type,
             Min_Value   => Integer'First,
             Max_Value   => Integer'Last,
+            Int_Min_Exclusive => False,
+            Int_Max_Exclusive => False,
+            Dec_Min     => Float'First,
+            Dec_Max     => Float'Last,
+            Dec_Min_Exclusive => False,
+            Dec_Max_Exclusive => False,
+            Total_Digits    => Natural'Last,
+            Fraction_Digits => Natural'Last,
             Min_Length  => 0,
             Max_Length  => Max_String_Length,
+            Length      => Natural'Last,
+            Trim        => False,
+            Prefix      => Empty_String,
+            Suffix      => Empty_String,
+            Contains    => Empty_String,
             Enum_Values => [others => Empty_String],
             Enum_Count  => 0);
-      end loop;
+     end loop;
 
       for I in Schema.Complex_Types'Range loop
          Schema.Complex_Types (I) :=
            (Name          => Empty_String,
             Content_Model => Sequence_Model,
+            Group_Min_Occurs => 1,
+            Group_Max_Occurs => 1,
+            Simple_Content_Type_Name => Empty_String,
             Children      =>
               [others =>
                  (Element_Name => Empty_String,
+                  Type_Name    => Empty_String,
                   Min_Occurs   => 1,
                   Max_Occurs   => 1)],
             Child_Count   => 0);
@@ -76,6 +160,11 @@ is
       Schema.Elements (Schema.Element_Count) := Element;
       Success := True;
    end Add_Element;
+
+   procedure Set_Root_Element (Schema : in out Schema_Document; Name : String) is
+   begin
+      Schema.Root_Element := To_Bounded_String (Name);
+   end Set_Root_Element;
 
    procedure Add_Simple_Type
      (Schema   : in out Schema_Document;
@@ -273,6 +362,26 @@ is
             Column        => 0);
       end if;
 
+      --  Enforce specific root element if specified in schema
+      if Schema.Root_Element.Length > 0 then
+         declare
+            Root_Name : constant String := Name (Doc, Root_Node);
+         begin
+            if To_Bounded_String (Root_Name) /= Schema.Root_Element then
+               return
+                 (Status        => Invalid,
+                  Error_Message =>
+                    To_Bounded_String
+                      ("Invalid root element: expected "
+                       & To_String (Schema.Root_Element)
+                       & ", got " & Root_Name),
+                  Error_Path    => To_Bounded_String ("/" & Root_Name),
+                  Line          => 0,
+                  Column        => 0);
+            end if;
+         end;
+      end if;
+
       --  Start validation from root
       return Validate_Element (Schema, Doc, Root_Node);
    end Validate_Document;
@@ -296,108 +405,295 @@ is
                --  Validate based on content model
                case Complex_Type.Content_Model is
                   when Sequence_Model =>
-                     --  Children must appear in order
-                     for J in 1 .. Complex_Type.Child_Count loop
-                        declare
-                           Expected     : Element_Ref
-                             renames Complex_Type.Children (J);
-                           Actual_Count : Natural := 0;
-                        begin
-                           --  Count matching children
-                           while Child /= Null_Node loop
-                              if Kind (Doc, Child) = Element
-                                and then To_Bounded_String (Name (Doc, Child))
-                                         = Expected.Element_Name
-                              then
-                                 Actual_Count := Actual_Count + 1;
-                              end if;
-                              Child := Next_Sibling (Doc, Child);
-                           end loop;
-
-                           --  Check cardinality
-                           declare
-                              Result : constant Validation_Result :=
-                                Check_Cardinality
-                                  (Expected.Min_Occurs,
-                                   Expected.Max_Occurs,
-                                   Actual_Count,
-                                   To_String (Expected.Element_Name));
-                           begin
-                              if Result.Status = Invalid then
-                                 return Result;
-                              end if;
-                           end;
-                        end;
-                     end loop;
-
-                  when Choice_Model =>
-                     --  Exactly one option must have elements
+                     -- Strict order: repeat group Group_Min_Occurs..Group_Max_Occurs times
                      declare
-                        Options_With_Elements : Natural := 0;
+                        Rep                : Natural := 0;
+                        Consumed_In_Rep    : Boolean := False;
+                        J                  : Natural := 1;
+                        Actual_Count       : Natural := 0;
+                        Max_Repetitions    : Natural := Complex_Type.Group_Max_Occurs;
                      begin
-                        --  Count which options have elements
-                        for J in 1 .. Complex_Type.Child_Count loop
-                           declare
-                              Expected     : Element_Ref
-                                renames Complex_Type.Children (J);
-                              Option_Count : Natural := 0;
-                              Check_Child  : Node_Id :=
-                                First_Child (Doc, Parent_Node);
-                           begin
-                              --  Count elements matching this option
-                              while Check_Child /= Null_Node loop
-                                 if Kind (Doc, Check_Child) = Element
-                                   and then To_Bounded_String
-                                              (Name (Doc, Check_Child))
-                                            = Expected.Element_Name
+                        Child := First_Child (Doc, Parent_Node);
+
+                        Group_Loop : loop
+                           exit Group_Loop when Max_Repetitions /= Natural'Last and then Rep >= Max_Repetitions;
+
+                           -- Start repetition
+                           Consumed_In_Rep := False;
+                           J := 1;
+
+                           while J <= Complex_Type.Child_Count loop
+                              declare
+                                 Expected : constant Element_Ref := Complex_Type.Children (J);
+                              begin
+                                 -- Skip non-element nodes
+                                 while Child /= Null_Node and then Kind (Doc, Child) /= Element loop
+                                    Child := Next_Sibling (Doc, Child);
+                                 end loop;
+
+                                 -- If required and next doesn't match: either stop (if min satisfied) or error
+                                 if Child /= Null_Node
+                                   and then Kind (Doc, Child) = Element
+                                   and then Expected.Min_Occurs > 0
+                                   and then To_Bounded_String (Name (Doc, Child)) /= Expected.Element_Name
                                  then
-                                    Option_Count := Option_Count + 1;
+                                    if Rep >= Complex_Type.Group_Min_Occurs then
+                                       exit Group_Loop;
+                                    else
+                                       declare
+                                          Found_Name : constant String := Name (Doc, Child);
+                                          Exp_Name   : constant String := To_String (Expected.Element_Name);
+                                       begin
+                                          return
+                                            (Status        => Invalid,
+                                             Error_Message => To_Bounded_String ("Order violation: expected " & Exp_Name & " before " & Found_Name),
+                                             Error_Path    => To_Bounded_String ("/" & Found_Name),
+                                             Line          => 0,
+                                             Column        => 0);
+                                       end;
+                                    end if;
                                  end if;
-                                 Check_Child :=
-                                   Next_Sibling (Doc, Check_Child);
-                              end loop;
 
-                              if Option_Count > 0 then
-                                 Options_With_Elements :=
-                                   Options_With_Elements + 1;
+                                 -- Count consecutive matches for this expected
+                                 Actual_Count := 0;
+                                 while Child /= Null_Node
+                                   and then Kind (Doc, Child) = Element
+                                   and then To_Bounded_String (Name (Doc, Child)) = Expected.Element_Name
+                                 loop
+                                    -- Typed validation if provided
+                                    if Expected.Type_Name.Length > 0 then
+                                       declare
+                                          Vres : constant Validation_Result :=
+                                            Validate_Node_Against_Type (Schema, Doc, Child, Expected.Type_Name);
+                                       begin
+                                          if Vres.Status = Invalid then
+                                             return Vres;
+                                          end if;
+                                       end;
+                                    end if;
 
-                                 --  Check cardinality for this option
+                                    Actual_Count := Actual_Count + 1;
+                                    Consumed_In_Rep := True;
+
+                                    if Expected.Max_Occurs /= Natural'Last and then Actual_Count > Expected.Max_Occurs then
+                                       return Check_Cardinality (Expected.Min_Occurs, Expected.Max_Occurs, Actual_Count, To_String (Expected.Element_Name));
+                                    end if;
+
+                                    Child := Next_Sibling (Doc, Child);
+                                    while Child /= Null_Node and then Kind (Doc, Child) /= Element loop
+                                       Child := Next_Sibling (Doc, Child);
+                                    end loop;
+                                 end loop;
+
+                                 -- Final cardinality check for this expected
                                  declare
                                     Result : constant Validation_Result :=
-                                      Check_Cardinality
-                                        (Expected.Min_Occurs,
-                                         Expected.Max_Occurs,
-                                         Option_Count,
-                                         To_String (Expected.Element_Name));
+                                      Check_Cardinality (Expected.Min_Occurs, Expected.Max_Occurs, Actual_Count, To_String (Expected.Element_Name));
                                  begin
                                     if Result.Status = Invalid then
                                        return Result;
                                     end if;
                                  end;
+
+                                 J := J + 1;
+                              end;
+                           end loop;
+
+                           -- Completed one repetition
+                           Rep := Rep + 1;
+
+                           -- If nothing consumed this repetition
+                           if not Consumed_In_Rep then
+                              if Rep >= Complex_Type.Group_Min_Occurs then
+                                 exit Group_Loop;
+                              else
+                                 return
+                                   (Status        => Invalid,
+                                    Error_Message => To_Bounded_String ("Missing required group repetition"),
+                                    Error_Path    => Empty_String,
+                                    Line          => 0,
+                                    Column        => 0);
                               end if;
-                           end;
+                           end if;
+                        end loop Group_Loop;
+
+                        -- Ensure no extra element children remain
+                        while Child /= Null_Node loop
+                           if Kind (Doc, Child) = Element then
+                              declare
+                                 Found_Name : constant String := Name (Doc, Child);
+                              begin
+                                 return
+                                   (Status        => Invalid,
+                                    Error_Message => To_Bounded_String ("Unexpected element: " & Found_Name),
+                                    Error_Path    => To_Bounded_String ("/" & Found_Name),
+                                    Line          => 0,
+                                    Column        => 0);
+                              end;
+                           end if;
+                           Child := Next_Sibling (Doc, Child);
+                        end loop;
+                     end;
+
+                  when Choice_Model =>
+                     -- Group-level occurs for choice: each repetition picks exactly one option
+                     declare
+                        Picks          : Natural := 0;
+                        Max_Picks      : Natural := Complex_Type.Group_Max_Occurs;
+                        C              : Node_Id := First_Child (Doc, Parent_Node);
+                     begin
+                        while C /= Null_Node loop
+                           if Kind (Doc, C) = Element then
+                              declare
+                                 NameB   : constant Bounded_String :=
+                                   To_Bounded_String (Name (Doc, C));
+                                 Matched : Boolean := False;
+                              begin
+                                 -- Find matching option
+                                 for J in 1 .. Complex_Type.Child_Count loop
+                                    declare
+                                       Opt : constant Element_Ref := Complex_Type.Children (J);
+                                    begin
+                                       if Opt.Element_Name = NameB then
+                                          Matched := True;
+                                          -- Typed validation for this pick
+                                          if Opt.Type_Name.Length > 0 then
+                                             declare
+                                                Vres : constant Validation_Result :=
+                                                  Validate_Node_Against_Type (Schema, Doc, C, Opt.Type_Name);
+                                             begin
+                                                if Vres.Status = Invalid then
+                                                   return Vres;
+                                                end if;
+                                             end;
+                                          end if;
+                                          exit;
+                                       end if;
+                                    end;
+                                 end loop;
+                                 if not Matched then
+                                    return
+                                      (Status        => Invalid,
+                                       Error_Message => To_Bounded_String ("Unexpected element: " & To_String (NameB)),
+                                       Error_Path    => To_Bounded_String ("/" & To_String (NameB)),
+                                       Line          => 0,
+                                       Column        => 0);
+                                 end if;
+                                 -- Count this as one pick
+                                 Picks := Picks + 1;
+                                 if Max_Picks /= Natural'Last and then Picks > Max_Picks then
+                                    return
+                                      (Status        => Invalid,
+                                       Error_Message => To_Bounded_String ("Too many choices: maximum" & Natural'Image (Complex_Type.Group_Max_Occurs) & ", got" & Natural'Image (Picks)),
+                                       Error_Path    => To_Bounded_String ("/" & To_String (NameB)),
+                                       Line          => 0,
+                                       Column        => 0);
+                                 end if;
+                              end;
+                           end if;
+                           C := Next_Sibling (Doc, C);
                         end loop;
 
-                        --  Validate that exactly one option was chosen
-                        if Options_With_Elements = 0 then
+                        -- Check minimum number of picks
+                        if Picks < Complex_Type.Group_Min_Occurs then
                            return
                              (Status        => Invalid,
-                              Error_Message =>
-                                To_Bounded_String
-                                  ("Choice group requires one option"),
-                              Error_Path    => Empty_String,
-                              Line          => 0,
-                              Column        => 0);
-                        elsif Options_With_Elements > 1 then
-                           return
-                             (Status        => Invalid,
-                              Error_Message =>
-                                To_Bounded_String
-                                  ("Choice group allows only one option"),
+                              Error_Message => To_Bounded_String ("Too few choices: minimum" & Natural'Image (Complex_Type.Group_Min_Occurs) & ", got" & Natural'Image (Picks)),
                               Error_Path    => Empty_String,
                               Line          => 0,
                               Column        => 0);
                         end if;
+                     end;
+
+                  when All_Model =>
+                     --  Unordered group: each expected element has independent
+                     --  cardinality; unexpected elements are rejected
+                     declare
+                        Counts : array (1 .. Complex_Type.Child_Count) of Natural :=
+                          [others => 0];
+                        EChild : Node_Id := First_Child (Doc, Parent_Node);
+                     begin
+                        --  Scan all element children
+                        while EChild /= Null_Node loop
+                           if Kind (Doc, EChild) = Element then
+                              declare
+                                 Found : constant Bounded_String :=
+                                   To_Bounded_String (Name (Doc, EChild));
+                                 Matched : Boolean := False;
+                              begin
+                                 for K in 1 .. Complex_Type.Child_Count loop
+                                    declare
+                                       RefK : constant Element_Ref :=
+                                         Complex_Type.Children (K);
+                                    begin
+                                       if RefK.Element_Name = Found then
+                                          Matched := True;
+                                          Counts (K) := Counts (K) + 1;
+                                          --  Early too-many check
+                                          if RefK.Max_Occurs /= Natural'Last
+                                            and then Counts (K) > RefK.Max_Occurs
+                                          then
+                                             return
+                                               Check_Cardinality
+                                                 (RefK.Min_Occurs,
+                                                  RefK.Max_Occurs,
+                                                  Counts (K),
+                                                  To_String (RefK.Element_Name));
+                                          end if;
+
+                                          --  Typed validation for this child
+                                          if RefK.Type_Name.Length > 0 then
+                                             declare
+                                                Vres : constant Validation_Result :=
+                                                  Validate_Node_Against_Type
+                                                    (Schema,
+                                                     Doc,
+                                                     EChild,
+                                                     RefK.Type_Name);
+                                             begin
+                                                if Vres.Status = Invalid then
+                                                   return Vres;
+                                                end if;
+                                             end;
+                                          end if;
+                                          exit;
+                                       end if;
+                                    end;
+                                 end loop;
+                                 if not Matched then
+                                    return
+                                      (Status        => Invalid,
+                                       Error_Message =>
+                                         To_Bounded_String
+                                           ("Unexpected element: "
+                                            & To_String (Found)),
+                                       Error_Path    => Found,
+                                       Line          => 0,
+                                       Column        => 0);
+                                 end if;
+                              end;
+                           end if;
+                           EChild := Next_Sibling (Doc, EChild);
+                        end loop;
+
+                        --  Check minimums
+                        for K in 1 .. Complex_Type.Child_Count loop
+                           declare
+                              RefK : constant Element_Ref :=
+                                Complex_Type.Children (K);
+                              Cnt : constant Natural := Counts (K);
+                              MinRes : constant Validation_Result :=
+                                Check_Cardinality
+                                  (RefK.Min_Occurs,
+                                   RefK.Max_Occurs,
+                                   Cnt,
+                                   To_String (RefK.Element_Name));
+                           begin
+                              if MinRes.Status = Invalid then
+                                 return MinRes;
+                              end if;
+                           end;
+                        end loop;
                      end;
 
                   when Simple_Model =>
@@ -421,29 +717,34 @@ is
                         end loop;
 
                         --  Simple content cannot have element children
-                        if Has_Element_Child then
-                           return
-                             (Status        => Invalid,
-                              Error_Message =>
-                                To_Bounded_String
-                                  ("Simple content cannot have child elements"),
-                              Error_Path    => Empty_String,
-                              Line          => 0,
-                              Column        => 0);
-                        end if;
+               if Has_Element_Child then
+                  return
+                    (Status        => Invalid,
+                     Error_Message =>
+                       To_Bounded_String
+                         ("Simple content cannot have child elements"),
+                     Error_Path    => To_Bounded_String ("/" & Name (Doc, Parent_Node)),
+                     Line          => 0,
+                     Column        => 0);
+               end if;
 
-                        --  If there's text content, validate it
-                        --  Note: In full implementation, would validate
-                        --  against the simple type for this element
-                        if First_Text_Node /= Null_Node then
-                           --  For now, just check it's not empty
+                        --  Validate text against bound simple type if provided
+                        if Complex_Type.Simple_Content_Type_Name.Length > 0 then
                            declare
-                              Text : constant String :=
-                                Text_Value (Doc, First_Text_Node);
-                              pragma Unreferenced (Text);
+                              Content : constant String :=
+                                (if First_Text_Node = Null_Node then
+                                   ""
+                                 else
+                                   Text_Value (Doc, First_Text_Node));
+                              Result : constant Validation_Result :=
+                                Validate_Content
+                                  (Schema,
+                                   Complex_Type.Simple_Content_Type_Name,
+                                   Content);
                            begin
-                              --  Empty text is OK for simple content
-                              null;
+                              if Result.Status = Invalid then
+                                 return Result;
+                              end if;
                            end;
                         end if;
                      end;
@@ -516,8 +817,16 @@ is
             begin
                case Type_Def.Base_Type is
                   when String_Type =>
+                     --  Optional trim
+                     declare
+                        S : constant String :=
+                          (if Type_Def.Trim then
+                             SML.UTF8.Trim_Whitespace (Content)
+                           else
+                             Content);
+                     begin
                      --  Check string length
-                     if Content'Length < Type_Def.Min_Length then
+                     if S'Length < Type_Def.Min_Length then
                         return
                           (Status        => Invalid,
                            Error_Message =>
@@ -528,7 +837,7 @@ is
                            Error_Path    => Empty_String,
                            Line          => 0,
                            Column        => 0);
-                     elsif Content'Length > Type_Def.Max_Length then
+                     elsif S'Length > Type_Def.Max_Length then
                         return
                           (Status        => Invalid,
                            Error_Message =>
@@ -542,9 +851,23 @@ is
                      end if;
 
                      --  Check enumeration if defined
+                     --  Exact length if configured
+                     if Type_Def.Length /= Natural'Last and then S'Length /= Type_Def.Length then
+                        return
+                          (Status        => Invalid,
+                           Error_Message =>
+                             To_Bounded_String
+                               ("String length must be "
+                                & Natural'Image (Type_Def.Length)
+                                & " characters"),
+                           Error_Path    => Empty_String,
+                           Line          => 0,
+                           Column        => 0);
+                     end if;
+
                      if Type_Def.Enum_Count > 0 then
                         --  Check content length before validation
-                        if Content'Length > Max_Name_Length then
+                        if S'Length > Max_Name_Length then
                            return
                              (Status        => Invalid,
                               Error_Message =>
@@ -556,23 +879,291 @@ is
                         end if;
                         return
                           Validate_Enum_Content
-                            (Content,
+                            (S,
                              Type_Def.Enum_Values,
                              Type_Def.Enum_Count);
                      end if;
 
+                     --  Optional prefix/suffix/contains constraints
+                     if Type_Def.Prefix.Length > 0 then
+                        declare
+                           P : constant String := To_String (Type_Def.Prefix);
+                        begin
+                           if S'Length < P'Length or else
+                             (P'Length > 0 and then
+                              S (S'First .. S'First + P'Length - 1) /= P)
+                           then
+                              return
+                                (Status        => Invalid,
+                                 Error_Message =>
+                                   To_Bounded_String
+                                     ("String must start with: " & P),
+                                 Error_Path    => Empty_String,
+                                 Line          => 0,
+                                 Column        => 0);
+                           end if;
+                        end;
+                     end if;
+
+                     if Type_Def.Suffix.Length > 0 then
+                        declare
+                           S : constant String := To_String (Type_Def.Suffix);
+                           L : constant Natural := S'Length;
+                           CL: constant Natural := S'Length;
+                        begin
+                           if CL < L or else
+                             (L > 0 and then
+                              S (S'Last - L + 1 .. S'Last) /= S)
+                           then
+                              return
+                                (Status        => Invalid,
+                                 Error_Message =>
+                                   To_Bounded_String
+                                     ("String must end with: " & S),
+                                 Error_Path    => Empty_String,
+                                 Line          => 0,
+                                 Column        => 0);
+                           end if;
+                        end;
+                     end if;
+
+                     if Type_Def.Contains.Length > 0 then
+                        declare
+                           Sub : constant String := To_String (Type_Def.Contains);
+                           CL  : constant Natural := S'Length;
+                           SL  : constant Natural := Sub'Length;
+                           Found : Boolean := False;
+                        begin
+                           if SL = 0 then
+                              Found := True;
+                           elsif SL <= CL then
+                              declare
+                                 I : Natural := 1;
+                              begin
+                                 while I <= CL - SL + 1 loop
+                                    if S (I .. I + SL - 1) = Sub then
+                                       Found := True;
+                                       exit;
+                                    end if;
+                                    I := I + 1;
+                                 end loop;
+                              end;
+                           end if;
+                           if not Found then
+                              return
+                                (Status        => Invalid,
+                                 Error_Message =>
+                                   To_Bounded_String ("String must contain: " & Sub),
+                                 Error_Path    => Empty_String,
+                                 Line          => 0,
+                                 Column        => 0);
+                           end if;
+                        end;
+                     end if;
+
                      return Valid_Result;
+                     end;
 
                   when Integer_Type =>
-                     return
-                       Validate_Integer_Content
-                         (Content, Type_Def.Min_Value, Type_Def.Max_Value);
+                     declare
+                        IRes  : constant Validation_Result :=
+                          Validate_Integer_Content (Content, Type_Def.Min_Value, Type_Def.Max_Value);
+                        Value : Integer;
+                     begin
+                        if IRes.Status = Invalid then
+                           return IRes;
+                        end if;
+                        --  Exclusive bounds
+                        begin
+                           Value := Integer'Value (Content);
+                        exception
+                           when Constraint_Error =>
+                              return
+                                (Status        => Invalid,
+                                 Error_Message => To_Bounded_String ("Invalid integer value: " & Content),
+                                 Error_Path    => Empty_String,
+                                 Line          => 0,
+                                 Column        => 0);
+                        end;
+                        if Type_Def.Int_Min_Exclusive and then Value <= Type_Def.Min_Value then
+                           return
+                             (Status        => Invalid,
+                              Error_Message => To_Bounded_String ("Integer must be > " & Integer'Image (Type_Def.Min_Value)),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
+                        end if;
+                        if Type_Def.Int_Max_Exclusive and then Value >= Type_Def.Max_Value then
+                           return
+                             (Status        => Invalid,
+                              Error_Message => To_Bounded_String ("Integer must be < " & Integer'Image (Type_Def.Max_Value)),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
+                        end if;
+
+                        --  If enumeration present, enforce numeric membership
+                        if Type_Def.Enum_Count > 0 then
+                           for E in 1 .. Type_Def.Enum_Count loop
+                              declare
+                                 EV_Str : constant String := To_String (Type_Def.Enum_Values (E));
+                                 EV     : Integer;
+                                 Match  : Boolean := False;
+                              begin
+                                 begin
+                                    EV := Integer'Value (EV_Str);
+                                    if EV = Value then
+                                       Match := True;
+                                    end if;
+                                 exception
+                                    when Constraint_Error => null;
+                                 end;
+                                 if Match then
+                                    return Valid_Result;
+                                 end if;
+                              end;
+                           end loop;
+                           return
+                             (Status        => Invalid,
+                              Error_Message => To_Bounded_String ("Value not in enumeration: " & Content),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
+                        end if;
+                        return Valid_Result;
+                     end;
 
                   when Boolean_Type =>
                      return Validate_Boolean_Content (Content);
 
                   when Decimal_Type =>
-                     return Validate_Decimal_Content (Content);
+                     declare
+                        Res : Validation_Result :=
+                          Validate_Decimal_Content (Content);
+                        V   : Float;
+                        --  Digit counts
+                        Total_D  : Natural := 0;
+                        Fraction : Natural := 0;
+                        Seen_Dot : Boolean := False;
+                     begin
+                        if Res.Status = Invalid then
+                           return Res;
+                        end if;
+                        --  Parse again to check range (safe under try/catch)
+                        begin
+                           V := Float'Value (Content);
+                        exception
+                           when Constraint_Error =>
+                              return
+                                (Status        => Invalid,
+                                 Error_Message =>
+                                   To_Bounded_String
+                                     ("Invalid decimal value: " & Content),
+                                 Error_Path    => Empty_String,
+                                 Line          => 0,
+                                 Column        => 0);
+                        end;
+                        if V < Type_Def.Dec_Min then
+                            return
+                             (Status        => Invalid,
+                              Error_Message =>
+                                To_Bounded_String
+                                  ("Decimal too small: minimum "
+                                   & Float'Image (Type_Def.Dec_Min)),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
+                        elsif V > Type_Def.Dec_Max then
+                           return
+                             (Status        => Invalid,
+                              Error_Message =>
+                                To_Bounded_String
+                                  ("Decimal too large: maximum "
+                                   & Float'Image (Type_Def.Dec_Max)),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
+                        end if;
+                        --  Enforce totalDigits/fractionDigits (max)
+                        if Type_Def.Total_Digits /= Natural'Last or else
+                           Type_Def.Fraction_Digits /= Natural'Last
+                        then
+                           -- Count digits in content (ignore sign and dot)
+                           declare
+                              S : constant String := Content;
+                           begin
+                              for I in S'Range loop
+                                 if S (I) = '-' then
+                                    null;
+                                 elsif S (I) = '.' then
+                                    Seen_Dot := True;
+                                 elsif S (I) >= '0' and then S (I) <= '9' then
+                                    Total_D := Total_D + 1;
+                                    if Seen_Dot then
+                                       Fraction := Fraction + 1;
+                                    end if;
+                                 else
+                                    null;
+                                 end if;
+                              end loop;
+                           end;
+                           if Type_Def.Total_Digits /= Natural'Last and then
+                              Total_D > Type_Def.Total_Digits
+                           then
+                              return
+                                (Status        => Invalid,
+                                 Error_Message =>
+                                   To_Bounded_String
+                                     ("Too many digits: maximum total "
+                                      & Natural'Image (Type_Def.Total_Digits)),
+                                 Error_Path    => Empty_String,
+                                 Line          => 0,
+                                 Column        => 0);
+                           end if;
+                           if Type_Def.Fraction_Digits /= Natural'Last and then
+                              Fraction > Type_Def.Fraction_Digits
+                           then
+                              return
+                                (Status        => Invalid,
+                                 Error_Message =>
+                                   To_Bounded_String
+                                     ("Too many fraction digits: maximum "
+                                      & Natural'Image (Type_Def.Fraction_Digits)),
+                                 Error_Path    => Empty_String,
+                                 Line          => 0,
+                                 Column        => 0);
+                           end if;
+                        end if;
+                        --  If enumeration present, enforce numeric membership
+                        if Type_Def.Enum_Count > 0 then
+                           for E in 1 .. Type_Def.Enum_Count loop
+                              declare
+                                 EV_Str : constant String := To_String (Type_Def.Enum_Values (E));
+                                 EV     : Float;
+                                 Match  : Boolean := False;
+                              begin
+                                 begin
+                                    EV := Float'Value (EV_Str);
+                                    if EV = V then
+                                       Match := True;
+                                    end if;
+                                 exception
+                                    when Constraint_Error => null;
+                                 end;
+                                 if Match then
+                                    return Valid_Result;
+                                 end if;
+                              end;
+                           end loop;
+                           return
+                             (Status        => Invalid,
+                              Error_Message => To_Bounded_String ("Value not in enumeration: " & Content),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
+                        end if;
+                        return Valid_Result;
+                     end;
                end case;
             end;
          end if;
