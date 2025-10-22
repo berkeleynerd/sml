@@ -12,14 +12,14 @@
 - ✅ Phase 5: Implemented content type validation and enumerations
 - ✅ Phase 6: Created schema loader (as example/reference code)
 - ✅ Phase 7: Comprehensive documentation (README, CLAUDE.md, tutorial, memory guide)
-- ✅ Phase 8: File I/O utilities (SML.IO in util/, maximum SPARK compliance)
+- ✅ Phase 8: File I/O utilities (moved to `sml_io` repository)
 
 **Current State:**
 - Library: Production ready, fully functional
 - Verification: 0 high-priority SPARK issues
 - Testing: 26 test procedures across 4 test suites, all passing
 - Documentation: Complete with tutorials and examples
-- File I/O: Available as optional utility package
+- File I/O: available via external `sml_io` crate
 
 ---
 
@@ -84,7 +84,7 @@ Validate_Integer_Content ("99999", 1, 65535) → Invalid
 
 **Workaround (no longer required):** Manual calls to `Validate_Content` are unnecessary for elements bound to simple types.
 
-### File I/O - Limited Type Return Constraints
+### File I/O - Limited Type Return Constraints (now in `sml_io`)
 
 **Discovery:** Ada's limited type rules prevent returning Document in custom result types.
 
@@ -205,7 +205,7 @@ with Pre => Input'Length > 0;
 
 **Effort estimate:** 5-10 hours
 
-**Note:** File I/O helpers already implemented in SML.IO (util/)
+**Note:** File I/O helpers live in the `sml_io` repository
 
 ### Optional Enhancement 6: Additional Testing
 

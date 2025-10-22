@@ -1,10 +1,14 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-Core SPARK Ada packages live in `src/` as `.ads` specs and `.adb` bodies. Verification artifacts in `proof/` mirror runtime packages with `.Proof` child units and VC logs. Executable demos sit in `examples/`, while compiled binaries resolve to `bin/`. Tests inhabit `test/` with shared documents under `test/fixtures/`. Build and project files (`sml.gpr`, `test_*.gpr`, `alire.toml`) anchor the toolchain, and configuration headers live in `config/`. Utility scripts and helpers reside in `util/`.
+Core SPARK Ada packages live in `src/` as `.ads` specs and `.adb` bodies. Verification artifacts in `proof/` mirror runtime packages with `.Proof` child units and VC logs. Tests inhabit `test/` with shared documents under `test/fixtures/`. Build and project files (`sml.gpr`, `test_*.gpr`, `alire.toml`) anchor the toolchain, and configuration headers live in `config/`.
+
+Examples and I/O utilities have been split into separate repositories:
+- Examples: `sml_examples`
+- File I/O utilities: `sml_io`
 
 ## Build, Test, and Verification
-Use Alire for reproducible builds: `alr build` compiles the library and resolves dependencies. Targeted builds use `alr exec -- gprbuild -P test_parser.gpr` (parser suite) or `alr exec -- gprbuild -P test_schema.gpr`. Executables for examples and I/O live in separate repositories (sml_examples, sml_io). Run validation with `bin/test_parser` and `bin/test_schema`. Keep proofs current by invoking `alr exec -- gnatprove -P sml.gpr --level=4 --prover=cvc5` and stash extended output in `proof/proof.log`.
+Use Alire for reproducible builds: `alr build` compiles the library and resolves dependencies. Targeted builds use `alr exec -- gprbuild -P test_parser.gpr` (parser suite) or `alr exec -- gprbuild -P test_schema.gpr`. Executables for examples and I/O live in separate repositories (sml_examples, sml_io). Run validation with `bin/test_parser` and `bin/test_schema`. Keep proofs current by invoking `alr exec -- gnatprove -P sml.gpr --level=4 --prover=cvc5` and stash extended output in `proof.log`.
 
 ## Coding Style & Naming Conventions
 Stick to SPARK Ada 2022 style: three-space indentation, one declaration per line, and explicit `with` clauses for dependencies. Keep package names in the `SML.*` hierarchy, placing ghost logic in `.Proof` children. Use Title_Case for types, Mixed_Case for subprograms, and UPPER_SNAKE_CASE for constants. Align contracts (`Pre`, `Post`, `Refined_Post`) vertically for readability, and run `gnatpp` with repository defaults before submitting significant formatting changes.
