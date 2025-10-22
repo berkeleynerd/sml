@@ -406,4 +406,7 @@ Validation := Validate_Document (Schema, Doc);
 3. Consider optional enhancements based on real needs
 4. Address medium-priority SPARK issues if desired (not required)
 
+Backlog
+- Refactor: split core parsing/DOM and schema into separate crates (sml_core, sml_schema). See issue: https://github.com/berkeleynerd/sml/issues/53
+
 **This document can be archived** - all planned work is complete.
