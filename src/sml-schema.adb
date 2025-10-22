@@ -907,19 +907,19 @@ is
 
                      if Type_Def.Suffix.Length > 0 then
                         declare
-                           S : constant String := To_String (Type_Def.Suffix);
-                           L : constant Natural := S'Length;
-                           CL: constant Natural := S'Length;
+                           Suf : constant String := To_String (Type_Def.Suffix);
+                           CL  : constant Natural := S'Length;
+                           L   : constant Natural := Suf'Length;
                         begin
-                           if CL < L or else
+                           if L > CL or else
                              (L > 0 and then
-                              S (S'Last - L + 1 .. S'Last) /= S)
+                              S (S'Last - L + 1 .. S'Last) /= Suf)
                            then
                               return
                                 (Status        => Invalid,
                                  Error_Message =>
                                    To_Bounded_String
-                                     ("String must end with: " & S),
+                                     ("String must end with: " & Suf),
                                  Error_Path    => Empty_String,
                                  Line          => 0,
                                  Column        => 0);
@@ -1080,6 +1080,27 @@ is
                                 To_Bounded_String
                                   ("Decimal too large: maximum "
                                    & Float'Image (Type_Def.Dec_Max)),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
+                        end if;
+                        --  Exclusive bounds, if configured
+                        if Type_Def.Dec_Min_Exclusive and then V <= Type_Def.Dec_Min then
+                           return
+                             (Status        => Invalid,
+                              Error_Message =>
+                                To_Bounded_String
+                                  ("Decimal must be > " & Float'Image (Type_Def.Dec_Min)),
+                              Error_Path    => Empty_String,
+                              Line          => 0,
+                              Column        => 0);
+                        end if;
+                        if Type_Def.Dec_Max_Exclusive and then V >= Type_Def.Dec_Max then
+                           return
+                             (Status        => Invalid,
+                              Error_Message =>
+                                To_Bounded_String
+                                  ("Decimal must be < " & Float'Image (Type_Def.Dec_Max)),
                               Error_Path    => Empty_String,
                               Line          => 0,
                               Column        => 0);
