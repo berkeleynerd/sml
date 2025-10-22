@@ -1,12 +1,13 @@
-with "sml.gpr";
+with "../sml.gpr";
 
-project Test_Schema is
+project Test_All is
 
-   for Source_Dirs use ("test/");
-   for Object_Dir use "obj/test/";
-   for Exec_Dir use "bin/";
-   for Main use ("test_schema.adb");
+   for Source_Dirs use (".");
+   for Object_Dir use "../obj/test/";
+   for Exec_Dir use "../bin/";
    for Create_Missing_Dirs use "True";
+
+   for Main use ("test_all.adb");
 
    package Compiler is
       for Default_Switches ("Ada") use
@@ -25,7 +26,10 @@ project Test_Schema is
    end Binder;
 
    package Linker is
-      for Linker_Options use ("-L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib");
+      for Linker_Options use (
+         "-L/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib",
+         "-Wl,-stack_size,0x2000000");  --  32MB stack for combined tests
    end Linker;
 
-end Test_Schema;
+end Test_All;
+

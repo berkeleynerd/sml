@@ -3,9 +3,9 @@
 ## Project Structure & Module Organization
 - `src/` — SPARK Ada sources (`SML.*`); proof-only units mirror as `sml-*-proof.ad[sb]` for `.Proof` children.
 - `test/` — Ada test mains (`test_*.adb`) and `test/fixtures/` sample SML files.
-- `bin/` — Built executables (e.g., `bin/test_parser`, `bin/test_schema`).
+- `bin/` — Built executables (e.g., `bin/test_all`).
 - `obj/`, `lib/` — Build artifacts; `proof/` and `proof.log` for SPARK results.
-- `sml.gpr`, `test_*.gpr` — GPRbuild projects; `config/sml_config.gpr` compiler/profile settings.
+- `sml.gpr`, `test/test_all.gpr`, `tests.gpr` — GPRbuild projects; `config/sml_config.gpr` compiler/profile settings.
 - `alire.toml`, `alire/` — Alire crate metadata.
 
 ## Build, Test, and Development Commands
@@ -14,11 +14,8 @@
 alr build
 # Or directly
 gprbuild -P sml.gpr
-# Build tests
-alr exec -- gprbuild -P test_parser.gpr
-alr exec -- gprbuild -P test_schema.gpr
-# Run tests
-bin/test_parser && bin/test_schema
+# Run tests via Alire action
+alr test
 # SPARK flow/proofs (writes to proof/)
 alr exec -- gnatprove -P sml.gpr --mode=flow --report=all
 alr exec -- gnatprove -P sml.gpr --level=4 --report=all
@@ -32,7 +29,7 @@ alr exec -- gnatprove -P sml.gpr --level=4 --report=all
 
 ## Testing Guidelines
 - Place new tests in `test/` as `test_<topic>.adb`; use fixtures under `test/fixtures/`.
-- Copy an existing `test_*.gpr` or add a new one with your main; build via `alr exec -- gprbuild -P <file>.gpr`.
+- Prefer adding cases to the omnibus runner (`test/test_all.adb`); keep `test/test_all.gpr` as the single project, and `alire.toml` actions run it via `alr test`.
 - Tests must be deterministic and exit non-zero on failure. Include edge cases (invalid UTF-8, entities, schema bounds).
 
 ## Commit & Pull Request Guidelines
@@ -42,4 +39,4 @@ alr exec -- gnatprove -P sml.gpr --level=4 --report=all
 
 ## Security & Verification Tips
 - Maintain strict UTF-8 and entity handling; avoid unbounded allocations.
-- For large tests, adjust stack as in `test_parser.gpr` (`-Wl,-stack_size,0x2000000`).
+- For large tests, adjust stack as in `test/test_all.gpr` (`-Wl,-stack_size,0x2000000`).

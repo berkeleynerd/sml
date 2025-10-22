@@ -13,14 +13,9 @@ A formally verified parser and Document Object Model (DOM) for Simple Markup Lan
 ## Quick Start
 
 ```bash
-# Build the core library and tests
+# Build the core library and run tests
 alr build -- -cargs:ada -gnat2022 -gnatX0
-alr exec -- gprbuild -P test_parser.gpr
-alr exec -- gprbuild -P test_schema.gpr
-
-# Run the tests
-bin/test_parser
-bin/test_schema
+alr test
 
 # Run SPARK verification
 alr exec -- gnatprove -P sml.gpr --mode=prove --level=4 --prover=cvc5 >> proof.log 2>&1
@@ -88,6 +83,9 @@ alr build
 
 # Or using GPRbuild directly
 gprbuild -P sml.gpr
+
+# Run tests via Alire actions
+alr test
 ```
 
 ## Verification
