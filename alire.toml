@@ -20,3 +20,14 @@ tags = ["xml", "parser", "simple-xml", "spark"]
   "-gnatya",      # attribute casing
   "-gnatyO"       # explicit overriding
 ]
+
+# Alire test actions: build and run omnibus tests
+[[actions]]
+type = "test"
+name = "build-tests"
+command = ["alr", "exec", "--", "gprbuild", "-p", "-P", "test/test_all.gpr", "-j0"]
+
+[[actions]]
+type = "test"
+name = "run-tests"
+command = ["bin/test_all"]

@@ -13,14 +13,9 @@ A formally verified parser and Document Object Model (DOM) for Simple Markup Lan
 ## Quick Start
 
 ```bash
-# Build the core library and tests
+# Build the core library and run tests
 alr build -- -cargs:ada -gnat2022 -gnatX0
-alr exec -- gprbuild -P test_parser.gpr
-alr exec -- gprbuild -P test_schema.gpr
-
-# Run the tests
-bin/test_parser
-bin/test_schema
+alr test
 
 # Run SPARK verification
 alr exec -- gnatprove -P sml.gpr --mode=prove --level=4 --prover=cvc5 >> proof.log 2>&1
@@ -65,20 +60,13 @@ SML is a strict subset of XML with these restrictions to enable formal verificat
 
 The library uses index-based node references and arena allocation for SPARK compatibility:
 
-- **SML.DOM** - Core DOM types and tree traversal operations
-- **SML.DOM.Parser** - Single-pass parser with formal correctness contracts
-- **SML.DOM.Builder** - DOM construction and modification API
-- **SML.DOM.Writer** - Serialization to SML format
+- **SML.DOM** — Core DOM types and traversal
+- **SML.DOM.Parser** — Single-pass parser with contracts
+- **SML.DOM.Builder** — DOM construction/modification API
+- **SML.DOM.Writer** — SML serialization
 
-Ghost code for formal verification is organized into separate `.Proof` child packages:
-- **SML.DOM.Proof** - DOM tree well-formedness and structural properties
-- **SML.Memory_Model.Proof** - Memory safety proofs and invariants
-- **SML.UTF8.Proof** - UTF-8 validation properties
-- **SML.Entities.Proof** - Entity encoding/decoding properties
-- **SML.Schema** - Schema validation engine with content types, structure rules, and cardinality
-- **SML.UTF8** - UTF-8 validation and processing
-- **SML.Entities** - XML entity encoding/decoding
-- **SML.Memory_Model** - Arena-based memory management
+Formal proof units live in `.Proof` children mirroring core modules, e.g.:
+- **SML.DOM.Proof**, **SML.UTF8.Proof**, **SML.Entities.Proof**, **SML.Memory_Model.Proof**
 
 ## Building
 
@@ -88,6 +76,9 @@ alr build
 
 # Or using GPRbuild directly
 gprbuild -P sml.gpr
+
+# Run tests via Alire actions
+alr test
 ```
 
 ## Verification
