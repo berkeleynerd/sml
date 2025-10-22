@@ -13,3 +13,11 @@ executables = ["sml_example"]
 [build-switches]
 "*".ada_version = "Ada2022"
 "*".runtime_checks = "Overflow"
+"*".style_checks = [
+  "-gnaty3",      # indentation 3
+  "-gnatyM120",   # max width 120
+  "-gnatyB",      # short-circuit bools
+  "-gnatyl",      # layout
+  "-gnatya",      # attribute casing
+  "-gnatyO"       # explicit overriding
+]
