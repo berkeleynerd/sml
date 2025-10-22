@@ -13,10 +13,8 @@ A formally verified parser and Document Object Model (DOM) for Simple Markup Lan
 ## Quick Start
 
 ```bash
-# Build library and examples
+# Build the core library and tests
 alr build -- -cargs:ada -gnat2022 -gnatX0
-
-# Build the test suite
 alr exec -- gprbuild -P test_parser.gpr
 alr exec -- gprbuild -P test_schema.gpr
 
@@ -24,61 +22,24 @@ alr exec -- gprbuild -P test_schema.gpr
 bin/test_parser
 bin/test_schema
 
-# Build and run examples
-alr exec -- gprbuild -P examples.gpr
-
-# Run examples (in suggested order)
-bin/sml_example                    # 1. DOM basics (parse, build, modify)
-bin/schema_validation_example      # 2. Schema validation
-bin/test_schema_loader             # 3. File I/O + integration testing
-
 # Run SPARK verification
 alr exec -- gnatprove -P sml.gpr --mode=prove --level=4 --prover=cvc5 >> proof.log 2>&1
 ```
 
-## Examples Guide
+## Examples
 
-### 1. sml_example - DOM Operations
-**Purpose:** Learn basic DOM parsing, building, and manipulation
-**What it demonstrates:**
-- Parse SML from string
-- Build DOM programmatically
-- Traverse and modify trees
-- Serialize back to SML
-- Round-trip operations
-
-**Run:** `bin/sml_example`
-
-### 2. schema_validation_example - Schema Validation
-**Purpose:** Learn schema-based document validation
-**What it demonstrates:**
-- Define schemas (types, elements, constraints)
-- Load schema from SML
-- Validate documents against schema
-- Error reporting and handling
-
-**Run:** `bin/schema_validation_example`
-
-### 3. test_schema_loader - File I/O & Integration
-**Purpose:** See file-based workflows and comprehensive testing
-**What it demonstrates:**
-- Schema loader functionality (8 unit tests)
-- File-based validation (SML.IO integration)
-- Loading schemas and instances from files
-- End-to-end validation workflow
-
-**Run:** `bin/test_schema_loader`
-
-See the example source files in `examples/` for complete working code.
+Examples and integration demos have moved to a separate repository:
+`sml_examples` (https://github.com/berkeleynerd/sml_examples).
+It contains runnable binaries (`sml_example`, `schema_validation_example`,
+`test_schema_loader`) and local fixtures.
 
 ## Documentation
 
 | File | Purpose |
 |------|---------|
 | **[AGENTS.md](AGENTS.md)** | Contributor guide with build, style, and review expectations |
-| **[CLAUDE.md](CLAUDE.md)** | Comprehensive development guide - architecture, implementation details, verification guidance |
 | **[MEMORY.md](MEMORY.md)** | Memory configuration guide - stack sizing, troubleshooting, performance tuning |
-| **[SCHEMA_SPEC.md](SCHEMA_SPEC.md)** | Schema language specification - types, constraints, validation rules |
+| (Additional docs) | Architecture and schema specification (to be added) |
 
 ## SML Language
 
@@ -168,16 +129,12 @@ SML includes a formally verified schema validation system for type-safe configur
   - Sequences enforce strict sibling order; extra elements are rejected; text/whitespace between elements is ignored.
   - Group-level occurs on sequence/choice via child `<minOccurs>/<maxOccurs>`; `unbounded` allowed (not for `all`).
   - `all` follows XSD: `minOccurs` ∈ {0,1}, `maxOccurs` = 1.
-  - See `SCHEMA_SPEC.md` for details and examples.
 - **Type safety** - Formal invariants with 0 high-priority SPARK issues
 
-### Example/Reference Code (examples/)
+### Example/Reference Code
 
-**SML.Schema.Loader** - Load schemas from SML documents (reference implementation)
-- Complete working implementation
-- Users can copy/adapt for their needs
-- One function uses `Integer'Value` (documented, isolated)
- - Supports `<include><path>…</path></include>` to merge external schema files
+See `sml_examples` for a reference `SML.Schema.Loader` implementation
+and end-to-end schema validation demos.
 
 ### Quick Start: Programmatic Schema
 
@@ -208,20 +165,11 @@ end Validate_Config;
 
 ### Running Schema Examples
 
-```bash
-# End-to-end validation demo
-bin/schema_validation_example
-
-# Schema loader tests (10 tests)
-bin/test_schema_loader
-
-# Core validation tests (13 tests)
-bin/test_schema
-```
+See the `sml_examples` repository for build and run instructions.
 
 ### Schema Language
 
-Schemas are expressed in SML itself. See [SCHEMA_SPEC.md](SCHEMA_SPEC.md) for complete specification.
+Schemas are expressed in SML itself. A concise schema specification will be added; see the `sml_examples` repository for working examples.
 
 **Example schema:**
 ```xml
@@ -242,16 +190,12 @@ Schemas are expressed in SML itself. See [SCHEMA_SPEC.md](SCHEMA_SPEC.md) for co
 </schema>
 ```
 
-**Loading schemas:** See `examples/sml-schema-loader.adb` for reference implementation.
+**Loading schemas:** See the loader in `sml_examples/src/` for a reference implementation.
 
 ## Contributing
 
-See [CLAUDE.md](CLAUDE.md) for comprehensive development guidance including:
-- Package architecture and design decisions
-- Implementation requirements and constraints
-- SPARK verification patterns and proof strategies
-- Memory bounds and performance guarantees
-- Common development tasks
+Development guidance and extended documentation will be added soon. For
+questions or proposals, please open an issue or PR.
 
 ## License
 
