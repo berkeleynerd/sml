@@ -27,6 +27,15 @@ procedure Test_Schema is
    procedure Test_Choice_Group_Repeats;
    procedure Test_Root_Element_Policy;
    procedure Test_Automatic_Content_Validation;
+   procedure Test_Unknown_Simple_Type_Element;
+   procedure Test_Unknown_Typed_Child;
+   procedure Test_Builtin_Typed_Child;
+   procedure Test_Unknown_Complex_Type_Direct;
+   procedure Test_Unknown_Simple_Type_Direct;
+   --  Custom simpleType reference tests
+   procedure Test_Custom_SimpleType_Element_Range;
+   procedure Test_Custom_SimpleType_Enum;
+   procedure Test_Custom_SimpleType_In_Complex;
 
    procedure Test_Basic_Schema is
       Schema : Schema_Document;
@@ -97,6 +106,19 @@ procedure Test_Schema is
 
       --  Initialize schema
       Initialize (Schema);
+
+      --  Define a simple type for the root element content
+      declare
+         Root_Type : Simple_Type_Definition;
+      begin
+         Root_Type.Name := To_Bounded_String ("rootType");
+         Root_Type.Base_Type := String_Type;
+         Add_Simple_Type (Schema, Root_Type, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add rootType");
+            return;
+         end if;
+      end;
 
       --  Add root element
       declare
@@ -1797,6 +1819,517 @@ procedure Test_Schema is
       Put_Line ("PASSED");
    end Test_Root_Element_Policy;
 
+   procedure Test_Unknown_Simple_Type_Element is
+      Schema  : Schema_Document;
+      Success : Boolean;
+   begin
+      Put ("Test: Unknown Simple Type on Element... ");
+
+      Initialize (Schema);
+
+      --  Declare element mapped to a missing simple type
+      declare
+         Priority : constant Element_Definition :=
+           (Name       => To_Bounded_String ("priority"),
+            Type_Name  => To_Bounded_String ("priorityType"),
+            Min_Occurs => 1,
+            Max_Occurs => 1);
+      begin
+         Add_Element (Schema, Priority, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add priority element");
+            return;
+         end if;
+      end;
+
+      --  Validate document; should fail because simple type is unknown
+      declare
+         Doc : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<priority>3</priority>");
+      begin
+         if not Doc.Success then
+            Put_Line ("FAILED: Could not parse priority document");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc.Doc);
+         begin
+            if R.Status = Invalid then
+               Put_Line ("✓ unknown simple type rejected");
+            else
+               Put_Line ("FAILED: unknown simple type accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      Put_Line ("PASSED");
+   end Test_Unknown_Simple_Type_Element;
+
+   procedure Test_Unknown_Typed_Child is
+      Schema  : Schema_Document;
+      Success : Boolean;
+   begin
+      Put ("Test: Unknown Typed Child in Sequence... ");
+
+      Initialize (Schema);
+
+      --  Complex type with a child that references a missing type
+      declare
+         P : Complex_Type_Definition;
+      begin
+         P.Name := To_Bounded_String ("parentType");
+         P.Content_Model := Sequence_Model;
+         P.Child_Count := 1;
+         P.Children (1) :=
+           (Element_Name => To_Bounded_String ("child"),
+            Type_Name    => To_Bounded_String ("mysteryType"),
+            Min_Occurs   => 1,
+            Max_Occurs   => 1);
+         Add_Complex_Type (Schema, P, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add parentType");
+            return;
+         end if;
+      end;
+
+      --  Root element mapped to the complex type
+      declare
+         Root : constant Element_Definition :=
+           (Name       => To_Bounded_String ("parent"),
+            Type_Name  => To_Bounded_String ("parentType"),
+            Min_Occurs => 1,
+            Max_Occurs => 1);
+      begin
+         Add_Element (Schema, Root, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add parent element");
+            return;
+         end if;
+      end;
+
+      --  Document has the typed child; should fail due to unknown type
+      declare
+         Doc : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<parent><child>abc</child></parent>");
+      begin
+         if not Doc.Success then
+            Put_Line ("FAILED: Could not parse parent document");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc.Doc);
+         begin
+            if R.Status = Invalid then
+               Put_Line ("✓ unknown typed child rejected");
+            else
+               Put_Line ("FAILED: unknown typed child accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      Put_Line ("PASSED");
+   end Test_Unknown_Typed_Child;
+
+   procedure Test_Builtin_Typed_Child is
+      Schema  : Schema_Document;
+      Success : Boolean;
+   begin
+      Put ("Test: Built-in Typed Child (string)... ");
+
+      Initialize (Schema);
+
+      --  Complex parent with a child validated as built-in 'string'
+      declare
+         P : Complex_Type_Definition;
+      begin
+         P.Name := To_Bounded_String ("parentType");
+         P.Content_Model := Sequence_Model;
+         P.Child_Count := 1;
+         P.Children (1) :=
+           (Element_Name => To_Bounded_String ("host"),
+            Type_Name    => To_Bounded_String ("string"),
+            Min_Occurs   => 1,
+            Max_Occurs   => 1);
+         Add_Complex_Type (Schema, P, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add parentType");
+            return;
+         end if;
+      end;
+
+      --  Root element mapped to the complex type
+      declare
+         Root : constant Element_Definition :=
+           (Name       => To_Bounded_String ("parent"),
+            Type_Name  => To_Bounded_String ("parentType"),
+            Min_Occurs => 1,
+            Max_Occurs => 1);
+      begin
+         Add_Element (Schema, Root, Success);
+      end;
+
+      --  Document should be valid as built-in 'string' is recognized
+      declare
+         Doc : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<parent><host>localhost</host></parent>");
+      begin
+         if not Doc.Success then
+            Put_Line ("FAILED: Could not parse built-in string document");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, Doc.Doc);
+         begin
+            if R.Status = Valid then
+               Put_Line ("✓ built-in string accepted");
+            else
+               Put_Line ("FAILED: built-in string rejected");
+               return;
+            end if;
+         end;
+      end;
+
+      Put_Line ("PASSED");
+   end Test_Builtin_Typed_Child;
+
+   procedure Test_Unknown_Complex_Type_Direct is
+      Schema : Schema_Document;
+   begin
+      Put ("Test: Unknown Complex Type (direct Validate_Structure)... ");
+
+      Initialize (Schema);
+
+      --  Minimal document and direct structure call with missing type
+      declare
+         Doc : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<root/>");
+      begin
+         if not Doc.Success then
+            Put_Line ("FAILED: Could not parse root document");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Structure
+                (Schema,
+                 Doc.Doc,
+                 SML.DOM.Root (Doc.Doc),
+                 To_Bounded_String ("missingComplex"));
+         begin
+            if R.Status = Invalid then
+               Put_Line ("✓ unknown complex type rejected");
+            else
+               Put_Line ("FAILED: unknown complex type accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      Put_Line ("PASSED");
+   end Test_Unknown_Complex_Type_Direct;
+
+   procedure Test_Unknown_Simple_Type_Direct is
+      Schema : Schema_Document;
+   begin
+      Put ("Test: Unknown Simple Type (direct Validate_Content)... ");
+
+      Initialize (Schema);
+
+      declare
+         R : constant Validation_Result :=
+           Validate_Content (Schema, To_Bounded_String ("bogusType"), "42");
+      begin
+         if R.Status = Invalid then
+            Put_Line ("✓ unknown simple type rejected");
+         else
+            Put_Line ("FAILED: unknown simple type accepted");
+            return;
+         end if;
+      end;
+
+      Put_Line ("PASSED");
+   end Test_Unknown_Simple_Type_Direct;
+
+   --  New tests for custom simpleType references
+   --  Used by elements and within complex types
+   procedure Test_Custom_SimpleType_Element_Range is
+      Schema  : Schema_Document;
+      Success : Boolean;
+   begin
+      Put ("Test: Custom SimpleType (integer range) on Element... ");
+
+      Initialize (Schema);
+
+      --  Define custom integer simpleType: scoreType (1..100)
+      declare
+         T : Simple_Type_Definition;
+      begin
+         T.Name := To_Bounded_String ("scoreType");
+         T.Base_Type := Integer_Type;
+         T.Min_Value := 1;
+         T.Max_Value := 100;
+         Add_Simple_Type (Schema, T, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add scoreType");
+            return;
+         end if;
+      end;
+
+      --  Map element 'score' to custom type 'scoreType'
+      declare
+         E : constant Element_Definition :=
+           (Name       => To_Bounded_String ("score"),
+            Type_Name  => To_Bounded_String ("scoreType"),
+            Min_Occurs => 1,
+            Max_Occurs => 1);
+      begin
+         Add_Element (Schema, E, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add score element");
+            return;
+         end if;
+      end;
+
+      --  Valid
+      declare
+         D1 : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<score>50</score>");
+      begin
+         if not D1.Success then
+            Put_Line ("FAILED: parse fail for valid score");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, D1.Doc);
+         begin
+            if R.Status = Valid then
+               Put ("✓ 50 ok, ");
+            else
+               Put_Line ("FAILED: 50 rejected");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Too large
+      declare
+         D2 : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<score>200</score>");
+      begin
+         if not D2.Success then
+            Put_Line ("FAILED: parse fail for large score");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, D2.Doc);
+         begin
+            if R.Status = Invalid then
+               Put ("✓ 200 rejected, ");
+            else
+               Put_Line ("FAILED: 200 accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Too small
+      declare
+         D3 : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<score>0</score>");
+      begin
+         if not D3.Success then
+            Put_Line ("FAILED: parse fail for small score");
+            return;
+         end if;
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, D3.Doc);
+         begin
+            if R.Status = Invalid then
+               Put_Line ("✓ 0 rejected");
+            else
+               Put_Line ("FAILED: 0 accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      Put_Line ("PASSED");
+   end Test_Custom_SimpleType_Element_Range;
+
+   procedure Test_Custom_SimpleType_Enum is
+      Schema  : Schema_Document;
+      Success : Boolean;
+   begin
+      Put ("Test: Custom SimpleType (string enum) on Element... ");
+
+      Initialize (Schema);
+
+      --  statusType with enumeration values
+      declare
+         T : Simple_Type_Definition;
+      begin
+         T.Name := To_Bounded_String ("statusType");
+         T.Base_Type := String_Type;
+         T.Enum_Count := 3;
+         T.Enum_Values (1) := To_Bounded_String ("todo");
+         T.Enum_Values (2) := To_Bounded_String ("in_progress");
+         T.Enum_Values (3) := To_Bounded_String ("done");
+         Add_Simple_Type (Schema, T, Success);
+         if not Success then
+            Put_Line ("FAILED: Could not add statusType");
+            return;
+         end if;
+      end;
+
+      --  Element uses statusType
+      declare
+         E : constant Element_Definition :=
+           (Name       => To_Bounded_String ("status"),
+            Type_Name  => To_Bounded_String ("statusType"),
+            Min_Occurs => 1,
+            Max_Occurs => 1);
+      begin
+         Add_Element (Schema, E, Success);
+      end;
+
+      --  Valid value
+      declare
+         D1 : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<status>done</status>");
+      begin
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, D1.Doc);
+         begin
+            if R.Status = Valid then
+               Put ("✓ done ok, ");
+            else
+               Put_Line ("FAILED: done rejected");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Invalid enum
+      declare
+         D2 : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse ("<status>invalid</status>");
+      begin
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, D2.Doc);
+         begin
+            if R.Status = Invalid then
+               Put_Line ("✓ invalid rejected");
+            else
+               Put_Line ("FAILED: invalid accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      Put_Line ("PASSED");
+   end Test_Custom_SimpleType_Enum;
+
+   procedure Test_Custom_SimpleType_In_Complex is
+      Schema  : Schema_Document;
+      Success : Boolean;
+   begin
+      Put ("Test: Custom SimpleType inside ComplexType... ");
+
+      Initialize (Schema);
+
+      --  priorityType: integer 1..5
+      declare
+         PT : Simple_Type_Definition;
+      begin
+         PT.Name := To_Bounded_String ("priorityType");
+         PT.Base_Type := Integer_Type;
+         PT.Min_Value := 1;
+         PT.Max_Value := 5;
+         Add_Simple_Type (Schema, PT, Success);
+      end;
+
+      --  taskType: sequence(title:string, priority:priorityType)
+      declare
+         CT : Complex_Type_Definition;
+      begin
+         CT.Name := To_Bounded_String ("taskType");
+         CT.Content_Model := Sequence_Model;
+         CT.Child_Count := 2;
+         CT.Children (1) :=
+           (Element_Name => To_Bounded_String ("title"),
+            Type_Name    => To_Bounded_String ("string"),
+            Min_Occurs   => 1,
+            Max_Occurs   => 1);
+         CT.Children (2) :=
+           (Element_Name => To_Bounded_String ("priority"),
+            Type_Name    => To_Bounded_String ("priorityType"),
+            Min_Occurs   => 1,
+            Max_Occurs   => 1);
+         Add_Complex_Type (Schema, CT, Success);
+      end;
+
+      --  Root element 'task' of type taskType
+      declare
+         E : constant Element_Definition :=
+           (Name       => To_Bounded_String ("task"),
+            Type_Name  => To_Bounded_String ("taskType"),
+            Min_Occurs => 1,
+            Max_Occurs => 1);
+      begin
+         Add_Element (Schema, E, Success);
+      end;
+
+      --  Valid
+      declare
+         D1 : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse
+             ("<task><title>Test</title><priority>3</priority></task>");
+      begin
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, D1.Doc);
+         begin
+            if R.Status = Valid then
+               Put ("✓ priority 3 ok, ");
+            else
+               Put_Line ("FAILED: priority 3 rejected");
+               return;
+            end if;
+         end;
+      end;
+
+      --  Invalid
+      declare
+         D2 : constant SML.DOM.Parser.Parse_Result :=
+           SML.DOM.Parser.Parse
+             ("<task><title>Test</title><priority>10</priority></task>");
+      begin
+         declare
+            R : constant Validation_Result :=
+              Validate_Document (Schema, D2.Doc);
+         begin
+            if R.Status = Invalid then
+               Put_Line ("✓ priority 10 rejected");
+            else
+               Put_Line ("FAILED: priority 10 accepted");
+               return;
+            end if;
+         end;
+      end;
+
+      Put_Line ("PASSED");
+   end Test_Custom_SimpleType_In_Complex;
+
 begin
    Put_Line ("=== SML Schema Tests ===");
    New_Line;
@@ -1815,6 +2348,16 @@ begin
    Test_Choice_Group_Repeats;
    Test_Root_Element_Policy;
    Test_Automatic_Content_Validation;
+   Test_Unknown_Simple_Type_Element;
+   Test_Unknown_Typed_Child;
+   Test_Builtin_Typed_Child;
+   Test_Unknown_Complex_Type_Direct;
+   Test_Unknown_Simple_Type_Direct;
+
+   --  New custom simpleType resolution tests
+   Test_Custom_SimpleType_Element_Range;
+   Test_Custom_SimpleType_Enum;
+   Test_Custom_SimpleType_In_Complex;
 
    New_Line;
    Put_Line ("=== All Tests Completed ===");
