@@ -71,8 +71,59 @@ is
          end if;
       end loop;
 
-      --  Unknown type name: treat as valid (no-op)
-      return Valid_Result;
+      --  Built-in simple types by name: validate as simple content
+      if Type_Name = To_Bounded_String ("string")
+        or else Type_Name = To_Bounded_String ("integer")
+        or else Type_Name = To_Bounded_String ("boolean")
+        or else Type_Name = To_Bounded_String ("decimal")
+      then
+         declare
+            Child             : Node_Id := First_Child (Doc, Node);
+            Has_Element_Child : Boolean := False;
+            First_Text_Node   : Node_Id := Null_Node;
+         begin
+            while Child /= Null_Node loop
+               if Kind (Doc, Child) = Element then
+                  Has_Element_Child := True;
+               elsif Kind (Doc, Child) = Text
+                 and then First_Text_Node = Null_Node
+               then
+                  First_Text_Node := Child;
+               end if;
+               Child := Next_Sibling (Doc, Child);
+            end loop;
+
+            if Has_Element_Child then
+               return
+                 (Status        => Invalid,
+                  Error_Message =>
+                    To_Bounded_String
+                      ("Simple content cannot have child elements"),
+                  Error_Path    => To_Bounded_String ("/" & Name (Doc, Node)),
+                  Line          => 0,
+                  Column        => 0);
+            end if;
+
+            declare
+               Content : constant String :=
+                 (if First_Text_Node = Null_Node then
+                    ""
+                  else
+                    Text_Value (Doc, First_Text_Node));
+            begin
+               return Validate_Content (Schema, Type_Name, Content);
+            end;
+         end;
+      end if;
+
+      --  Unknown type name: report as error
+      return
+        (Status        => Invalid,
+         Error_Message =>
+           To_Bounded_String ("Unknown type: " & To_String (Type_Name)),
+         Error_Path    => To_Bounded_String ("/" & Name (Doc, Node)),
+         Line          => 0,
+         Column        => 0);
    end Validate_Node_Against_Type;
 
    ---------------------------------------------------------------------------
@@ -269,74 +320,17 @@ is
                Column        => 0);
          end if;
 
-         --  Find the element definition
+         --  Find the element definition and validate using unified type resolution
          for I in 1 .. Schema.Element_Count loop
             if Schema.Elements (I).Name = To_Bounded_String (Element_Name) then
                declare
                   Element_Def : Element_Definition renames Schema.Elements (I);
                begin
-                  --  If a complex type with this name exists, validate structure
-                  declare
-                     Found_Complex : Boolean := False;
-                  begin
-                     if Element_Def.Type_Name.Length > 0 then
-                        for C in 1 .. Schema.Complex_Type_Count loop
-                           if Schema.Complex_Types (C).Name = Element_Def.Type_Name then
-                              Found_Complex := True;
-                              declare
-                                 Structure_Result : constant Validation_Result :=
-                                   Validate_Structure (Schema, Doc, Node, Element_Def.Type_Name);
-                              begin
-                                 if Structure_Result.Status = Invalid then
-                                    return Structure_Result;
-                                 end if;
-                              end;
-                              exit;
-                           end if;
-                        end loop;
-                     end if;
-
-                     --  If no complex type, check for simple type and validate content
-                     if not Found_Complex and then Element_Def.Type_Name.Length > 0 then
-                        --  Ensure there are no element children and extract first text node
-                        declare
-                           Child              : Node_Id := First_Child (Doc, Node);
-                           Has_Element_Child  : Boolean := False;
-                           First_Text_Node    : Node_Id := Null_Node;
-                        begin
-                           while Child /= Null_Node loop
-                              if Kind (Doc, Child) = Element then
-                                 Has_Element_Child := True;
-                              elsif Kind (Doc, Child) = Text and then First_Text_Node = Null_Node then
-                                 First_Text_Node := Child;
-                              end if;
-                              Child := Next_Sibling (Doc, Child);
-                           end loop;
-
-                           if Has_Element_Child then
-                              return
-                                (Status        => Invalid,
-                                 Error_Message =>
-                                   To_Bounded_String ("Simple content cannot have child elements"),
-                                 Error_Path    => To_Bounded_String ("/" & Element_Name),
-                                 Line          => 0,
-                                 Column        => 0);
-                           end if;
-
-                           declare
-                              Content : constant String :=
-                                (if First_Text_Node = Null_Node then "" else Text_Value (Doc, First_Text_Node));
-                              Content_Result : constant Validation_Result :=
-                                Validate_Content (Schema, Element_Def.Type_Name, Content);
-                           begin
-                              if Content_Result.Status = Invalid then
-                                 return Content_Result;
-                              end if;
-                           end;
-                        end;
-                     end if;
-                  end;
-
+                  if Element_Def.Type_Name.Length > 0 then
+                     --  Delegate to common resolver which handles complex/simple/built-ins
+                     return Validate_Node_Against_Type
+                       (Schema, Doc, Node, Element_Def.Type_Name);
+                  end if;
                end;
                exit;
             end if;
@@ -755,9 +749,15 @@ is
          end if;
       end loop;
 
-      --  Type not found - for now return valid
-      --  In full implementation, this would be an error
-      return Valid_Result;
+      --  Type not found - report as error
+      return
+        (Status        => Invalid,
+         Error_Message =>
+           To_Bounded_String
+             ("Complex type not found: " & To_String (Type_Name)),
+         Error_Path    => To_Bounded_String ("/" & Name (Doc, Parent_Node)),
+         Line          => 0,
+         Column        => 0);
    end Validate_Structure;
 
    function Check_Cardinality
@@ -808,7 +808,8 @@ is
      (Schema : Schema_Document; Type_Name : Bounded_String; Content : String)
       return Validation_Result is
    begin
-      --  Look for the simple type definition
+      --  Prefer user-defined simple types first, then fall back to built-ins.
+      --  This ensures custom simpleType references are honored.
       for I in 1 .. Schema.Simple_Type_Count loop
          if Schema.Simple_Types (I).Name = Type_Name then
             declare
@@ -1190,8 +1191,26 @@ is
          end if;
       end loop;
 
-      --  Type not found - treat as string for now
-      return Valid_Result;
+      --  Built-in simple types by name (no additional restrictions)
+      if Type_Name = To_Bounded_String ("string") then
+         return Valid_Result;
+      elsif Type_Name = To_Bounded_String ("integer") then
+         return Validate_Integer_Content (Content, Integer'First, Integer'Last);
+      elsif Type_Name = To_Bounded_String ("boolean") then
+         return Validate_Boolean_Content (Content);
+      elsif Type_Name = To_Bounded_String ("decimal") then
+         return Validate_Decimal_Content (Content);
+      end if;
+
+      --  Type not found - report as error
+      return
+        (Status        => Invalid,
+         Error_Message =>
+           To_Bounded_String
+             ("Simple type not found: " & To_String (Type_Name)),
+         Error_Path    => Empty_String,
+         Line          => 0,
+         Column        => 0);
    end Validate_Content;
 
    function Validate_Integer_Content
