@@ -24,7 +24,7 @@ alr exec -- gnatprove -P sml.gpr --mode=prove --level=4 --prover=cvc5 >> proof.l
 ## Examples
 
 Examples and integration demos have moved to a separate repository:
-`sml_examples` (https://github.com/berkeleynerd/sml_examples).
+[`sml_examples`](https://git.idril.is/rebecca/sml_examples).
 It contains runnable binaries (`sml_example`, `schema_validation_example`,
 `test_schema_loader`) and local fixtures.
 

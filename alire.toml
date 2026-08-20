@@ -1,12 +1,14 @@
 name = "sml"
 description = "Simple XML library for Ada/SPARK"
-version = "0.1.0-dev"
+version = "0.1.0"
 
-authors = ["Your Name"]
-maintainers = ["Your Name <example@example.com>"]
+authors = ["Rebecca Wise"]
+maintainers = ["Rebecca Wise <rebecca@berkeleynerd.com>"]
+maintainers-logins = ["berkeleynerd"]
 licenses = "MIT OR Apache-2.0 WITH LLVM-exception"
-website = ""
+website = "https://git.idril.is/rebecca/sml"
 tags = ["xml", "parser", "simple-xml", "spark"]
+project-files = ["sml.gpr"]
 
 
 [build-switches]
@@ -20,6 +22,12 @@ tags = ["xml", "parser", "simple-xml", "spark"]
   "-gnatya",      # attribute casing
   "-gnatyO"       # explicit overriding
 ]
+
+[gpr-externals]
+SML_LIBRARY_TYPE = ["static", "relocatable", "static-pic"]
+
+[gpr-set-externals]
+SML_LIBRARY_TYPE = "static"
 
 # Alire test actions: build and run omnibus tests
 [[actions]]
